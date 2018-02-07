@@ -1,0 +1,9 @@
+{
+  "chip": {
+    "template": "pulpissimo",
+
+    "fc": {
+      "core": "zeroriscy"
+    }
+  }
+}

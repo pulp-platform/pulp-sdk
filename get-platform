@@ -1,0 +1,10 @@
+#!/bin/bash
+
+chips=`plpinfo get --property=pulp_chip --silent`
+platform=`plpinfo get --property=platform --silent | grep rtl`
+
+if [ -n "$platform" ]; then
+    for chip in $chips; do
+	plpbuild --p $chip checkout build --stdout
+    done
+fi

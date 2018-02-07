@@ -1,0 +1,10 @@
+*~
+__pycache__
+/build
+/libs
+/pkg
+/platform
+/runtime
+/sourceme.*
+/testset.cfg
+/tools

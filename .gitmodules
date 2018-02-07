@@ -1,0 +1,3 @@
+[submodule "pulp-tools"]
+	path = pulp-tools
+	url = git@iis-git.ee.ethz.ch:pulp-sw/pulp-tools
