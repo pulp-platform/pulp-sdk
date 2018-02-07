@@ -39,14 +39,12 @@ Have a look at the dependencies documentation to see how to build them.
 
 All the dependencies required to build the SDK must be setup through environment variables.
 
-The toolchains must be built separately and, depending on the selected cores, the following environment variables must be defined:
+The toolchain must be built separately and the following environment variable should 
+point to it:
 
-- riscy core: RISCVV2_GCC_TOOLCHAIN
-- zeroriscy core: RISCVSLIM_GCC_TOOLCHAIN
-- riscy core with FPU: RISCVV2_HARDFLOAT_GCC_TOOLCHAIN
-
-Not that several environement variables for different cores are needed for now, this will soon be fixed
-so that only one is needed.
+```
+export PULP_RISCV_GCC_TOOLCHAIN=<path to the folder containing the bin folder of the toolchain>
+``
 
 RTL platforms should also be built separately (see the platform documentation for that) and the following
 environment variable must point to the folder where the platform was installed (this example is for pulpissimo):
@@ -70,7 +68,7 @@ Then go inside the downloaded folder:
 cd pulp-sdk
 ```
 
-### Target setup
+### Target and platform selection
 
 Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the file
 in directory *configs* for example like the following:
@@ -78,6 +76,16 @@ in directory *configs* for example like the following:
 ```
 source configs/pulpissimo.sh
 ```
+
+You can also configure to platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+
+```
+source configs/platform-rtl.sh
+```
+
+Note that anytime the target file is sourced, you must source again the one for the platform.
+
+
 
 ### SDK build
 
