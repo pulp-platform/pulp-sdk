@@ -1,4 +1,3 @@
-
 all: pulp-tools
 	plpbuild --p sdk checkout build --stdout
 
