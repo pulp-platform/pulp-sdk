@@ -77,7 +77,9 @@ in directory *configs* for example like the following:
 source configs/pulpissimo.sh
 ```
 
-You can also configure to platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+Once your application is compiled, you will need to run it on a platform. The platform can
+be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
 
 ```
 source configs/platform-rtl.sh
