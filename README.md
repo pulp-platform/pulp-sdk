@@ -35,6 +35,9 @@ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl
 
 Have a look at the dependencies documentation to see how to build them.
 
+You can have a look here for the toolchain: git@github.com:pulp-platform/pulp-riscv-gnu-toolchain.git
+
+
 ### Dependencies setup
 
 All the dependencies required to build the SDK must be setup through environment variables.
@@ -112,7 +115,17 @@ The next time you open a new terminal, you have to source again the file for the
 
 After these steps, the SDK is ready to be used, you can have a look at section *Documentation* for more information.
 
+For a quick hello test, you can get some examples here:
 
+```
+git clone git@github.com:pulp-platform/pulp-rt-examples.git
+```
+
+Then you can go to the folder *pulp-rt-examples/hello* and execute:
+
+```
+make clean all run
+```
 
 
 
