@@ -3,7 +3,7 @@
     "template": "pulpissimo",
 
     "fc": {
-      "core": "riscyv2"
+      "core": "riscyv2-fpu"
     }
   }
 }

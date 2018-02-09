@@ -20,12 +20,8 @@ Here are the required system dependencies for building the SDK and its dependenc
 
 Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be executed to get all required dependencies:
 
-```
-sudo apt install git python3-pip gawk texinfo libgmp-dev libmpfr-dev libmpc-dev swig3.0 libjpeg-dev lsb-core doxygen python-sphinx sox graphicsmagick-libmagick-dev-compat
-sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter
-```
-
-
+    $ sudo apt install git python3-pip gawk texinfo libgmp-dev libmpfr-dev libmpc-dev swig3.0 libjpeg-dev lsb-core doxygen python-sphinx sox graphicsmagick-libmagick-dev-compat
+    # sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter
 
 
 
@@ -45,40 +41,43 @@ All the dependencies required to build the SDK must be setup through environment
 The toolchain must be built separately and the following environment variable should 
 point to it:
 
-```
-export PULP_RISCV_GCC_TOOLCHAIN=<path to the folder containing the bin folder of the toolchain>
-``
+    $ export PULP_RISCV_GCC_TOOLCHAIN=<path to the folder containing the bin folder of the toolchain>
 
 RTL platforms should also be built separately (see the platform documentation for that) and the following
 environment variable must point to the folder where the platform was installed (this example is for pulpissimo):
 
-export VSIM_PATH=<pulpissimo root folder>/sim
+    $ export VSIM_PATH=<pulpissimo root folder>/sim
 
 
 ### SDK sources
 
 First get the sources of the SDK top module:
 
-```
-git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
-```
+    $ git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
+
 
 Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
 
 Then go inside the downloaded folder:
 
-```
-cd pulp-sdk
-```
+    $ cd pulp-sdk
 
 ### Target and platform selection
 
 Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the file
 in directory *configs* for example like the following:
 
-```
-source configs/pulpissimo.sh
-```
+    $ source configs/pulpissimo.sh
+
+Once your application is compiled, you will need to run it on a platform. The platform can
+be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+
+    $ source configs/platform-rtl.sh
+
+Note that anytime the target file is sourced, you must source again the one for the platform.
+
+
 
 Once your application is compiled, you will need to run it on a platform. The platform can
 be the RTL simulator, the FPGA, the virtual platform or the FPGA.
@@ -96,9 +95,8 @@ Note that anytime the target file is sourced, you must source again the one for 
 
 You can then build the SDK with this command:
 
-```
-make all
-```
+    $ make all
+
 
 
 ### SDK setup
@@ -107,9 +105,8 @@ The SDK build should have installed the SDK under *pkg/sdk/dev*.
 
 Once you want to use it to compile and run applications, you first need to setup the SDK by sourcing the *sourceme.sh* file which is inside the installation folder:
 
-```
-source pkg/sdk/dev/sourceme.sh
-```
+$ source pkg/sdk/dev/sourceme.sh
+
 
 The next time you open a new terminal, you have to source again the file for the target (i.e. *configs/pulpissimo.sh) and then the file in the SDK installation folder.
 
@@ -117,15 +114,11 @@ After these steps, the SDK is ready to be used, you can have a look at section *
 
 For a quick hello test, you can get some examples here:
 
-```
-git clone git@github.com:pulp-platform/pulp-rt-examples.git
-```
+    $ git clone git@github.com:pulp-platform/pulp-rt-examples.git
 
 Then you can go to the folder *pulp-rt-examples/hello* and execute:
 
-```
-make clean all run
-```
+    $ make clean all run
 
 
 
@@ -144,64 +137,46 @@ All the SDK dependencies can be downloaded if they are compatible with the Linux
 
 For that first get the top SDK module, after you have configured your ssh key in gitlab:
 
-```
-git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
-```
+    $ git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
 
 Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
 
 Then go to the module folder and execute:
 
-```
-git submodule update --init
-```
+    $ git submodule update --init
 
 Configure the targets for which the SDK must be built (you can have a look at section *Possible configurations* to see what to set):
 
-```
-export PULP_CURRENT_CONFIG=system=wolfe
-```
+    $ export PULP_CURRENT_CONFIG=system=wolfe
 
 Initialize the SDK:
 
-```
-source init.sh
-```
+    $ source init.sh
 
 Download the dependencies:
 
-```
-plpbuild --p sdk deps
-```
+    $ plpbuild --p sdk deps
 
 Checkout the source code:
 
-```
-plpbuild --p sdk checkout
-```
+    $ plpbuild --p sdk checkout
 
 And build the SDK:
 
-```
-plpbuild --p sdk build --stdout
-```
+    $ plpbuild --p sdk build --stdout
 
 Finally, to test the SDK package, first generate a sourceme file and source it:
 
-```
-plpbuild --p sdk env
-source sourceme.sh
-```
+    $ plpbuild --p sdk env
+    $ source sourceme.sh
 
 Note that for SDK users, only sourcing this file is enough to configure the SDK and compile applications.
 
 Download some tests, and try one of them:
 
-```
-git clone git@iis-git.ee.ethz.ch:pulp-tests/rt-tests.git
-cd rt-tests/rt/threads
-make clean all run
-```
+    $ git clone git@iis-git.ee.ethz.ch:pulp-tests/rt-tests.git
+    $ cd rt-tests/rt/threads
+    $ make clean all run
 
 
 ### Update
@@ -210,23 +185,17 @@ If the SDK has already been built and needs to be updated, the SDK can be rebuil
 
 For that first update the sources:
 
-```
-git pull
-git submodule update
-plpbuild --p sdk checkout
-```
+    $ git pull
+    $ git submodule update
+    $ plpbuild --p sdk checkout
 
 Download the new dependencies:
 
-```
-plpbuild --p sdk deps
-```
+    $ plpbuild --p sdk deps
 
 Then rebuild everything, including a command to clean the SDK, as some modules do not work well with incremental compilation:
 
-```
-plpbuild --p sdk clean build --stdout
-```
+    $ plpbuild --p sdk clean build --stdout
 
 After these steps, the new SDK is ready to be used.
 
@@ -239,58 +208,42 @@ After these steps, the new SDK is ready to be used.
 The SDK has some dependencies like the toolchains which must be built before the SDK can be built.
 To build everything including all the dependencies, first get the top SDK module, after you have configured your ssh key in gitlab:
 
-```
-git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
-```
+    $ git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
 
 Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
 
 Then go to the module folder and execute:
 
-```
-git submodule update --init
-```
+    $ git submodule update --init
 
 Configure the targets for which the SDK must be built (you can have a look at section *Possible configurations* to see what to set):
 
-```
-export PULP_CURRENT_CONFIG=system=wolfe
-```
+    $ export PULP_CURRENT_CONFIG=system=wolfe
 
 Initialize the SDK:
 
-```
-source init.sh
-```
+    $ source init.sh
 
 Checkout the source code:
 
-```
-plpbuild --p sdk checkout --deps
-```
+    $ plpbuild --p sdk checkout --deps
 
 And build everything:
 
-```
-plpbuild --p sdk build --deps --stdout
-```
+    $ plpbuild --p sdk build --deps --stdout
 
 Finally, to test the SDK package, first generate a sourceme file and source it:
 
-```
-plpbuild --p sdk env
-source sourceme.sh
-```
+    $ plpbuild --p sdk env
+    $ source sourceme.sh
 
 Note that for SDK users, only sourcing this file is enough to configure the SDK and compile applications.
 
 Download some tests, and try one of them:
 
-```
-git clone git@iis-git.ee.ethz.ch:pulp-tests/rt-tests.git
-cd rt-tests/rt/threads
-make clean all run
-```
+    $ git clone git@iis-git.ee.ethz.ch:pulp-tests/rt-tests.git
+    $ cd rt-tests/rt/threads
+    $ make clean all run
 
 ### Update
 
@@ -298,17 +251,13 @@ If the SDK has already been built and needs to be updated, the SDK can be rebuil
 
 For that first update the sources:
 
-```
-git pull
-git submodule update
-plpbuild --p sdk checkout --deps
-```
+    $ git pull
+    $ git submodule update
+    $ plpbuild --p sdk checkout --deps
 
 Then rebuild everything, including a command to clean the SDK, as some modules do not work well with incremental compilation:
 
-```
-plpbuild --p sdk clean build --deps --stdout
-```
+    $ plpbuild --p sdk clean build --deps --stdout
 
 After these steps, the new SDK is ready to be used.
 
@@ -317,12 +266,10 @@ After these steps, the new SDK is ready to be used.
 
 Here is a list of possible values for the configuration:
 
-```
-export PULP_CURRENT_CONFIG=system=pulpissimo
-export PULP_CURRENT_CONFIG=system=pulp
-export PULP_CURRENT_CONFIG=system=gap
-export PULP_CURRENT_CONFIG=system=vivosoc3
-```
+    $ export PULP_CURRENT_CONFIG=system=pulpissimo
+    $ export PULP_CURRENT_CONFIG=system=pulp
+    $ export PULP_CURRENT_CONFIG=system=gap
+    $ export PULP_CURRENT_CONFIG=system=vivosoc3
 
 ## Documentation
 
