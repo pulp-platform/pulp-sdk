@@ -90,7 +90,6 @@ test-platform:
 
 
 pulp-tools:
-	echo $(PULP_CONFIGS)
 	git submodule update --init
 
 
