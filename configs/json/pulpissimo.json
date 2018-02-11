@@ -1,6 +1,7 @@
 {
   "chip": {
     "template": "pulpissimo",
+    "install_name": "pulpissimo",
 
     "fc": {
       "core": "riscyv2-fpu"

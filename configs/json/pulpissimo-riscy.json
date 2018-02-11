@@ -1,6 +1,7 @@
 {
   "chip": {
     "template": "pulpissimo",
+    "install_name": "pulpissimo-riscy",
 
     "fc": {
       "core": "riscyv2"
