@@ -6,7 +6,7 @@ ifdef USE_TEST
 CONFIG ?= pulpissimo-rtl@system=pulpissimo:platform=rtl;wolfe-rtl@template=wolfe:platform=rtl;quentin-rtl@template=quentin:platform=rtl;vivosoc3-rtl@template=vivosoc3:platform=rtl;gap-rtl@template=gap:platform=rtl
 else
 ifndef CONFIG
-CONFIG += pulpissimoy@user_config_file=$(CURDIR)/configs/json/pulpissimo.json
+CONFIG += pulpissimo@user_config_file=$(CURDIR)/configs/json/pulpissimo.json
 CONFIG += pulpissimo-riscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-riscy.json
 CONFIG += pulpissimo-zeroriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
 CONFIG += pulpissimo-microriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
@@ -90,6 +90,7 @@ test-platform:
 
 
 pulp-tools:
+	echo $(PULP_CONFIGS)
 	git submodule update --init
 
 
