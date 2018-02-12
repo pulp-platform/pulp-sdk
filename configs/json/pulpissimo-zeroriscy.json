@@ -1,6 +1,7 @@
 {
   "chip": {
     "template": "pulpissimo",
+    "install_name": "pulpissimo-zeroriscy",
 
     "fc": {
       "core": "zeroriscy"

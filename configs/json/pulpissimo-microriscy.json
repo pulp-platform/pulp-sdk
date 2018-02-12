@@ -1,0 +1,10 @@
+{
+  "chip": {
+    "template": "pulpissimo",
+    "install_name": "pulpissimo-microriscy",
+
+    "fc": {
+      "core": "microriscy"
+    }
+  }
+}

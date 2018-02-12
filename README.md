@@ -79,6 +79,18 @@ Note that anytime the target file is sourced, you must source again the one for 
 
 
 
+Once your application is compiled, you will need to run it on a platform. The platform can
+be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+
+```
+source configs/platform-rtl.sh
+```
+
+Note that anytime the target file is sourced, you must source again the one for the platform.
+
+
+
 ### SDK build
 
 You can then build the SDK with this command:

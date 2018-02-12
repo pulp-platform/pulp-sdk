@@ -5,7 +5,21 @@ override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
 ifdef USE_TEST
 CONFIG ?= pulpissimo-rtl@system=pulpissimo:platform=rtl;wolfe-rtl@template=wolfe:platform=rtl;quentin-rtl@template=quentin:platform=rtl;vivosoc3-rtl@template=vivosoc3:platform=rtl;gap-rtl@template=gap:platform=rtl
 else
-CONFIG ?= devchip@system=devchip;wolfe@system=wolfe;pulpissimo@system=pulpissimo;quentin@system=quentin;gap@system=gap;oprecompkw@system=oprecompkw;vivosoc3@system=vivosoc3;honey@system=honey;bigpulp@system=bigpulp
+ifndef CONFIG
+CONFIG += pulpissimo@user_config_file=$(CURDIR)/configs/json/pulpissimo.json
+CONFIG += pulpissimo-riscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-riscy.json
+CONFIG += pulpissimo-zeroriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
+CONFIG += pulpissimo-microriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
+CONFIG += devchip@system=devchip
+CONFIG += wolfe@system=wolfe
+CONFIG += pulpissimo@system=pulpissimo
+CONFIG += quentin@system=quentin
+CONFIG += gap@system=gap
+CONFIG += oprecompkw@system=oprecompkw
+CONFIG += vivosoc3@system=vivosoc3
+CONFIG += honey@system=honey
+CONFIG += bigpulp@system=bigpulp
+endif
 endif
 
 export PULP_CONFIGS=$(CONFIG)
@@ -25,6 +39,9 @@ all: pulp-tools deps checkout build deploy
 
 deploy:
 	source init.sh && plpbuild --p sdk deploy $(OPT)
+
+rt:
+	source init.sh && plpbuild --g runtime build --threads $(THREADS) $(OPT)
 
 build:
 	source init.sh && plpbuild --p sdk build --threads $(THREADS) $(OPT)

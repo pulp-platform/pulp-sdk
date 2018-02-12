@@ -1,10 +1,10 @@
 {
   "chip": {
     "template": "pulpissimo",
-    "install_name": "pulpissimo",
+    "install_name": "pulpissimo-riscy",
 
     "fc": {
-      "core": "riscyv2-fpu"
+      "core": "riscyv2"
     }
   }
 }

@@ -1,0 +1,6 @@
+{
+  "chip": {
+    "template": "pulp",
+    "install_name": "pulp"
+  }
+}
