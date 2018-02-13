@@ -53,7 +53,7 @@ environment variable must point to the folder where the platform was installed (
 
 First get the sources of the SDK top module:
 
-    $ git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
+    $ git clone git@github.com:pulp-platform/pulp-sdk.git -b <sdb branch or tag>
 
 
 Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
@@ -105,7 +105,7 @@ The SDK build should have installed the SDK under *pkg/sdk/dev*.
 
 Once you want to use it to compile and run applications, you first need to setup the SDK by sourcing the *sourceme.sh* file which is inside the installation folder:
 
-$ source pkg/sdk/dev/sourceme.sh
+    $ source pkg/sdk/dev/sourceme.sh
 
 
 The next time you open a new terminal, you have to source again the file for the target (i.e. *configs/pulpissimo.sh) and then the file in the SDK installation folder.
@@ -137,7 +137,7 @@ All the SDK dependencies can be downloaded if they are compatible with the Linux
 
 For that first get the top SDK module, after you have configured your ssh key in gitlab:
 
-    $ git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
+    $ git clone git@github.com:pulp-platform/pulp-sdk.git -b <sdb branch or tag>
 
 Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
 
@@ -174,7 +174,7 @@ Note that for SDK users, only sourcing this file is enough to configure the SDK 
 
 Download some tests, and try one of them:
 
-    $ git clone git@iis-git.ee.ethz.ch:pulp-tests/rt-tests.git
+    $ git clone git@github.com:pulp-platform/rt-tests.git
     $ cd rt-tests/rt/threads
     $ make clean all run
 
@@ -208,7 +208,7 @@ After these steps, the new SDK is ready to be used.
 The SDK has some dependencies like the toolchains which must be built before the SDK can be built.
 To build everything including all the dependencies, first get the top SDK module, after you have configured your ssh key in gitlab:
 
-    $ git clone git@iis-git.ee.ethz.ch:pulp-sw/pulp-sdk.git -b <sdb branch or tag>
+    $ git clone git@github.com:pulp-platform/pulp-sdk.git -b <sdb branch or tag>
 
 Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
 
@@ -241,7 +241,7 @@ Note that for SDK users, only sourcing this file is enough to configure the SDK 
 
 Download some tests, and try one of them:
 
-    $ git clone git@iis-git.ee.ethz.ch:pulp-tests/rt-tests.git
+    $ git clone git@github.com:pulp-platform/rt-tests.git
     $ cd rt-tests/rt/threads
     $ make clean all run
 
