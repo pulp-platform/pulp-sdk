@@ -12,7 +12,7 @@ CONFIG += pulpissimo-zeroriscy@user_config_file=$(CURDIR)/configs/json/pulpissim
 CONFIG += pulpissimo-microriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
 CONFIG += devchip@system=devchip
 CONFIG += wolfe@system=wolfe
-CONFIG += pulpissimo@system=pulpissimo
+CONFIG += pulp@user_config_file=$(CURDIR)/configs/json/pulp.json
 CONFIG += quentin@system=quentin
 CONFIG += gap@system=gap
 CONFIG += oprecompkw@system=oprecompkw
