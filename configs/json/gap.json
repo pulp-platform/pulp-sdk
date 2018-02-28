@@ -1,0 +1,6 @@
+{
+  "chip": {
+    "template": "gap",
+    "install_name": "gap"
+  }
+}
