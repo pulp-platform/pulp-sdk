@@ -1,0 +1,6 @@
+{
+  "chip": {
+    "template": "multino",
+    "install_name": "multino"
+  }
+}
