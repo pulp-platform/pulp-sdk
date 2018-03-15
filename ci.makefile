@@ -71,10 +71,10 @@ test-run:
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) --env=sdk_validation \
 	    --commit=`git rev-parse HEAD`
 
-	source init.sh && source sourceme.sh && \
-	  plpdb tests --build=`cat $(CURDIR)/db_info.txt | grep tests.build.id= | sed s/tests.build.id=//` \
-	    --mail="SDK regression report" --xls=report.xlsx --branch $(BRANCH) --config=$$CONFIG \
-	    --url=$(BUILD_URL) --author-email=`git show -s --pretty=%ae` --env=sdk_validation
+	#source init.sh && source sourceme.sh && \
+	#  plpdb tests --build=`cat $(CURDIR)/db_info.txt | grep tests.build.id= | sed s/tests.build.id=//` \
+	#    --mail="SDK regression report" --xls=report.xlsx --branch $(BRANCH) --config=$$CONFIG \
+	#    --url=$(BUILD_URL) --author-email=`git show -s --pretty=%ae` --env=sdk_validation
 
 	#&& \
 	#  plpdb check_reg --build=`cat $(CURDIR)/db_info.txt | grep tests.build.id= | sed s/tests.build.id=//` \
