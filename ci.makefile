@@ -74,9 +74,11 @@ test-run:
 	source init.sh && source sourceme.sh && \
 	  plpdb tests --build=`cat $(CURDIR)/db_info.txt | grep tests.build.id= | sed s/tests.build.id=//` \
 	    --mail="SDK regression report" --xls=report.xlsx --branch $(BRANCH) --config=$$CONFIG \
-	    --url=$(BUILD_URL) --author-email=`git show -s --pretty=%ae` --env=sdk_validation && \
-	  plpdb check_reg --build=`cat $(CURDIR)/db_info.txt | grep tests.build.id= | sed s/tests.build.id=//` \
-	    --branch $(BRANCH) --config=$$CONFIG --env=sdk_validation
+	    --url=$(BUILD_URL) --author-email=`git show -s --pretty=%ae` --env=sdk_validation
+
+	#&& \
+	#  plpdb check_reg --build=`cat $(CURDIR)/db_info.txt | grep tests.build.id= | sed s/tests.build.id=//` \
+	#    --branch $(BRANCH) --config=$$CONFIG --env=sdk_validation
 
 
 test-checkout:
