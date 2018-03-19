@@ -69,7 +69,7 @@ test-all: pulp-tools test-platform test-deps test-checkout test-run
 test-run:
 	source init.sh && plpbuild --p tests env && source sourceme.sh && \
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) --env=sdk_validation \
-	    --commit=`git rev-parse HEAD`
+	    --commit=`git rev-parse HEAD` --max-timeout=10800
 
 	touch report.xlsx
 
