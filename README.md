@@ -31,7 +31,7 @@ Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be exe
 
 Have a look at the dependencies documentation to see how to build them.
 
-You can have a look here for the toolchain: git@github.com:pulp-platform/pulp-riscv-gnu-toolchain.git
+You can have a look here for the toolchain: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git
 
 
 ### Dependencies setup
@@ -53,10 +53,14 @@ environment variable must point to the folder where the platform was installed (
 
 First get the sources of the SDK top module:
 
-    $ git clone git@github.com:pulp-platform/pulp-sdk.git -b <sdb branch or tag>
-
+    $ git clone https://github.com/pulp-platform/pulp-sdk.git -b <sdb branch or tag>
 
 Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
+
+Note that by default the SDK will fetch other modules using HTPPS. In case you prefer
+to use SSH, you can define this environment variable:
+
+    $ export PULP_GITHUB_SSH=1
 
 Then go inside the downloaded folder:
 
@@ -114,7 +118,7 @@ After these steps, the SDK is ready to be used, you can have a look at section *
 
 For a quick hello test, you can get some examples here:
 
-    $ git clone git@github.com:pulp-platform/pulp-rt-examples.git
+    $ git clone https://github.com/pulp-platform/pulp-rt-examples.git
 
 Then you can go to the folder *pulp-rt-examples/hello* and execute:
 
@@ -127,55 +131,92 @@ Then you can go to the folder *pulp-rt-examples/hello* and execute:
 
 This section is only relevant if the toolchains are downloaded precompiled. If you don't have access to the artifactory server, follow the other sections to also build the toolchains.
 
-## Package server configuration
+### Package server configuration
 
 To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this project: https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal
 
-### First build
 
-All the SDK dependencies can be downloaded if they are compatible with the Linux distribution used.
+### SDK sources
 
-For that first get the top SDK module, after you have configured your ssh key in gitlab:
+First get the sources of the SDK top module:
 
-    $ git clone git@github.com:pulp-platform/pulp-sdk.git -b <sdb branch or tag>
+    $ git clone https://github.com/pulp-platform/pulp-sdk.git -b <sdb branch or tag>
 
-Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
 
-Then go to the module folder and execute:
+Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
 
-    $ git submodule update --init
+Note that by default the SDK will fetch other modules using HTPPS. In case you prefer
+to use SSH, you can define this environment variable:
 
-Configure the targets for which the SDK must be built (you can have a look at section *Possible configurations* to see what to set):
+    $ export PULP_GITHUB_SSH=1
 
-    $ export PULP_CURRENT_CONFIG=system=wolfe
+Then go inside the downloaded folder:
 
-Initialize the SDK:
+    $ cd pulp-sdk
 
-    $ source init.sh
+### Target and platform selection
 
-Download the dependencies:
+Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the file
+in directory *configs* for example like the following:
 
-    $ plpbuild --p sdk deps
+    $ source configs/pulpissimo.sh
 
-Checkout the source code:
+Once your application is compiled, you will need to run it on a platform. The platform can
+be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
 
-    $ plpbuild --p sdk checkout
+    $ source configs/platform-rtl.sh
 
-And build the SDK:
+Note that anytime the target file is sourced, you must source again the one for the platform.
 
-    $ plpbuild --p sdk build --stdout
 
-Finally, to test the SDK package, first generate a sourceme file and source it:
 
-    $ plpbuild --p sdk env
+Once your application is compiled, you will need to run it on a platform. The platform can
+be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+
+```
+source configs/platform-rtl.sh
+```
+
+Note that anytime the target file is sourced, you must source again the one for the platform.
+
+
+### SDK dependencies download
+
+You can download the SDK dependencies with this command:
+
+    $ make deps
+
+
+
+### SDK build
+
+You can then build the SDK with this command:
+
+    $ make all
+
+
+
+### SDK setup
+
+Finally, to test the SDK package, you have to generate a sourceme file and source it:
+
+    $ make env
     $ source sourceme.sh
 
 Note that for SDK users, only sourcing this file is enough to configure the SDK and compile applications.
 
-Download some tests, and try one of them:
+Also, the next time you open a new terminal, you can just source the *sourceme.sh* file.
 
-    $ git clone git@github.com:pulp-platform/rt-tests.git
-    $ cd rt-tests/rt/threads
+After these steps, the SDK is ready to be used, you can have a look at section *Documentation* for more information.
+
+For a quick hello test, you can get some examples here:
+
+    $ git clone https://github.com/pulp-platform/pulp-rt-examples.git
+
+Then you can go to the folder *pulp-rt-examples/hello* and execute:
+
     $ make clean all run
 
 
@@ -186,16 +227,12 @@ If the SDK has already been built and needs to be updated, the SDK can be rebuil
 For that first update the sources:
 
     $ git pull
-    $ git submodule update
-    $ plpbuild --p sdk checkout
 
-Download the new dependencies:
+Then redo all the commands, including a command to clean the SDK, as some modules do not work well with incremental compilation:
 
-    $ plpbuild --p sdk deps
+    $ make deps clean all env
 
-Then rebuild everything, including a command to clean the SDK, as some modules do not work well with incremental compilation:
 
-    $ plpbuild --p sdk clean build --stdout
 
 After these steps, the new SDK is ready to be used.
 
@@ -208,7 +245,7 @@ After these steps, the new SDK is ready to be used.
 The SDK has some dependencies like the toolchains which must be built before the SDK can be built.
 To build everything including all the dependencies, first get the top SDK module, after you have configured your ssh key in gitlab:
 
-    $ git clone git@github.com:pulp-platform/pulp-sdk.git -b <sdb branch or tag>
+    $ git clone https://github.com/pulp-platform/pulp-sdk.git -b <sdb branch or tag>
 
 Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
 
@@ -241,7 +278,7 @@ Note that for SDK users, only sourcing this file is enough to configure the SDK 
 
 Download some tests, and try one of them:
 
-    $ git clone git@github.com:pulp-platform/rt-tests.git
+    $ git clone https://github.com/pulp-platform/rt-tests.git
     $ cd rt-tests/rt/threads
     $ make clean all run
 
