@@ -10,6 +10,7 @@ Contents:
    setup
    makefile
    virtual_platform
+   board
    configuration
    references
    issues
