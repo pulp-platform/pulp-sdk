@@ -1,0 +1,6 @@
+{
+  "chip": {
+    "template": "vivosoc2",
+    "install_name": "vivosoc2"
+  }
+}

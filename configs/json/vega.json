@@ -1,0 +1,6 @@
+{
+  "chip": {
+    "template": "vega",
+    "install_name": "vega"
+  }
+}
