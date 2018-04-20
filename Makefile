@@ -4,6 +4,9 @@ SHELL=bash
 all: pulp-tools
 	plpbuild --p sdk checkout build --stdout
 
+build: pulp-tools
+	plpbuild --p sdk build --stdout
+
 clean: pulp-tools
 	plpbuild --p sdk clean
 
