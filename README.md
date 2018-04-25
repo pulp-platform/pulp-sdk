@@ -135,6 +135,12 @@ This section is only relevant if the toolchains are downloaded precompiled. If y
 
 To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this project: https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal
 
+The build process will try to download packages suitable for the detected Linux distribution. In case this is not suitable, you can force the distribution to be used by defining this environment variable:
+
+    $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
+
+This can currently be Centos_7 or Ubuntu_16.
+
 
 ### SDK sources
 
