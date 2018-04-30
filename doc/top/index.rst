@@ -7,7 +7,6 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   setup
    makefile
    virtual_platform
    board

@@ -9,7 +9,6 @@ There are several ways of building the SDK, depending on how the dependencies ar
 
  - Section *SDK build with independant dependencies build* shows how to compile the SDK and the dependencies separately. This is the simplest way of building the SDK and should be the one used by default.
  - Section *SDK build with dependencies download* shows how to download precompiled packages for the dependencies and then build the SDK using these precompiled packages. This will only work if you have access to the package server.
- - Section *Full SDK build including dependencies build* shows how to compile everything, SDK plus dependencies, using the SDK build process. This is convenient to let the SDK choose the versions of the dependencies which are suitable for the version of the SDK which was retrieved. It is however only useful to get an environment which is stricly the same used for validating the SDK.
 
 
 ## Linux dependencies
@@ -21,7 +20,7 @@ Here are the required system dependencies for building the SDK and its dependenc
 Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be executed to get all required dependencies:
 
     $ sudo apt install git python3-pip gawk texinfo libgmp-dev libmpfr-dev libmpc-dev swig3.0 libjpeg-dev lsb-core doxygen python-sphinx sox graphicsmagick-libmagick-dev-compat libswitch-perl
-    # sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter
+    # sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter yaml
 
 
 
@@ -244,75 +243,6 @@ After these steps, the new SDK is ready to be used.
 
 
 
-## Full SDK build including dependencies build
-
-### First build
-
-The SDK has some dependencies like the toolchains which must be built before the SDK can be built.
-To build everything including all the dependencies, first get the top SDK module, after you have configured your ssh key in gitlab:
-
-    $ git clone https://github.com/pulp-platform/pulp-sdk.git -b <sdb branch or tag>
-
-Take the *master* branch of the SDK if you want the latest features. However this branch may not be fully stable. The *release* branch can be retrieved to get the latest stable release. Otherwise any other branch or tag. There is always a tag whose name is the one of the SDK tag which is released.
-
-Then go to the module folder and execute:
-
-    $ git submodule update --init
-
-Configure the targets for which the SDK must be built (you can have a look at section *Possible configurations* to see what to set):
-
-    $ export PULP_CURRENT_CONFIG=system=wolfe
-
-Initialize the SDK:
-
-    $ source init.sh
-
-Checkout the source code:
-
-    $ plpbuild --p sdk checkout --deps
-
-And build everything:
-
-    $ plpbuild --p sdk build --deps --stdout
-
-Finally, to test the SDK package, first generate a sourceme file and source it:
-
-    $ plpbuild --p sdk env
-    $ source sourceme.sh
-
-Note that for SDK users, only sourcing this file is enough to configure the SDK and compile applications.
-
-Download some tests, and try one of them:
-
-    $ git clone https://github.com/pulp-platform/rt-tests.git
-    $ cd rt-tests/rt/threads
-    $ make clean all run
-
-### Update
-
-If the SDK has already been built and needs to be updated, the SDK can be rebuilt on top of the previous one.
-
-For that first update the sources:
-
-    $ git pull
-    $ git submodule update
-    $ plpbuild --p sdk checkout --deps
-
-Then rebuild everything, including a command to clean the SDK, as some modules do not work well with incremental compilation:
-
-    $ plpbuild --p sdk clean build --deps --stdout
-
-After these steps, the new SDK is ready to be used.
-
-
-## Possible configurations
-
-Here is a list of possible values for the configuration:
-
-    $ export PULP_CURRENT_CONFIG=system=pulpissimo
-    $ export PULP_CURRENT_CONFIG=system=pulp
-    $ export PULP_CURRENT_CONFIG=system=gap
-    $ export PULP_CURRENT_CONFIG=system=vivosoc3
 
 ## Documentation
 

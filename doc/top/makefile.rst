@@ -24,9 +24,13 @@ More documentation can be obtained about the flags with this command: ::
 
   make help_flags
 
-And also about the available configuration options: ::
+About the available configuration options: ::
 
   make help_config
+
+And about the available makefile options: ::
+
+  make help_opt
 
 Application makefile sample
 ---------------------------
@@ -57,6 +61,9 @@ If the makefile is modified, it may be necessary to clean and recompile the appl
 
   $ make clean all
 
+In some cases where the target configuration is changed or the build folder is moved, it may be
+needed to remove the build folder by hands.
+
 
 
 Application run
@@ -77,9 +84,9 @@ The system configuration for which the application is compiled and run is stored
 
   $ echo $PULP_CURRENT_CONFIG
 
-It is then possible to change this configuration in order to apply it to all applications. For that, just redefine this environnement variable: ::
+It is then possible to customize this configuration in order to apply it to all applications. For that, just define this environnement variable: ::
 
-  $ export PULP_CURRENT_CONFIG=template=wolfe:vp/trace=iss
+  $ export PULP_CURRENT_CONFIG_ARGS=gvsoc/trace=iss
 
 With this configuration example, all applications will have virtual platform traces active.
 
@@ -91,39 +98,15 @@ In order to keep the previous configuration and just extend it, just put back th
 
 
 
-Configuration syntax
---------------------
 
-The system configuration is a set of properties put together to specify the exact system to use.
-
-Each property is defined by its name and its value in this format: <name>=<value>.
-
-All properties can be put together by separating them with *:* like in this example: ::
-
-  template=wolfe:vp/trace=iss
-
-It is also sometimes usefull to put different configurations together, for example for launching testsuites. This can be done by separating them with *;* like in this example: ::
-
-  template=wolfe;template=wolfe:vp/trace=iss
-
-In this example, this will activate one configuration for wolfe architecture without traces and one for the same architecture with traces.
-
-Most of the time, it is sufficient to just give the top architecture to be used by using the property name *template*.
-
-It is also possible to give a name to each configuration so that it appears with a short name. This can be done using this syntax: <name>@<configuration>. Here is an example: ::
-
-  wolfe@template=wolfe;wolfe-trace@template=wolfe:vp/trace=iss
-
-
-
-Reconfiguration
+Application reconfiguration
 ---------------
 
 The configuration used for compiling and running the application is selected when the SDK is initialized, depending on the script which is sourced.
 
 It is then possible to customize this configuration in order to give platform options or to slightly change the architecture and so on. For that the makefile option *CONFIG_OPT* can be used combined with the *conf* target, like in the following command: ::
 
-  $ make conf CONFIG_OPT="vp/trace=iss"
+  $ make conf CONFIG_OPT="gvsoc/trace=iss"
 
 After the configuration has been modified with such a command, the application must be recompiled in order to take it into account: ::
 
