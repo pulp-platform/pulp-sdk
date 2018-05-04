@@ -3,8 +3,8 @@ ENV_INSTALL_FILES += setup.sh
 ENV_INSTALL_FILES += gap.sh
 ENV_INSTALL_FILES += env/setup.sh
 ENV_INSTALL_FILES += env/setup.csh
-#ENV_INSTALL_FILES += $(shell find -L configs -name "*.sh")
-#ENV_INSTALL_FILES += $(shell find -L configs -name "*.json")
+ENV_INSTALL_FILES += $(shell find -L configs -name "*.sh")
+ENV_INSTALL_FILES += $(shell find -L configs -name "*.json")
 
 define declareEnvInstallFile
 
