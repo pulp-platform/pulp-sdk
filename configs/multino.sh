@@ -6,4 +6,6 @@ export PULP_CURRENT_CONFIG=multino@user_config_file=${scriptDir}/json/multino.js
 
 unset PULP_CURRENT_CONFIG_ARGS
 
-source ${scriptDir}/../init.sh
+if [ -e ${scriptDir}/../init.sh ]; then
+    source ${scriptDir}/../init.sh
+fi
