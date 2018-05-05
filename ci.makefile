@@ -2,7 +2,10 @@
 SHELL = bash
 THREADS ?= 1
 TEST_THREADS ?= 32
+ifndef NO_DB
 override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
+endif
+override OPT += --debug
 ifdef USE_TEST
 CONFIG ?= pulpissimo-rtl@system=pulpissimo:platform=rtl;wolfe-rtl@template=wolfe:platform=rtl;quentin-rtl@template=quentin:platform=rtl;vivosoc3-rtl@template=vivosoc3:platform=rtl;gap-rtl@template=gap:platform=rtl
 else
