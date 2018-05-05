@@ -21,6 +21,9 @@ CONFIG += vega@user_config_file=$(CURDIR)/configs/json/vega.json
 CONFIG += quentin@system=quentin
 CONFIG += gap@system=gap
 CONFIG += oprecompkw@system=oprecompkw
+CONFIG += fulmine@system=fulmine
+CONFIG += vivosoc2@system=vivosoc2
+CONFIG += vivosoc2_1@system=vivosoc2_1
 CONFIG += vivosoc3@system=vivosoc3
 CONFIG += honey@system=honey
 CONFIG += bigpulp@system=bigpulp
