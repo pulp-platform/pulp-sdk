@@ -29,6 +29,8 @@ CONFIG += honey@system=honey
 CONFIG += bigpulp@system=bigpulp
 endif
 endif
+DISTRIBS ?= Ubuntu_16
+
 
 export PULP_CONFIGS=$(CONFIG)
 ifndef PULP_DB_MYSQL
@@ -83,12 +85,13 @@ else
 profile=default
 endif
 
-tag_prepare: sdk_users configs-all
+tag_prepare: sdk_users
 	source init.sh && for distrib in $(DISTRIBS); do \
 	  downloaders=`plpbuild --p sdk downloader --distrib=$$distrib --version=$(profileName)$(version)`; \
 	  for downloader in $$downloaders; do \
 	    mkdir -p sdk_users/artifacts/$(profile)/$$distrib; \
-	    cp $$downloader sdk_users/artifacts/$(profile)/$$distrib; \
+	    chmod guo+x $$downloader; \
+	    mv $$downloader sdk_users/artifacts/$(profile)/$$distrib; \
 	    done; \
 	  done
 
@@ -102,7 +105,7 @@ tag_user_commit:
 	git commit -a -m "Added tag $(profileName)$(version)"; \
 	git push
 
-tag: tag_prepare tag_commit tag_user_commit
+tag: tag_prepare tag_user_commit
 
 
 
@@ -143,4 +146,4 @@ pulp-tools:
 report: pulp-tools
 	source init.sh && plpdb tests --xls=report.xls --mail
 
-.PHONY: deps checkout build deploy all pulp-tools doc
+.PHONY: deps checkout build deploy all pulp-tools doc sdk_users

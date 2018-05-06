@@ -9,6 +9,7 @@ There are several ways of building the SDK, depending on how the dependencies ar
 
  - Section *SDK build with independant dependencies build* shows how to compile the SDK and the dependencies separately. This is the simplest way of building the SDK and should be the one used by default.
  - Section *SDK build with dependencies download* shows how to download precompiled packages for the dependencies and then build the SDK using these precompiled packages. This will only work if you have access to the package server.
+ - Section *SDK release download* shows how to download everything as precompiled releases. This will only work if you have access to the package server.
 
 
 ## Linux dependencies
@@ -240,6 +241,73 @@ Then redo all the commands, including a command to clean the SDK, as some module
 
 
 After these steps, the new SDK is ready to be used.
+
+
+
+
+
+
+
+## SDK release download
+
+This section is only relevant if all the packages can be downloaded precompiled. If you don't have access to the artifactory server, follow the other sections to build the packages.
+
+### Getting the top repositories
+
+As this method of getting the SDK allows selecting the SDK amongst several releases, you must
+first get this top repository which knows which releases are available:
+
+    $ git clone git@github.com:pulp-platform/pulp-sdk-release.git
+    $ cd pulp-sdk-release
+
+
+### Package server configuration
+
+To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this project: https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal. Be careful to configure the artifactory credentials using the .wgetrc file as the packages will be downloaded through wget.
+
+The build process will try to download packages suitable for the detected Linux distribution. In case this is not suitable, you can force the distribution to be used by defining this environment variable:
+
+    $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
+
+This can currently be Centos_7 or Ubuntu_16. If your distribution is not supported, you can try
+to download he packages for a distribution which is close ot yours.
+
+You can also specify the distribution on the command-line hwn invoking make:
+
+    $ make list distrib=Ubuntu_16
+
+
+
+### SDK and dependency download
+
+You can get the list of available SDK for the distribution you selected with this command:
+
+    $ make list
+
+Then you can download the SDK you want by executing the following command with the appropriate
+SDK version:
+
+    $ make version=<version> get
+
+You should see packages being downloaded through wget. Otherwise there is probably something wrong
+with the artifactory server configuration.
+
+
+
+
+### Target and platform selection
+
+Once the SDK is selecting, you can get the list of supported targets with this command:
+
+    $ make targets
+
+Before using the SDK, you have to configure it for a specific target by sourcing the file
+indicated next to the target you want to select.
+
+You have to do the same for the platform you want to use, and you can get the list of platform
+with this command:
+
+    $ make platforms
 
 
 
