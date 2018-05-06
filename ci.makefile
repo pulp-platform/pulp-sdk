@@ -69,6 +69,41 @@ tar:
 	ln -s $(CURDIR)/pkg/sdk/dev artifacts/$(SDK_FULL_NAME)
 	cd artifacts && tar -jhcvf $(SDK_FULL_NAME).tar.bz2 $(SDK_FULL_NAME)
 
+sdk_users:
+        if [ ! -e sdk_users ]; then \
+          git clone git@github.com:pulp-platform/pulp-sdk-release.git sdk_users; \
+        else \
+          cd sdk_users; \
+          git pull; \
+        fi
+
+ifneq '$(profile)' ''
+profileName=$(profile)-
+else
+profile=default
+endif
+
+tag_prepare: sdk_users configs-all
+        source init.sh && for distrib in $(DISTRIBS); do \
+          downloaders=`plpbuild --p sdk downloader --distrib=$$distrib --version=$(profileName)$(version)`; \
+          for downloader in $$downloaders; do \
+            mkdir -p sdk_users/artifacts/$(profile)/$$distrib; \
+            cp $$downloader sdk_users/artifacts/$(profile)/$$distrib; \
+          done; \
+        done
+
+tag_commit:
+        git tag $(profileName)$(version)
+        git push --tags
+
+tag_user_commit:
+        cd sdk_users; \
+        git add -A; \
+        git commit -a -m "Added tag $(profileName)$(version)"; \
+        git push
+
+tag: tag_prepare tag_commit tag_user_commit
+
 
 
 
