@@ -270,9 +270,9 @@ The build process will try to download packages suitable for the detected Linux 
     $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
 
 This can currently be Centos_7 or Ubuntu_16. If your distribution is not supported, you can try
-to download he packages for a distribution which is close ot yours.
+to download he packages for a distribution which is close to yours.
 
-You can also specify the distribution on the command-line hwn invoking make:
+You can also specify the distribution on the command-line when invoking make:
 
     $ make list distrib=Ubuntu_16
 
