@@ -21,7 +21,7 @@ Here are the required system dependencies for building the SDK and its dependenc
 Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be executed to get all required dependencies:
 
     $ sudo apt install git python3-pip gawk texinfo libgmp-dev libmpfr-dev libmpc-dev swig3.0 libjpeg-dev lsb-core doxygen python-sphinx sox graphicsmagick-libmagick-dev-compat libswitch-perl
-    # sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter yaml
+    # sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter yaml numpy
 
 
 
@@ -269,10 +269,13 @@ The build process will try to download packages suitable for the detected Linux 
 
     $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
 
-This can currently be `Centos_7` or `Ubuntu_16`. If your distribution is not supported, you can try
-to download he packages for a distribution which is close to yours.
 
 You can also specify the distribution on the command-line while invoking make:
+=======
+This can currently be `Centos_7` or `Ubuntu_16`. If your distribution is not supported, you can try
+to download the packages for a distribution which is close to yours.
+
+You can also specify the distribution on the command-line when invoking make:
 
     $ make list distrib=Ubuntu_16
 
