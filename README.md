@@ -292,12 +292,13 @@ SDK version:
 You should see packages being downloaded through wget. Otherwise there is probably something wrong
 with the artifactory server configuration.
 
+Once the SDK is downloaded, you have to source the file indicated in the terminal to setup the downloaded SDK.
 
 
 
 ### Target and platform selection
 
-Once the SDK is selecting, you can get the list of supported targets with this command:
+Once the SDK is selected, you can get the list of supported targets with this command:
 
     $ make targets
 
