@@ -3,7 +3,7 @@
 
 ## About
 
-This module is the build process for the Pulp SDK. It can be used to do everything needed to build the SDK.
+This module is the build process for the PULP SDK. It can be used to do everything needed to build the SDK.
 
 There are several ways of building the SDK, depending on how the dependencies are managed:
 
@@ -31,7 +31,7 @@ Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be exe
 
 Have a look at the dependencies documentation to see how to build them.
 
-You can have a look here for the toolchain: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git
+You can have a look [here](https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git) for the toolchain.
 
 
 ### Dependencies setup
@@ -57,7 +57,7 @@ First get the sources of the SDK top module:
 
 Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
 
-Note that by default the SDK will fetch other modules using HTPPS. In case you prefer
+Note that by default the SDK will fetch other modules using HTTPS. In case you prefer
 to use SSH, you can define this environment variable:
 
     $ export PULP_GITHUB_SSH=1
@@ -68,13 +68,13 @@ Then go inside the downloaded folder:
 
 ### Target and platform selection
 
-Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the file
+Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the files
 in directory *configs* for example like the following:
 
     $ source configs/pulpissimo.sh
 
 Once your application is compiled, you will need to run it on a platform. The platform can
-be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+be the RTL simulator, FPGA, or virtual platform.
 You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
 
     $ source configs/platform-rtl.sh
@@ -84,7 +84,7 @@ Note that anytime the target file is sourced, you must source again the one for 
 
 
 Once your application is compiled, you will need to run it on a platform. The platform can
-be the RTL simulator, the FPGA, the virtual platform or the FPGA.
+be the RTL simulator, FPGA, or virtual platform.
 You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
 
 ```
@@ -105,7 +105,7 @@ You can then build the SDK with this command:
 
 ### SDK setup
 
-The SDK build should have installed the SDK under *pkg/sdk/dev*.
+The SDK build should have installed the SDK under `pkg/sdk/dev`.
 
 Once you want to use it to compile and run applications, you first need to setup the SDK by sourcing the *sourceme.sh* file which is inside the installation folder:
 
@@ -120,7 +120,7 @@ For a quick hello test, you can get some examples here:
 
     $ git clone https://github.com/pulp-platform/pulp-rt-examples.git
 
-Then you can go to the folder *pulp-rt-examples/hello* and execute:
+Then you can go to the folder `pulp-rt-examples/hello` and execute:
 
     $ make clean all run
 
@@ -133,13 +133,13 @@ This section is only relevant if the toolchains are downloaded precompiled. If y
 
 ### Package server configuration
 
-To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this project: https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal
+To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this [project](https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal).
 
 The build process will try to download packages suitable for the detected Linux distribution. In case this is not suitable, you can force the distribution to be used by defining this environment variable:
 
     $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
 
-This can currently be Centos_7 or Ubuntu_16.
+This can currently be set to `Centos_7` or `Ubuntu_16`.
 
 
 ### SDK sources
@@ -151,7 +151,7 @@ First get the sources of the SDK top module:
 
 Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
 
-Note that by default the SDK will fetch other modules using HTPPS. In case you prefer
+Note that by default the SDK will fetch other modules using HTTPS. In case you prefer
 to use SSH, you can define this environment variable:
 
     $ export PULP_GITHUB_SSH=1
@@ -263,16 +263,16 @@ first get this top repository which knows which releases are available:
 
 ### Package server configuration
 
-To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this project: https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal. Be careful to configure the artifactory credentials using the .wgetrc file as the packages will be downloaded through wget.
+To download the dependencies, the access to the package server (Artifactory) must be configured. This is reserved for internal usage, more information can be retrieved on this [project]( https://iis-git.ee.ethz.ch/pulp-sw/pulp-sdk-internal). Be careful to configure the artifactory credentials using the .wgetrc file as the packages will be downloaded through wget.
 
 The build process will try to download packages suitable for the detected Linux distribution. In case this is not suitable, you can force the distribution to be used by defining this environment variable:
 
     $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
 
-This can currently be Centos_7 or Ubuntu_16. If your distribution is not supported, you can try
-to download he packages for a distribution which is close ot yours.
+This can currently be `Centos_7` or `Ubuntu_16`. If your distribution is not supported, you can try
+to download he packages for a distribution which is close to yours.
 
-You can also specify the distribution on the command-line hwn invoking make:
+You can also specify the distribution on the command-line while invoking make:
 
     $ make list distrib=Ubuntu_16
 
@@ -280,7 +280,7 @@ You can also specify the distribution on the command-line hwn invoking make:
 
 ### SDK and dependency download
 
-You can get the list of available SDK for the distribution you selected with this command:
+You can get the list of available SDKs for the distribution you selected with this command:
 
     $ make list
 
@@ -297,14 +297,14 @@ with the artifactory server configuration.
 
 ### Target and platform selection
 
-Once the SDK is selecting, you can get the list of supported targets with this command:
+Once the SDK is selected, you can get the list of supported targets with this command:
 
     $ make targets
 
 Before using the SDK, you have to configure it for a specific target by sourcing the file
 indicated next to the target you want to select.
 
-You have to do the same for the platform you want to use, and you can get the list of platform
+You have to do the same for the platform you want to use, and you can get the list of platforms
 with this command:
 
     $ make platforms
@@ -314,5 +314,5 @@ with this command:
 
 ## Documentation
 
-The documentation is inside the SDK. you can see it by openining the file <SDK path>/doc/sdk/index.html in a Web browser.
+The documentation is inside the SDK folder. You can view it by opening the file `<SDK path>/doc/sdk/index.html` in a web browser.
 
