@@ -139,7 +139,7 @@ The build process will try to download packages suitable for the detected Linux 
 
     $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
 
-This can currently be set to `Centos_7` or `Ubuntu_16`.
+This can currently be set to `CentOS_7` or `Ubuntu_16`.
 
 
 ### SDK sources
@@ -269,7 +269,7 @@ The build process will try to download packages suitable for the detected Linux 
 
     $ export PULP_ARTIFACTORY_DISTRIB=<distrib>
 
-This can currently be `Centos_7` or `Ubuntu_16`. If your distribution is not supported, you can try
+This can currently be `CentOS_7` or `Ubuntu_16`. If your distribution is not supported, you can try
 to download the packages for a distribution which is close to yours.
 
 You can also specify the distribution on the command-line when invoking make:
