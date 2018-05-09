@@ -2,7 +2,7 @@
 SHELL = bash
 THREADS ?= 1
 TEST_THREADS ?= 4
-ifndef NO_DB
+ifdef USE_DB
 override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
 endif
 override OPT += --debug
