@@ -29,7 +29,7 @@ CONFIG += honey@system=honey
 CONFIG += bigpulp@system=bigpulp
 endif
 endif
-DISTRIBS ?= Ubuntu_16
+DISTRIBS ?= CentOS_7 Ubuntu_16
 
 
 export PULP_CONFIGS=$(CONFIG)
