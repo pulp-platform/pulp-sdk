@@ -27,6 +27,7 @@ CONFIG += vivosoc2_1@system=vivosoc2_1
 CONFIG += vivosoc3@system=vivosoc3
 CONFIG += honey@system=honey
 CONFIG += bigpulp@system=bigpulp
+CONFIG += hero-zc706@user_config_file=$(CURDIR)/configs/json/hero-zc706.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16
