@@ -57,10 +57,10 @@ First get the sources of the SDK top module:
 
 Take the *master* branch of the SDK if you want a stable branch with the latest features. The branch *integration* can be taken to get more recent features but may not be fully stable.
 
-Note that by default the SDK will fetch other modules using HTTPS. In case you prefer
-to use SSH, you can define this environment variable:
+Note that by default the SDK will fetch other modules using SSH. In case you prefer
+to use HTTPS, you can define this environment variable:
 
-    $ export PULP_GITHUB_SSH=1
+    $ export PULP_GITHUB_HTTPS=1
 
 Then go inside the downloaded folder:
 
