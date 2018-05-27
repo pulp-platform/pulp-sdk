@@ -1,7 +1,7 @@
 
 SHELL = bash
 THREADS ?= 1
-TEST_THREADS ?= 4
+TEST_THREADS ?= 16
 ifdef USE_DB
 override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
 endif
