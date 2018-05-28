@@ -106,7 +106,7 @@ tag_user_commit:
 	git commit -a -m "Added tag $(profileName)$(version)"; \
 	git push
 
-tag: tag_prepare tag_user_commit
+tag: tag_prepare tag_user_commit tag_commit
 
 
 
