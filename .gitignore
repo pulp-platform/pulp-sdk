@@ -8,3 +8,8 @@ __pycache__
 /sourceme.*
 /testset.cfg
 /tools
+/apps/
+/env/
+/examples/
+/rtl/
+/tests/

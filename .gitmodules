@@ -1,3 +1,6 @@
 [submodule "pulp-tools"]
 	path = pulp-tools
 	url = https://github.com/pulp-platform/pulp-tools.git
+[submodule "pulp-configs"]
+	path = pulp-configs
+	url = https://github.com/pulp-platform/pulp-configs.git
