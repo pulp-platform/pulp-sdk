@@ -7,27 +7,32 @@ override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
 endif
 override OPT += --debug
 ifdef USE_TEST
-CONFIG ?= pulpissimo-rtl@system=pulpissimo:platform=rtl;wolfe-rtl@template=wolfe:platform=rtl;quentin-rtl@template=quentin:platform=rtl;vivosoc3-rtl@template=vivosoc3:platform=rtl;gap-rtl@template=gap:platform=rtl
+ifndef CONFIG
+CONFIG += pulpissimo-rtl@config_file=$(CURDIR)/configs/json/pulpissimo.json:platform=rtl
+CONFIG += wolfe-rtl@config_file=$(CURDIR)/configs/json/wolfe.json:platform=rtl
+CONFIG += quentin-rtl@config_file=$(CURDIR)/configs/json/quentin.json:platform=rtl
+CONFIG += vivosoc3-rtl@config_file=$(CURDIR)/configs/json/vivosoc3.json:platform=rtl
+CONFIG += gap-rtl@config_file=$(CURDIR)/configs/json/gap.json:platform=rtl
+endif
 else
 ifndef CONFIG
-CONFIG += pulpissimo@user_config_file=$(CURDIR)/configs/json/pulpissimo.json
-CONFIG += pulpissimo-riscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-riscy.json
-CONFIG += pulpissimo-zeroriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
-CONFIG += pulpissimo-microriscy@user_config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
-CONFIG += devchip@system=devchip
-CONFIG += wolfe@system=wolfe
-CONFIG += pulp@user_config_file=$(CURDIR)/configs/json/pulp.json
-CONFIG += vega@user_config_file=$(CURDIR)/configs/json/vega.json
-CONFIG += quentin@system=quentin
-CONFIG += gap@system=gap
-CONFIG += oprecompkw@system=oprecompkw
-CONFIG += fulmine@system=fulmine
-CONFIG += vivosoc2@system=vivosoc2
-CONFIG += vivosoc2_1@system=vivosoc2_1
-CONFIG += vivosoc3@system=vivosoc3
-CONFIG += honey@system=honey
-CONFIG += bigpulp@system=bigpulp
-CONFIG += hero-zc706@user_config_file=$(CURDIR)/configs/json/hero-zc706.json
+CONFIG += pulpissimo@config_file=$(CURDIR)/configs/json/pulpissimo.json
+CONFIG += pulpissimo-riscy@config_file=$(CURDIR)/configs/json/pulpissimo-riscy.json
+CONFIG += pulpissimo-zeroriscy@config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
+CONFIG += pulpissimo-microriscy@config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
+CONFIG += wolfe@config_file=$(CURDIR)/configs/json/wolfe.json
+CONFIG += pulp@config_file=$(CURDIR)/configs/json/pulp.json
+CONFIG += vega@config_file=$(CURDIR)/configs/json/vega.json
+CONFIG += quentin@config_file=$(CURDIR)/configs/json/quentin.json
+CONFIG += gap@config_file=$(CURDIR)/configs/json/gap.json
+CONFIG += oprecompkw@config_file=$(CURDIR)/configs/json/oprecompkw.json
+CONFIG += fulmine@config_file=$(CURDIR)/configs/json/fulmine.json
+CONFIG += vivosoc2@config_file=$(CURDIR)/configs/json/vivosoc2.json
+CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
+CONFIG += vivosoc3@config_file=$(CURDIR)/configs/json/vivosoc3.json
+CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
+CONFIG += bigpulp@config_file=$(CURDIR)/configs/json/bigpulp.json
+CONFIG += hero-zc706@config_file=$(CURDIR)/configs/json/hero-zc706.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16
