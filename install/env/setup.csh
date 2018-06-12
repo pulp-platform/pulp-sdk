@@ -23,4 +23,5 @@ endif
 
 setenv PULP_SDK_INSTALL $PULP_SDK_HOME/install
 setenv PULP_SDK_WS_INSTALL $PULP_SDK_HOME/install/ws
+setenv PULP_CONFIGS_PATH $PULP_SDK_WS_INSTALL/configs
 setenv SDK_TILER_PATH $PULP_SDK_HOME/install/auto-tiler

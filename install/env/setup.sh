@@ -29,4 +29,5 @@ add_PYTHONPATH $PULP_SDK_HOME/install/ws/python
 
 export PULP_SDK_INSTALL=$PULP_SDK_HOME/install
 export PULP_SDK_WS_INSTALL=$PULP_SDK_HOME/install/ws
+export PULP_CONFIGS_PATH=$PULP_SDK_WS_INSTALL/configs
 export SDK_TILER_PATH=$PULP_SDK_HOME/install/auto-tiler
