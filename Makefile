@@ -1,22 +1,28 @@
 SHELL=bash
 
+MODULES ?= --p sdk
+
 all: pulp-tools
-	plpbuild --p sdk checkout build --stdout
+	./pulp-tools/bin/plpbuild $(MODULES) checkout build --stdout
 
 build: pulp-tools
-	plpbuild --p sdk build --stdout
+	./pulp-tools/bin/plpbuild $(MODULES) build --stdout
+
+distclean:
+	-./pulp-tools/bin/plpbuild --p sdk distclean --stdout
+	rm -rf build
 
 clean: pulp-tools
-	plpbuild --p sdk clean
+	./pulp-tools/bin/plpbuild $(MODULES) clean
 
 env: pulp-tools
-	plpbuild --p sdk env
+	./pulp-tools/bin/plpbuild $(MODULES) env
 
 deps: pulp-tools
-	plpbuild --p sdk deps --stdout
+	./pulp-tools/bin/plpbuild --p sdk deps --stdout
 
 cmd: pulp-tools
-	source configs/$(CONFIG).sh && plpbuild $(SDK_OPT)
+	source configs/$(CONFIG).sh && ./pulp-tools/bin/plpbuild $(SDK_OPT)
 
 pulp-tools:
 	git submodule update --init
