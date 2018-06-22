@@ -1,6 +1,7 @@
 
 SHELL = bash
 THREADS ?= 1
+MAX_TIMEOUT ?= 3600
 TEST_THREADS ?= 16
 ifdef USE_DB
 override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
@@ -121,7 +122,7 @@ test-all: pulp-tools test-platform test-deps test-checkout test-run
 test-run:
 	source init.sh && plpbuild --p tests env && source sourceme.sh && \
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) $(TEST_OPT) --env=sdk_validation \
-	    --commit=`git rev-parse HEAD` --max-timeout=3600
+	    --commit=`git rev-parse HEAD` --max-timeout=$(MAX_TIMEOUT)
 
 	touch report.xlsx
 
