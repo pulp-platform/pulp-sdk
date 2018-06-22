@@ -26,6 +26,7 @@ Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be exe
 ### Scientific Linux 7.4
 
 Starting from a fresh Scientific Linux 7.4 distribution, here are the commands to be executed to get all required dependencies:
+
     $ sudo yum install git python34-pip python34-devel gawk texinfo gmp-devel mpfr-devel libmpc-devel swig libjpeg-turbo-devel redhat-lsb-core doxygen python-sphinx sox GraphicsMagick-devel ImageMagick-devel SDL2-devel perl-Switch libftdi-devel
     $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy 
 
