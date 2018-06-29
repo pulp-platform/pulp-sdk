@@ -1,6 +1,6 @@
-
 SHELL = bash
 THREADS ?= 1
+MAX_TIMEOUT ?= 3600
 TEST_THREADS ?= 16
 ifdef USE_DB
 override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
@@ -32,6 +32,7 @@ CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
 CONFIG += vivosoc3@config_file=$(CURDIR)/configs/json/vivosoc3.json
 CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
 CONFIG += bigpulp@config_file=$(CURDIR)/configs/json/bigpulp.json
+CONFIG += multino@config_file=$(CURDIR)/configs/json/multino.json
 CONFIG += hero-zc706@config_file=$(CURDIR)/configs/json/hero-zc706.json
 endif
 endif
@@ -121,7 +122,7 @@ test-all: pulp-tools test-platform test-deps test-checkout test-run
 test-run:
 	source init.sh && plpbuild --p tests env && source sourceme.sh && \
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) $(TEST_OPT) --env=sdk_validation \
-	    --commit=`git rev-parse HEAD` --max-timeout=3600
+	    --commit=`git rev-parse HEAD` --max-timeout=$(MAX_TIMEOUT)
 
 	touch report.xlsx
 
