@@ -26,6 +26,7 @@ CONFIG += vega@config_file=$(CURDIR)/configs/json/vega.json
 CONFIG += quentin@config_file=$(CURDIR)/configs/json/quentin.json
 CONFIG += gap@config_file=$(CURDIR)/configs/json/gap.json
 CONFIG += oprecompkw@config_file=$(CURDIR)/configs/json/oprecompkw.json
+CONFIG += oprecompkw_sa@config_file=$(CURDIR)/configs/json/oprecompkw_sa.json
 CONFIG += fulmine@config_file=$(CURDIR)/configs/json/fulmine.json
 CONFIG += vivosoc2@config_file=$(CURDIR)/configs/json/vivosoc2.json
 CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
