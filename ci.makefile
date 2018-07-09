@@ -35,7 +35,7 @@ CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
 CONFIG += bigpulp@config_file=$(CURDIR)/configs/json/bigpulp.json
 CONFIG += bigpulp-z-7045@config_file=$(CURDIR)/configs/json/bigpulp-z-7045.json
 CONFIG += multino@config_file=$(CURDIR)/configs/json/multino.json
-CONFIG += hero-zc706@config_file=$(CURDIR)/configs/json/hero-zc706.json
+CONFIG += hero-z-7045@config_file=$(CURDIR)/configs/json/hero-z-7045.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16
