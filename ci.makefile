@@ -26,12 +26,14 @@ CONFIG += vega@config_file=$(CURDIR)/configs/json/vega.json
 CONFIG += quentin@config_file=$(CURDIR)/configs/json/quentin.json
 CONFIG += gap@config_file=$(CURDIR)/configs/json/gap.json
 CONFIG += oprecompkw@config_file=$(CURDIR)/configs/json/oprecompkw.json
+CONFIG += oprecompkw_sa@config_file=$(CURDIR)/configs/json/oprecompkw_sa.json
 CONFIG += fulmine@config_file=$(CURDIR)/configs/json/fulmine.json
 CONFIG += vivosoc2@config_file=$(CURDIR)/configs/json/vivosoc2.json
 CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
 CONFIG += vivosoc3@config_file=$(CURDIR)/configs/json/vivosoc3.json
 CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
 CONFIG += bigpulp@config_file=$(CURDIR)/configs/json/bigpulp.json
+CONFIG += bigpulp-z-7045@config_file=$(CURDIR)/configs/json/bigpulp-z-7045.json
 CONFIG += multino@config_file=$(CURDIR)/configs/json/multino.json
 CONFIG += hero-zc706@config_file=$(CURDIR)/configs/json/hero-zc706.json
 endif
