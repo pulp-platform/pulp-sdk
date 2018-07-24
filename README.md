@@ -1,5 +1,8 @@
 # PULP SDK build process
 
+## TL;TR
+Currently we do not offer pre-built binaries except for members of the PULP team (if you are one, you can find the SDK releases [here](https://github.com/pulp-platform/pulp-sdk-release)).
+In this README, we offer instructions on how to build the SDK from scratch or using precompiled binaries.
 
 ## About
 
