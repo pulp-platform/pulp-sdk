@@ -30,7 +30,7 @@ Starting from a fresh Scientific Linux 7.4 distribution, here are the commands t
     $ sudo yum install git python34-pip python34-devel gawk texinfo gmp-devel mpfr-devel libmpc-devel swig libjpeg-turbo-devel redhat-lsb-core doxygen python-sphinx sox GraphicsMagick-devel ImageMagick-devel SDL2-devel perl-Switch libftdi-devel
     $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy 
 
-## SDK build with independant dependencies build
+## SDK build with independent dependencies build
 
 ### Dependencies build
 
@@ -262,7 +262,7 @@ This section is only relevant if all the packages can be downloaded precompiled.
 As this method of getting the SDK allows selecting the SDK amongst several releases, you must
 first get this top repository which knows which releases are available:
 
-    $ git clone git@github.com:pulp-platform/pulp-sdk-release.git
+    $ git clone https://github.com/pulp-platform/pulp-sdk-release.git
     $ cd pulp-sdk-release
 
 
