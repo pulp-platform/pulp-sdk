@@ -6,4 +6,4 @@
 	url = https://github.com/pulp-platform/pulp-configs.git
 [submodule "json-tools"]
 	path = json-tools
-	url = git@github.com:pulp-platform/json-tools.git
+	url = https://github.com/pulp-platform/json-tools.git
