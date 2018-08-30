@@ -127,6 +127,43 @@ Then click on Search->Search Signal Regexp, enter "pc", click on Select All and 
 .. This view contains some pre-defined groups that are very useful for quickly opening and closing architectures parts. It also contains a group called debug, that contains more high-level debug information like function name, disassembled instructions and so on.
 
 
+Application profiling
+---------------------
+
+The virtual platform is for now not providing any particular feature in terms of profiling except for hardware performance counters whose most of them are modeled.
+
+To use them, the test should configure and use them as on the real silicon, with the difference that all performance counters are implemented, not only one.
+
+You can have a look at this SDK example to know more about peformance counters: examples/pulp-rt-examples/perf/cluster/direct
+
+
+
+Timing models
+-------------
+
+Timing models are always active, there is no specific option to set to activate them. They are mainly timing the core model so that the main stalls are modeled. This includes branch penalty, load-use penalty an so on. The rest of the architecture is slightly timed. Remote accesses are assigned a fixed cost and are impacted by bandwidth limitation, although this still not reflect exactly the HW (the bus width may be different). L1 contentions are modeled with no priority. DMA is modeled with bursts, which gets assigned a cost. All UDMA interfaces are finely modeled.
+
+
+
+Power models
+------------
+
+This is for now a very preliminary work. Power traces can be showed when VCD traces are activated. Each power source is able to register an amount of energy, which is showed inside a VCD trace as a pulse.
+
+For now only the core is registering the energy consumed by an instruction, but all instructions are assigned a fixed cost, which just has an arbitrary value.
+
+A more detailed power report will soon be produced, and power sources added.
+
+
+
+Devices
+-------
+
+The virtual platform is by default simulating only a stand-alone chip. Device models such as camera, flash or microphones can be connected in order to run full applications.
+
+The devices to be simulated must be specified using the standard SDK feature for customizing peripherals, see :ref:`periph_config`.
+
+
 GDB
 ---
 
