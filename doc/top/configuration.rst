@@ -45,31 +45,95 @@ To make this customization permanent for the application, you can put the CONFIG
 
 
 
+Per-application JSON configuration
+----------------------------------
+
+Deeper customizations can also be done at application level by inluding a JSON file in the application in order to customize the global configuration.
+
+This can be done by adding the following variable to the application application, which will give the path to the JSON file: ::
+
+  PULP_USER_CONFIG = $(CURDIR)/config.json
+
+The file can actually be anywhere, as soon as it is found by the makefile, and there can even be several files, for example to select a specific one from the makefile, using make conditional features.
+
+The file follows the JSON syntax and the sections which must be put inside depends on the global configuration (platform, chip, runtime, etc), so the content is documented in other sections.
+
+Here is an example of such a file which adds an hyperflash model, change the boot mode to boot from hyperflash, and change the default padframe profile: ::
+
+  {
+    "devices": {
+      "hyperram": {
+        "type": "hyper",
+        "interface": "hyper0",
+        "cs": 0
+      }
+    },
+
+    "runner": {
+      "boot-mode": "hyper",
+      "flash_type": "hyper"
+    },
+
+    "pads": {
+      "default_profile": "hyper"
+    }
+  }
+
+
+
+.. _periph_config:
+
 Peripherals customization
 -------------------------
 
 When using a simulation platform, the default configuration is usually only activating very few peripherals and
-additional peripherals can be added by customizing the default configuration.
+additional peripherals can be added by customizing the default configuration with a specific section in the user JSON configuration.
 
-Customizing peripherals is using a different mechanism compared to the previous section as it needs to modify
-several aspects in the configuration. 
+The devices to be simulated must be specified in the application user JSON configuration. A section with name *devices* must be added, with one sub-section per device, like in the following example: ::
 
-In order to add a peripheral to the current configuration, you can modify an application makefile and
-add the following line: ::
+  {
+    "devices": {
+      "hyperram": {
+        "type": "hyper",
+        "interface": "hyper0",
+        "cs": 0
+      }
+    }
+  }
 
-  override PULP_TEMPLATE_ARGS += <config>
+Each device section must at least have the section *type*, which specifies which device to be simulated. The rest is specific to each device.
 
-*<config>* should be replaced by the list of peripherals to be added, as well as their parameters.
-Peripherals must be separated by spaces and parameters are given inside parenthesis after the peripheral name,
-like in the following example: ::
-
-  override PULP_TEMPLATE_ARGS += uart_tb(uart0)
 
 Here is the list of supported peripherals.
 
-=================== =============================== ========================== ================ ===================
-Model name          Description                     Parameters                 Example          Supported platforms
-=================== =============================== ========================== ================ ===================
-uart_tb             Can be used to dump uart TX to   uart_tb(<uart itf name>)  uart_tb(uart0)   gvsoc
-                    file or terminal
-=================== =============================== ========================== ================ ===================
+=================== ==================================================== ===================
+Type                Description                                          Supported platforms
+=================== ==================================================== ===================
+uart_tb             Uart testbench, can be used to                       gvsoc, rtl
+                    dump uart TX to file or terminal                        
+hyper               Hyperflash/Hyperram model                            gvsoc
+=================== ==================================================== ===================
+
+
+
+Hyper
+.....
+
+This model supports the following parameters
+
+=================== ==================================================== ==================
+Name                Description                                          Optional/Mandatory
+=================== ==================================================== ==================
+interface           Gives the interface where the device is connected.   Mandatory
+cs                  Gives the chip select where the device is connected. Mandatory
+=================== ==================================================== ==================
+
+Here is an example: ::
+  
+  {
+    "hyperram": {
+      "type": "hyper",
+      "interface": "hyper0",
+      "cs": 0
+    }
+  }
