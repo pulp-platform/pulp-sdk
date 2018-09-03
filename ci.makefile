@@ -34,6 +34,7 @@ CONFIG += vivosoc3@config_file=$(CURDIR)/configs/json/vivosoc3.json
 CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
 CONFIG += bigpulp@config_file=$(CURDIR)/configs/json/bigpulp.json
 CONFIG += bigpulp-z-7045@config_file=$(CURDIR)/configs/json/bigpulp-z-7045.json
+CONFIG += bigpulp-standalone@config_file=$(CURDIR)/configs/json/bigpulp-standalone.json
 CONFIG += multino@config_file=$(CURDIR)/configs/json/multino.json
 CONFIG += hero-z-7045@config_file=$(CURDIR)/configs/json/hero-z-7045.json
 endif
