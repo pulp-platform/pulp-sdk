@@ -4,7 +4,7 @@
 
 # The following commands should work cleanly.
 set -e
-source configs/hero-z-7045.sh
+source configs/bigpulp-z-7045.sh
 source configs/platform-hsa.sh
 make deps
 for m in \
