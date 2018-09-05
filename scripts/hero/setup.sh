@@ -6,7 +6,7 @@
 set -e
 source configs/hero-z-7045.sh
 source configs/platform-hsa.sh
-make deps
+
 for m in \
     json-tools \
     pulp-tools \
