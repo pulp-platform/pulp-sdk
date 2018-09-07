@@ -28,4 +28,3 @@ pulp-tools:
 	git submodule update --init
 
 .PHONY: pulp-tools pulpissimo
-
