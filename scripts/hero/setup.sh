@@ -13,10 +13,7 @@ for m in \
     pulp-configs \
     pulp-rules \
     archi \
-    archi_analog \
-    hal_analog \
     hal \
-    jtag-bridge \
     debug-bridge2 \
     debug-bridge; \
 do
