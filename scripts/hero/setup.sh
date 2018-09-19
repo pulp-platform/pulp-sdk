@@ -20,23 +20,23 @@ do
     plpbuild --m $m checkout build --stdout
 done
 
+plpbuild --g runtime checkout --stdout
+
 # Building `pulp-rt` will fail, but this is to be expected.
 set +e
-plpbuild --m pulp-rt checkout build --stdout
+plpbuild --m pulp-rt build --stdout
 echo 'NOTE: The failure of building `pulp-rt` at this point is known and can be tolerated.'
 
 # Now that the `pulp-rt` headers are installed, we can go ahead and install `archi-host` followed by
 # a re-installation of the entire SDK.  At some point, this will fail because two of the runtime
 # variants ('tiny' and 'bare') are not aligned with the main runtime, causing the wrong header files
 # to be deployed.
-plpbuild --m archi-host checkout build --stdout
-make all
+plpbuild --m archi-host build --stdout
 
 # We fix this by forcing the `pulp-rt` headers, followed by the final compilation of `libvmm`.
 find runtime/pulp-rt/include -type f -exec touch {} +
 plpbuild --m pulp-rt build --stdout
-plpbuild --m libvmm checkout build --stdout
-plpbuild --m libgomp checkout build --stdout
-plpbuild --m runner checkout build --stdout
+plpbuild --m libvmm build --stdout
+plpbuild --g runtime build --stdout
 
-make env
+#make env
