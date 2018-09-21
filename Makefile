@@ -3,7 +3,7 @@ SHELL=bash
 MODULES ?= --p sdk
 
 all: pulp-tools
-	./pulp-tools/bin/plpbuild $(MODULES) checkout build --stdout
+	./pulp-tools/bin/plpbuild $(MODULES) checkout build env --stdout
 
 build: pulp-tools
 	./pulp-tools/bin/plpbuild $(MODULES) build --stdout
