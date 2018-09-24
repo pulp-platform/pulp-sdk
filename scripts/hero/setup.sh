@@ -39,4 +39,5 @@ plpbuild --m pulp-rt build --stdout
 plpbuild --m libvmm build --stdout
 plpbuild --g runtime build --stdout
 
-#make env
+plpbuild --g pkg build
+make env
