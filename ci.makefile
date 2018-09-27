@@ -21,10 +21,12 @@ CONFIG += pulpissimo-riscy@config_file=$(CURDIR)/configs/json/pulpissimo-riscy.j
 CONFIG += pulpissimo-zeroriscy@config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
 CONFIG += pulpissimo-microriscy@config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
 CONFIG += wolfe@config_file=$(CURDIR)/configs/json/wolfe.json
+CONFIG += usoc_v1@config_file=$(CURDIR)/configs/json/usoc_v1.json
 CONFIG += pulp@config_file=$(CURDIR)/configs/json/pulp.json
 CONFIG += vega@config_file=$(CURDIR)/configs/json/vega.json
 CONFIG += quentin@config_file=$(CURDIR)/configs/json/quentin.json
 CONFIG += gap@config_file=$(CURDIR)/configs/json/gap.json
+CONFIG += gap_rev1@config_file=$(CURDIR)/configs/json/gap_rev1.json
 CONFIG += oprecompkw@config_file=$(CURDIR)/configs/json/oprecompkw.json
 CONFIG += oprecompkw_sa@config_file=$(CURDIR)/configs/json/oprecompkw_sa.json
 CONFIG += fulmine@config_file=$(CURDIR)/configs/json/fulmine.json
