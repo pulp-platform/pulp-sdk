@@ -1,10 +1,7 @@
-#!/usr/bin/env bash
-
 # Workaround to manually resolve cyclic dependencies during initial SDK setup
 
 # The following commands should work cleanly.
 set -e
-source configs/bigpulp-z-7045.sh
 source configs/platform-hsa.sh
 make deps
 for m in \
