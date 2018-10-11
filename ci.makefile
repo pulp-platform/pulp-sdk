@@ -30,8 +30,8 @@ CONFIG += gap_rev1@config_file=$(CURDIR)/configs/json/gap_rev1.json
 CONFIG += oprecompkw@config_file=$(CURDIR)/configs/json/oprecompkw.json
 CONFIG += oprecompkw_sa@config_file=$(CURDIR)/configs/json/oprecompkw_sa.json
 CONFIG += fulmine@config_file=$(CURDIR)/configs/json/fulmine.json
-CONFIG += vivosoc2@config_file=$(CURDIR)/configs/json/vivosoc2.json
-CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
+#CONFIG += vivosoc2@config_file=$(CURDIR)/configs/json/vivosoc2.json
+#CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
 CONFIG += vivosoc3@config_file=$(CURDIR)/configs/json/vivosoc3.json
 CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
 CONFIG += arnold@config_file=$(CURDIR)/configs/json/arnold.json
