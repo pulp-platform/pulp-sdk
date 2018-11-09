@@ -15,7 +15,7 @@ Here are the best to start with:
 Runtime
 -------
 
-For more details about the runtime, the documentation is available `here <../runtime/index.html>`_.
+For more details about the runtime, the documentation is available `here <../runtime/default/index.html>`_.
 
 .. Kernel of library
 .. -----------------
