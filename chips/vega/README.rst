@@ -5,11 +5,12 @@ Execute the following commands: ::
 
   git clone git@github.com:pulp-platform/pulp-sdk.git
   cd pulp-sdk
-  git checkout integration
   source configs/vega.sh
   make deps all
 
 You need to setup PULP_ARTIFACTORY_USER to be able to download the toolchain.
+
+The "master" branch will be taken, this branch is always stable. Branch "integration" can also be taken to get most recent developments but is not always stable.
 
 
 How to setup Vega SDK after it has been installed
