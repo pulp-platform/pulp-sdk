@@ -82,3 +82,24 @@ The file should be added in the appropriate hierarchy under include.
 When archi or hal modules are built, only the files needed for Vega are copied. If a file is added, the SConstruct file must also be updated so that the file is also copied. The easiest at first is to copy it when the vega config is detected (at the end of the SConstruct file).
 
 Then just recompile the whole runtime to make it available to the test.
+
+
+How to generate an archi file from xls sheet
+--------------------------------------------
+
+There is a new tool called regmap which is installed by module pulp-tools. You can
+find it there if you need to modify it: pulp-tools/regmap
+
+You can first see on the terminal how it is parsing the xls file with such a command: ::
+
+  regmap --name=timer    --input-xls=doc/TIMER_UNIT_reference.xlsx  --table
+
+The header file can be generated with this command: ::
+
+  regmap --name=timer    --input-xls=doc/TIMER_UNIT_reference.xlsx  --header=include/archi/timer/timer_v2_new.h
+
+Be careful to not replace the old file as it is still used by current current and virtual platform. Instead create a new one and include it from the old file, like it is done for the timer file.
+
+If you modify the tool, be careful to not break it for other formats, it also support JSON as input and output files, and RST as output file.
+
+The produced header file can be pushed to archi module and the command for generating it in the archi Makefile so that we can easily regenerate all the files in case we fix something in the script.
