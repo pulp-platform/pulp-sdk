@@ -5,7 +5,7 @@ platform=`plpinfo get --property=platform --silent | grep rtl`
 
 if [ -n "$platform" ]; then
     for chip in $chips; do
-      if [ $chip != "wolfe" ]; then
+      if [ $chip != "wolfe" ] && [ $chip != "arnold" ]; then
         plpbuild --p $chip checkout build --stdout
       fi
     done
