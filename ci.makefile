@@ -17,6 +17,7 @@ endif
 else
 ifndef CONFIG
 CONFIG += pulpissimo@config_file=$(CURDIR)/configs/json/pulpissimo.json
+CONFIG += pulpissimo_v2@config_file=$(CURDIR)/configs/json/pulpissimo_v2.json
 CONFIG += pulpissimo-riscy@config_file=$(CURDIR)/configs/json/pulpissimo-riscy.json
 CONFIG += pulpissimo-zeroriscy@config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
 CONFIG += pulpissimo-microriscy@config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
