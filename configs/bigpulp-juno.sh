@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=bigpulp-juno@config_file=${scriptDir}/json/bigpulp-juno.json
+export PULP_CURRENT_CONFIG=bigpulp-juno@config_file=systems/bigpulp-juno.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 

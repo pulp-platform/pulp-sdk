@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=fulmine@config_file=${scriptDir}/json/fulmine.json
+export PULP_CURRENT_CONFIG=fulmine@config_file=systems/fulmine.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 

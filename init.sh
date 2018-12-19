@@ -20,6 +20,8 @@ export PULP_PROJECT_HOME="$scriptDir"
 echo "Configuring Pulp project at $PULP_PROJECT_HOME"
 add_path $PULP_PROJECT_HOME/pulp-tools/bin
 add_PYTHONPATH $PULP_PROJECT_HOME/pulp-tools/python
+add_PYTHONPATH $PULP_PROJECT_HOME/pulp-configs/python
+add_PYTHONPATH $PULP_PROJECT_HOME/pulp-configs/bin
 add_PYTHONPATH $PULP_PROJECT_HOME/json-tools/python
 export PULP_CONFIGS_PATH=$PULP_PROJECT_HOME/pulp-configs/configs
 

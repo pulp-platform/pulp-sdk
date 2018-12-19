@@ -8,39 +8,39 @@ endif
 override OPT += --debug
 ifdef USE_TEST
 ifndef CONFIG
-CONFIG += pulpissimo-rtl@config_file=$(CURDIR)/configs/json/pulpissimo.json:platform=rtl
-CONFIG += wolfe-rtl@config_file=$(CURDIR)/configs/json/wolfe.json:platform=rtl
-CONFIG += quentin-rtl@config_file=$(CURDIR)/configs/json/quentin.json:platform=rtl
-CONFIG += vivosoc3-rtl@config_file=$(CURDIR)/configs/json/vivosoc3.json:platform=rtl
-CONFIG += gap-rtl@config_file=$(CURDIR)/configs/json/gap.json:platform=rtl
+CONFIG += pulpissimo-rtl@config_file=systems/pulpissimo.json:platform=rtl
+CONFIG += wolfe-rtl@config_file=systems/wolfe.json:platform=rtl
+CONFIG += quentin-rtl@config_file=systems/quentin.json:platform=rtl
+CONFIG += vivosoc3-rtl@config_file=systems/vivosoc3.json:platform=rtl
+CONFIG += gap-rtl@config_file=systems/gap.json:platform=rtl
 endif
 else
 ifndef CONFIG
-CONFIG += pulpissimo@config_file=$(CURDIR)/configs/json/pulpissimo.json
-CONFIG += pulpissimo_v2@config_file=$(CURDIR)/configs/json/pulpissimo_v2.json
-CONFIG += pulpissimo-riscy@config_file=$(CURDIR)/configs/json/pulpissimo-riscy.json
-CONFIG += pulpissimo-zeroriscy@config_file=$(CURDIR)/configs/json/pulpissimo-zeroriscy.json
-CONFIG += pulpissimo-microriscy@config_file=$(CURDIR)/configs/json/pulpissimo-microriscy.json
-CONFIG += wolfe@config_file=$(CURDIR)/configs/json/wolfe.json
-CONFIG += usoc_v1@config_file=$(CURDIR)/configs/json/usoc_v1.json
-CONFIG += pulp@config_file=$(CURDIR)/configs/json/pulp.json
-CONFIG += vega@config_file=$(CURDIR)/configs/json/vega.json
-#CONFIG += quentin@config_file=$(CURDIR)/configs/json/quentin.json
-CONFIG += gap@config_file=$(CURDIR)/configs/json/gap.json
-CONFIG += gap_rev1@config_file=$(CURDIR)/configs/json/gap_rev1.json
-CONFIG += oprecompkw@config_file=$(CURDIR)/configs/json/oprecompkw.json
-CONFIG += oprecompkw_sa@config_file=$(CURDIR)/configs/json/oprecompkw_sa.json
-#CONFIG += fulmine@config_file=$(CURDIR)/configs/json/fulmine.json
-#CONFIG += vivosoc2@config_file=$(CURDIR)/configs/json/vivosoc2.json
-#CONFIG += vivosoc2_1@config_file=$(CURDIR)/configs/json/vivosoc2_1.json
-CONFIG += vivosoc3@config_file=$(CURDIR)/configs/json/vivosoc3.json
-#CONFIG += honey@config_file=$(CURDIR)/configs/json/honey.json
-CONFIG += arnold@config_file=$(CURDIR)/configs/json/arnold.json
-#CONFIG += bigpulp@config_file=$(CURDIR)/configs/json/bigpulp.json
-#CONFIG += bigpulp-z-7045@config_file=$(CURDIR)/configs/json/bigpulp-z-7045.json
-CONFIG += bigpulp-standalone@config_file=$(CURDIR)/configs/json/bigpulp-standalone.json
-CONFIG += multino@config_file=$(CURDIR)/configs/json/multino.json
-#CONFIG += hero-z-7045@config_file=$(CURDIR)/configs/json/hero-z-7045.json
+CONFIG += pulpissimo@config_file=systems/pulpissimo.json
+CONFIG += pulpissimo_v2@config_file=systems/pulpissimo_v2.json
+CONFIG += pulpissimo-riscy@config_file=systems/pulpissimo-riscy.json
+CONFIG += pulpissimo-zeroriscy@config_file=systems/pulpissimo-zeroriscy.json
+CONFIG += pulpissimo-microriscy@config_file=systems/pulpissimo-microriscy.json
+CONFIG += wolfe@config_file=systems/wolfe.json
+CONFIG += usoc_v1@config_file=systems/usoc_v1.json
+CONFIG += pulp@config_file=systems/pulp.json
+CONFIG += vega@config_file=systems/vega.json
+#CONFIG += quentin@config_file=systems/quentin.json
+CONFIG += gap@config_file=systems/gap.json
+CONFIG += gap_rev1@config_file=systems/gap_rev1.json
+CONFIG += oprecompkw@config_file=systems/oprecompkw.json
+CONFIG += oprecompkw_sa@config_file=systems/oprecompkw_sa.json
+#CONFIG += fulmine@config_file=systems/fulmine.json
+#CONFIG += vivosoc2@config_file=systems/vivosoc2.json
+#CONFIG += vivosoc2_1@config_file=systems/vivosoc2_1.json
+CONFIG += vivosoc3@config_file=systems/vivosoc3.json
+#CONFIG += honey@config_file=systems/honey.json
+CONFIG += arnold@config_file=systems/arnold.json
+#CONFIG += bigpulp@config_file=systems/bigpulp.json
+#CONFIG += bigpulp-z-7045@config_file=systems/bigpulp-z-7045.json
+CONFIG += bigpulp-standalone@config_file=systems/bigpulp-standalone.json
+CONFIG += multino@config_file=systems/multino.json
+#CONFIG += hero-z-7045@config_file=systems/hero-z-7045.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16

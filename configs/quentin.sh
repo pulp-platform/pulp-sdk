@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=quentin@config_file=${scriptDir}/json/quentin.json
+export PULP_CURRENT_CONFIG=quentin@config_file=systems/quentin.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 

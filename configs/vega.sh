@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=vega@config_file=${scriptDir}/json/vega.json
+export PULP_CURRENT_CONFIG=vega@config_file=systems/vega.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 
