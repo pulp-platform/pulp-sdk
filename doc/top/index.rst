@@ -11,6 +11,7 @@ Contents:
    virtual_platform
    board
    configuration
+   pulpos
    references
    issues
 
