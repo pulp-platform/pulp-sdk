@@ -34,6 +34,7 @@ CONFIG += oprecompkw_sa@config_file=systems/oprecompkw_sa.json
 #CONFIG += vivosoc2@config_file=systems/vivosoc2.json
 #CONFIG += vivosoc2_1@config_file=systems/vivosoc2_1.json
 CONFIG += vivosoc3@config_file=systems/vivosoc3.json
+CONFIG += vivosoc3_5@config_file=systems/vivosoc3_5.json
 #CONFIG += honey@config_file=systems/honey.json
 CONFIG += arnold@config_file=systems/arnold.json
 #CONFIG += bigpulp@config_file=systems/bigpulp.json
