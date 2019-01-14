@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=oprecompkw_sfloat_sa_dual_regfile@config_file=systems/oprecompkw_sfloat_sa_dual_regfile.json
+export PULP_CURRENT_CONFIG=oprecompkw_sfloat_sa_dual_regfile@config_file=chips/oprecompkw_sfloat_sa_dual_regfile/oprecompkw_sfloat_sa_dual_regfile.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 

@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=vivosoc3@config_file=systems/vivosoc3.json
+export PULP_CURRENT_CONFIG=vivosoc3@config_file=chips/vivosoc3/vivosoc3.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 

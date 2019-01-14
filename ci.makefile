@@ -16,32 +16,24 @@ CONFIG += gap-rtl@config_file=systems/gap.json:platform=rtl
 endif
 else
 ifndef CONFIG
-CONFIG += pulpissimo@config_file=systems/pulpissimo.json
-CONFIG += pulpissimo_v2@config_file=systems/pulpissimo_v2.json
-CONFIG += pulpissimo-riscy@config_file=systems/pulpissimo-riscy.json
-CONFIG += pulpissimo-zeroriscy@config_file=systems/pulpissimo-zeroriscy.json
-CONFIG += pulpissimo-microriscy@config_file=systems/pulpissimo-microriscy.json
-CONFIG += wolfe@config_file=systems/wolfe.json
-CONFIG += usoc_v1@config_file=systems/usoc_v1.json
-CONFIG += pulp@config_file=systems/pulp.json
-CONFIG += vega@config_file=systems/vega.json
-#CONFIG += quentin@config_file=systems/quentin.json
-CONFIG += gap@config_file=systems/gap.json
-CONFIG += gap_rev1@config_file=systems/gap_rev1.json
-CONFIG += oprecompkw@config_file=systems/oprecompkw.json
-CONFIG += oprecompkw_sa@config_file=systems/oprecompkw_sa.json
-#CONFIG += fulmine@config_file=systems/fulmine.json
-#CONFIG += vivosoc2@config_file=systems/vivosoc2.json
-#CONFIG += vivosoc2_1@config_file=systems/vivosoc2_1.json
-CONFIG += vivosoc3@config_file=systems/vivosoc3.json
-CONFIG += vivosoc3_5@config_file=systems/vivosoc3_5.json
-#CONFIG += honey@config_file=systems/honey.json
-CONFIG += arnold@config_file=systems/arnold.json
-#CONFIG += bigpulp@config_file=systems/bigpulp.json
-#CONFIG += bigpulp-z-7045@config_file=systems/bigpulp-z-7045.json
-CONFIG += bigpulp-standalone@config_file=systems/bigpulp-standalone.json
-CONFIG += multino@config_file=systems/multino.json
-#CONFIG += hero-z-7045@config_file=systems/hero-z-7045.json
+CONFIG += pulpissimo@config_file=chips/pulpissimo/pulpissimo.json
+CONFIG += pulpissimo_v2@config_file=chips/pulpissimo_v2/pulpissimo_v2.json
+CONFIG += pulpissimo-riscy@config_file=chips/pulpissimo-riscy/pulpissimo-riscy.json
+CONFIG += pulpissimo-zeroriscy@config_file=chips/pulpissimo-zeroriscy/pulpissimo-zeroriscy.json
+CONFIG += pulpissimo-microriscy@config_file=chips/pulpissimo-microriscy/pulpissimo-microriscy.json
+CONFIG += wolfe@config_file=chips/wolfe/wolfe.json
+CONFIG += usoc_v1@config_file=chips/usoc_v1/usoc_v1.json
+CONFIG += pulp@config_file=chips/pulp/pulp.json
+CONFIG += vega@config_file=chips/vega/vega.json
+CONFIG += gap@config_file=chips/gap/gap.json
+CONFIG += gap_rev1@config_file=chips/gap_rev1/gap_rev1.json
+CONFIG += oprecompkw@config_file=chips/oprecompkw/oprecompkw.json
+CONFIG += oprecompkw_sa@config_file=chips/oprecompkw_sa/oprecompkw_sa.json
+CONFIG += vivosoc3@config_file=chips/vivosoc3/vivosoc3.json
+CONFIG += vivosoc3_5@config_file=chips/vivosoc3_5/vivosoc3_5.json
+CONFIG += arnold@config_file=chips/arnold/arnold.json
+CONFIG += bigpulp-standalone@config_file=chips/bigpulp-standalone/bigpulp-standalone.json
+CONFIG += multino@config_file=chips/multino/multino.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16
