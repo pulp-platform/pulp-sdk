@@ -32,7 +32,7 @@ CONFIG += oprecompkw_sa@config_file=chips/oprecompkw_sa/oprecompkw_sa.json
 CONFIG += vivosoc3@config_file=chips/vivosoc3/vivosoc3.json
 CONFIG += vivosoc3_5@config_file=chips/vivosoc3_5/vivosoc3_5.json
 CONFIG += arnold@config_file=chips/arnold/arnold.json
-CONFIG += bigpulp-standalone@config_file=chips/bigpulp-standalone/bigpulp-standalone.json
+CONFIG += bigpulp-standalone@config_file=chips/bigpulp-standalone/bigpulp.json
 CONFIG += multino@config_file=chips/multino/multino.json
 endif
 endif
