@@ -42,7 +42,9 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = os.environ.get('SDK_DOC_TOP')
+if master_doc is None:
+  master_doc = 'sdk_top'
 
 # General information about the project.
 project = u'Pulp SDK'
