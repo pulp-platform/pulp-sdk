@@ -2,6 +2,7 @@ SHELL = bash
 THREADS ?= 1
 MAX_TIMEOUT ?= 3600
 TEST_THREADS ?= 16
+override TEST_OPT += --stdout
 ifdef USE_DB
 override OPT += --db --db-info=$(CURDIR)/db_info.txt --debug
 endif
