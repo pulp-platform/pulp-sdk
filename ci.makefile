@@ -18,13 +18,14 @@ endif
 else
 ifndef CONFIG
 CONFIG += pulpissimo@config_file=chips/pulpissimo/pulpissimo.json
-CONFIG += pulpissimo_v2@config_file=chips/pulpissimo_v2/pulpissimo_v2.json
+CONFIG += pulpissimo_v1@config_file=chips/pulpissimo_v2/pulpissimo_v1.json
 CONFIG += pulpissimo-riscy@config_file=chips/pulpissimo-riscy/pulpissimo-riscy.json
 CONFIG += pulpissimo-zeroriscy@config_file=chips/pulpissimo-zeroriscy/pulpissimo-zeroriscy.json
 CONFIG += pulpissimo-microriscy@config_file=chips/pulpissimo-microriscy/pulpissimo-microriscy.json
 CONFIG += wolfe@config_file=chips/wolfe/wolfe.json
 CONFIG += usoc_v1@config_file=chips/usoc_v1/usoc_v1.json
 CONFIG += pulp@config_file=chips/pulp/pulp.json
+CONFIG += pulp_v1@config_file=chips/pulp/pulp_v1.json
 CONFIG += vega@config_file=chips/vega/vega.json
 CONFIG += gap@config_file=chips/gap/gap.json
 CONFIG += gap_rev1@config_file=chips/gap_rev1/gap_rev1.json

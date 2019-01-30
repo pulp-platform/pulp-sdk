@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=pulpissimo@config_file=chips/pulpissimo/pulpissimo.json
+export PULP_CURRENT_CONFIG=pulpissimo_v1@config_file=chips/pulpissimo_v1/pulpissimo_v1.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 
