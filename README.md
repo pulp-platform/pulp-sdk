@@ -24,6 +24,16 @@ Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be exe
     $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy configparser pyvcd
     $ sudo pip2 configparser
 
+In case you face a problem regarding python dependencies you may also want to check if python3 and pip3 versions match:
+
+    $ pip --version
+    $ python3 --version
+
+If they differ you can try to install and manage python packages as follows:
+
+    $ sudo python3 -m pip install --upgrade pip
+    $ sudo python3 -m pip install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy configparser pyvcd
+
 For more recent Ubuntu distributions it is needed to configure the default gcc version to 5 as more recent gcc versions make the build fail. You can get more information about how to set default gcc version here: https://askubuntu.com/questions/26498/how-to-choose-the-default-gcc-and-g-version
 
 ### Scientific Linux 7.4
