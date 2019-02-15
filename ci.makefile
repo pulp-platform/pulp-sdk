@@ -142,10 +142,15 @@ test-checkout:
 	source init.sh && plpbuild --p tests checkout $(OPT)
 
 test-deps:
+ifdef BUILD_SDK
+	source init.sh && plpbuild --p sdk deps checkout build env $(OPT)
+endif
 	source init.sh && plpbuild --p tests deps $(OPT)
 
 test-platform:
+ifndef USE_EXTERNAL_PLATFORM
 	source init.sh && plpbuild --p tests env && source sourceme.sh && ./get-platform
+endif
 
 
 pulp-tools:
