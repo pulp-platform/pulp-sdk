@@ -36,6 +36,7 @@ CONFIG += vivosoc3_5@config_file=chips/vivosoc3_5/vivosoc3_5.json
 CONFIG += arnold@config_file=chips/arnold/arnold.json
 CONFIG += bigpulp-standalone@config_file=chips/bigpulp-standalone/bigpulp.json
 CONFIG += multino@config_file=chips/multino/multino.json
+CONFIG += vivosoc3_1@config_file=chips/vivosoc3_1/vivosoc3_1.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16
