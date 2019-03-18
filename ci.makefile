@@ -119,11 +119,15 @@ tag: tag_prepare tag_user_commit tag_commit
 
 
 
+test-prepare: pulp-tools test-platform test-deps test-checkout test-env
 
-test-all: pulp-tools test-platform test-deps test-checkout test-run
+test-env:
+	source init.sh && plpbuild --p tests env
+
+test-all: pulp-tools test-platform test-deps test-checkout test-env test-run
 
 test-run:
-	source init.sh && plpbuild --p tests env && source sourceme.sh && \
+	source sourceme.sh && \
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) $(TEST_OPT) --env=sdk_validation \
 	    --commit=`git rev-parse HEAD` --max-timeout=$(MAX_TIMEOUT)
 
