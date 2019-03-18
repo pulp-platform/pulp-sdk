@@ -127,7 +127,7 @@ test-env:
 test-all: pulp-tools test-platform test-deps test-checkout test-env test-run
 
 test-run:
-	source sourceme.sh && \
+	source init.sh && source sourceme.sh && \
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) $(TEST_OPT) --env=sdk_validation \
 	    --commit=`git rev-parse HEAD` --max-timeout=$(MAX_TIMEOUT)
 
