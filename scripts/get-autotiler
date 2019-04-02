@@ -1,0 +1,6 @@
+#!/bin/bash
+
+plpbuild --m auto-tiler checkout
+
+pushd tools/auto-tiler
+make all
