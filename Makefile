@@ -30,3 +30,5 @@ pulp-tools:
 
 .PHONY: pulp-tools pulpissimo
 
+autotiler:
+	./scripts/get-autotiler
