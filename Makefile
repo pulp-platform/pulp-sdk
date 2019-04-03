@@ -12,11 +12,12 @@ distclean:
 	-./pulp-tools/bin/plpbuild --p sdk distclean --stdout
 	rm -rf build
 
-clean: pulp-tools
-	./pulp-tools/bin/plpbuild $(MODULES) clean
+clean:
+	-./pulp-tools/bin/plpbuild --p sdk distclean --stdout
+	rm -rf build
 
 env: pulp-tools
-	./pulp-tools/bin/plpbuild $(MODULES) env
+	./pulp-tools/bin/plpbuild $(MODULES) env --stdout
 
 deps: pulp-tools
 	./pulp-tools/bin/plpbuild --p sdk deps --stdout
