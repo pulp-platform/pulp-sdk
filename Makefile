@@ -32,3 +32,4 @@ pulp-tools:
 
 autotiler:
 	./scripts/get-autotiler
+	export GWT_AUTOTILER=1 && source init.sh && ./pulp-tools/bin/plpbuild --m auto-tiler checkout build --stdout
