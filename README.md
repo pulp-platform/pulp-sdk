@@ -38,7 +38,7 @@ Starting from a fresh Scientific Linux 7.4 distribution, here are the commands t
 
 In case you are using the debug bridge for example to connect to a board, you also need to install the prerequisites indicated on this page: https://github.com/pulp-platform/pulp-debug-bridge
 
-## SDK build with independant dependencies build
+## Standard SDK build
 
 ### Dependencies build
 
