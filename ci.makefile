@@ -36,6 +36,7 @@ CONFIG += vivosoc3_5@config_file=chips/vivosoc3_5/vivosoc3_5.json
 CONFIG += arnold@config_file=chips/arnold/arnold.json
 CONFIG += bigpulp-standalone@config_file=chips/bigpulp-standalone/bigpulp.json
 CONFIG += multino@config_file=chips/multino/multino.json
+CONFIG += vivosoc3_1@config_file=chips/vivosoc3_1/vivosoc3_1.json
 endif
 endif
 DISTRIBS ?= CentOS_7 Ubuntu_16
@@ -118,11 +119,15 @@ tag: tag_prepare tag_user_commit tag_commit
 
 
 
+test-prepare: pulp-tools test-platform test-deps test-checkout test-env
 
-test-all: pulp-tools test-platform test-deps test-checkout test-run
+test-env:
+	source init.sh && plpbuild --p tests env
+
+test-all: pulp-tools test-platform test-deps test-checkout test-env test-run
 
 test-run:
-	source init.sh && plpbuild --p tests env && source sourceme.sh && \
+	source init.sh && source sourceme.sh && \
 	  plpbuild --p tests test --threads $(TEST_THREADS) $(OPT) $(TEST_OPT) --env=sdk_validation \
 	    --commit=`git rev-parse HEAD` --max-timeout=$(MAX_TIMEOUT)
 
@@ -142,10 +147,15 @@ test-checkout:
 	source init.sh && plpbuild --p tests checkout $(OPT)
 
 test-deps:
+ifdef BUILD_SDK
+	source init.sh && plpbuild --p sdk deps checkout build env $(OPT)
+endif
 	source init.sh && plpbuild --p tests deps $(OPT)
 
 test-platform:
+ifndef USE_EXTERNAL_PLATFORM
 	source init.sh && plpbuild --p tests env && source sourceme.sh && ./get-platform
+endif
 
 
 pulp-tools:

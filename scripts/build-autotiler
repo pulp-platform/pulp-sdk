@@ -1,0 +1,9 @@
+#!/bin/bash
+
+mkdir -p $INSTALL_DIR/auto-tiler/generators
+mkdir -p $INSTALL_DIR/auto-tiler/lib
+mkdir -p $INSTALL_DIR/auto-tiler/include
+
+cp -r generators/* $INSTALL_DIR/auto-tiler/generators
+cp -r include/* $INSTALL_DIR/auto-tiler/include
+cp -r lib/* $INSTALL_DIR/auto-tiler/lib

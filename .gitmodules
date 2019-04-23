@@ -7,3 +7,6 @@
 [submodule "json-tools"]
 	path = json-tools
 	url = https://github.com/pulp-platform/json-tools.git
+[submodule "plptest"]
+	path = plptest
+	url = https://github.com/pulp-platform/plptest.git
