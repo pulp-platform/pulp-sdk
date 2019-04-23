@@ -38,13 +38,15 @@ For more recent Ubuntu distributions it is needed to configure the default gcc v
 
 In case you are using the debug bridge for example to connect to a board, you also need to install the prerequisites indicated on this page: https://github.com/pulp-platform/pulp-debug-bridge
 
-### Scientific Linux 7.4
+### Scientific Linux 7.4/7.5/7.6
 
-Starting from a fresh Scientific Linux 7.4 distribution, here are the commands to be executed to get all required dependencies:
+Starting from a fresh Scientific Linux 7.4/7.5/7.6 distribution, here are the commands to be executed to get all required dependencies:
 
-    $ sudo yum install git python34-pip python34-devel gawk texinfo gmp-devel mpfr-devel libmpc-devel swig libjpeg-turbo-devel redhat-lsb-core doxygen python-sphinx sox GraphicsMagick-devel ImageMagick-devel SDL2-devel perl-Switch libftdi-devel cmake scons
-    $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy configparser pyvcd
-    $ sudo pip2 install configparser
+    $ sudo yum install git python36-pip python36-devel gawk texinfo gmp-devel mpfr-devel libmpc-devel swig libjpeg-turbo-devel redhat-lsb-core doxygen python-sphinx sox GraphicsMagick-devel ImageMagick-devel SDL2-devel perl-Switch libftdi-devel cmake cmake3 scons
+    $ sudo python3 -m pip install --upgrade pip
+    $ sudo python2 -m pip install --upgrade pip
+    $ sudo python3 -m pip install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy configparser pyvcd
+    $ sudo python2 -m pip install configparser
 
 In case you are using the debug bridge for example to connect to a board, you also need to install the prerequisites indicated on this page: https://github.com/pulp-platform/pulp-debug-bridge
 
