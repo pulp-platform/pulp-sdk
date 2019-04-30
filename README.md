@@ -18,13 +18,15 @@ Here are the required system dependencies for building the SDK and its dependenc
 
 ### Ubuntu 16.04
 
+Be carefull that this procedure has been validated with a default installation of Ubuntu 16.04, so you may have some issues if one of the dependency like python3 is not the default one coming with Ubuntu 16.04 (python 3.5).
+
 Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be executed to get all required dependencies:
 
     $ sudo apt install git python3-pip python-pip gawk texinfo libgmp-dev libmpfr-dev libmpc-dev swig3.0 libjpeg-dev lsb-core doxygen python-sphinx sox graphicsmagick-libmagick-dev-compat libsdl2-dev libswitch-perl libftdi1-dev cmake scons libsndfile1-dev
     $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy configparser pyvcd
     $ sudo pip2 install configparser
 
-In case you face a problem regarding python dependencies you may also want to check if python3 and pip3 versions match:
+In case you face a problem regarding python dependencies you may also want to check if the version reported by python3 is matching the python version reported by pip:
 
     $ pip --version
     $ python3 --version
