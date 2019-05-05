@@ -23,7 +23,6 @@ CONFIG += pulpissimo-riscy@config_file=chips/pulpissimo-riscy/pulpissimo-riscy.j
 CONFIG += pulpissimo-zeroriscy@config_file=chips/pulpissimo-zeroriscy/pulpissimo-zeroriscy.json
 CONFIG += pulpissimo-microriscy@config_file=chips/pulpissimo-microriscy/pulpissimo-microriscy.json
 CONFIG += wolfe@config_file=chips/wolfe/wolfe.json
-CONFIG += usoc_v1@config_file=chips/usoc_v1/usoc_v1.json
 CONFIG += pulp@config_file=chips/pulp/pulp.json
 CONFIG += pulp_v1@config_file=chips/pulp_v1/pulp_v1.json
 CONFIG += vega@config_file=chips/vega/vega.json
