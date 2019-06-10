@@ -1,0 +1,25 @@
+From ff617e3d3cd6fc7f12853ea3f6bee96474b2a640 Mon Sep 17 00:00:00 2001
+From: Germain Haugou <germain.haugou@iis.ee.ethz.ch>
+Date: Sat, 8 Jun 2019 00:24:13 +0200
+Subject: [PATCH] Increased number of harts
+
+---
+ src/target/riscv/riscv.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/target/riscv/riscv.h b/src/target/riscv/riscv.h
+index fe1c57859..895ec5779 100644
+--- a/src/target/riscv/riscv.h
++++ b/src/target/riscv/riscv.h
+@@ -8,7 +8,7 @@ struct riscv_program;
+ #include "gdb_regs.h"
+ 
+ /* The register cache is statically allocated. */
+-#define RISCV_MAX_HARTS 32
++#define RISCV_MAX_HARTS 1024
+ #define RISCV_MAX_REGISTERS 5000
+ #define RISCV_MAX_TRIGGERS 32
+ #define RISCV_MAX_HWBPS 16
+-- 
+2.17.1
+

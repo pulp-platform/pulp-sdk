@@ -1,0 +1,5 @@
+#!/bin/bash -ex
+
+./bootstrap
+./configure --prefix=$OPENOCD_INSTALL_DIR
+make install
