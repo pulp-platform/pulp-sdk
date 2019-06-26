@@ -6,6 +6,6 @@ export PULP_CURRENT_CONFIG=gap@config_file=boards/gapoc_a.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 
-if [ -e ${scriptDir}/../init.sh ]; then
-    source ${scriptDir}/../init.sh
+if [ -e ${scriptDir}/../../init.sh ]; then
+    source ${scriptDir}/../../init.sh
 fi
