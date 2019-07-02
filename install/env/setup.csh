@@ -21,7 +21,10 @@ else
     setenv PYTHONPATH $PULP_SDK_HOME/install/ws/python
 endif
 
+setenv RULES_PATH $PULP_SDK_HOME/install/rules
 setenv PULP_SDK_INSTALL $PULP_SDK_HOME/install
 setenv PULP_SDK_WS_INSTALL $PULP_SDK_HOME/install/ws
 setenv PULP_CONFIGS_PATH $PULP_SDK_WS_INSTALL/configs
 setenv SDK_TILER_PATH $PULP_SDK_HOME/install/auto-tiler
+setenv INSTALL_DIR $PULP_SDK_WS_INSTALL
+setenv TARGET_INSTALL_DIR $PULP_SDK_INSTALL

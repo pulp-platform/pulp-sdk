@@ -27,6 +27,7 @@ add_path $PULP_SDK_HOME/install/ws/bin
 add_ld_path $PULP_SDK_HOME/install/ws/lib
 add_PYTHONPATH $PULP_SDK_HOME/install/ws/python
 
+export RULES_PATH=$PULP_SDK_HOME/install/rules
 export PULP_SDK_INSTALL=$PULP_SDK_HOME/install
 export PULP_SDK_WS_INSTALL=$PULP_SDK_HOME/install/ws
 export PULP_CONFIGS_PATH=$PULP_SDK_WS_INSTALL/configs
