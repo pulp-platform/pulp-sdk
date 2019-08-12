@@ -28,6 +28,7 @@ CONFIG += pulp_v1@config_file=chips/pulp_v1/pulp_v1.json
 CONFIG += vega@config_file=chips/vega/vega.json
 CONFIG += gap@config_file=chips/gap/gap.json
 CONFIG += gap_rev1@config_file=chips/gap_rev1/gap_rev1.json
+CONFIG += gap8_revc@config_file=chips/gap8_revc/gap8_revc.json
 CONFIG += oprecompkw@config_file=chips/oprecompkw/oprecompkw.json
 CONFIG += oprecompkw_sa@config_file=chips/oprecompkw_sa/oprecompkw_sa.json
 CONFIG += vivosoc3@config_file=chips/vivosoc3/vivosoc3.json
