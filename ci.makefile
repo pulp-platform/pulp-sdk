@@ -25,6 +25,7 @@ CONFIG += pulpissimo-microriscy@config_file=chips/pulpissimo-microriscy/pulpissi
 CONFIG += wolfe@config_file=chips/wolfe/wolfe.json
 CONFIG += pulp@config_file=chips/pulp/pulp.json
 CONFIG += pulp_v1@config_file=chips/pulp_v1/pulp_v1.json
+CONFIG += mempool@config_file=chips/mempool/mempool.json
 CONFIG += vega@config_file=chips/vega/vega.json
 CONFIG += gap@config_file=chips/gap/gap.json
 CONFIG += gap_rev1@config_file=chips/gap_rev1/gap_rev1.json
