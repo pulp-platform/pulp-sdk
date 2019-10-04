@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=gapuino_revc@config_file=boards/gapuino_revb.json
+export PULP_CURRENT_CONFIG=gapuino_revb@config_file=boards/gapuino_revb.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 
