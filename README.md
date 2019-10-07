@@ -98,29 +98,15 @@ Then go inside the downloaded folder:
 Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the files
 in directory *configs* for example like the following:
 
-    $ source configs/pulpissimo.sh
+    $ source configs/mempool.sh
 
 Once your application is compiled, you will need to run it on a platform. The platform can
 be the RTL simulator, FPGA, or virtual platform.
-You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+You can configure the platform to be used by sourcing one of the *platform-\*.sh* file, like the following:
 
-    $ source configs/platform-rtl.sh
-
-Note that anytime the target file is sourced, you must source again the one for the platform.
-
-
-
-Once your application is compiled, you will need to run it on a platform. The platform can
-be the RTL simulator, FPGA, or virtual platform.
-You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
-
-```
-source configs/platform-rtl.sh
-```
+    $ source configs/platform-gvsoc.sh
 
 Note that anytime the target file is sourced, you must source again the one for the platform.
-
-
 
 ### SDK build
 
@@ -136,10 +122,10 @@ The SDK build should have installed the SDK under `pkg/sdk/dev`.
 
 Once you want to use it to compile and run applications, you first need to setup the SDK by sourcing the *sourceme.sh* file which is inside the installation folder:
 
-    $ source pkg/sdk/dev/sourceme.sh
+    $ source sourceme.sh
 
 
-The next time you open a new terminal, you have to source again the file for the target (i.e. *configs/pulpissimo.sh) and then the file in the SDK installation folder.
+The next time you open a new terminal, you have to source again the file for the target (i.e. *configs/mempool.sh*) and then the file in the SDK installation folder.
 
 After these steps, the SDK is ready to be used, you can have a look at section *Documentation* for more information.
 
@@ -192,28 +178,15 @@ Then go inside the downloaded folder:
 Before building the SDK, the target for which the SDK will be built must be selected by sourcing one of the file
 in directory *configs* for example like the following:
 
-    $ source configs/pulpissimo.sh
+    $ source configs/mempool.sh
 
 Once your application is compiled, you will need to run it on a platform. The platform can
 be the RTL simulator, the FPGA, the virtual platform or the FPGA.
-You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
+You can configure the platform to be used by sourcing one of the *platform-\*.sh* file, like the following:
 
-    $ source configs/platform-rtl.sh
-
-Note that anytime the target file is sourced, you must source again the one for the platform.
-
-
-
-Once your application is compiled, you will need to run it on a platform. The platform can
-be the RTL simulator, the FPGA, the virtual platform or the FPGA.
-You can configure the platform to be used by sourcing one of the *platform-*.sh* file, like the following:
-
-```
-source configs/platform-rtl.sh
-```
+    $ source configs/platform-gvsoc.sh
 
 Note that anytime the target file is sourced, you must source again the one for the platform.
-
 
 ### SDK dependencies download
 
