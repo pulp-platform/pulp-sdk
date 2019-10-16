@@ -2,7 +2,7 @@
 
 scriptDir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-export PULP_CURRENT_CONFIG=gap@config_file=boards/gapoc_a.json
+export PULP_CURRENT_CONFIG=gapoc_a@config_file=boards/gapoc_a.json
 
 unset PULP_CURRENT_CONFIG_ARGS
 
