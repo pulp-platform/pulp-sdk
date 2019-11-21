@@ -1,0 +1,4 @@
+#!/bin/bash -ex
+
+mkdir -p $INSTALL_DIR/share/openocd/scripts/tcl
+cp -r tcl/* $INSTALL_DIR/share/openocd/scripts/tcl
