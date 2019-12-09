@@ -9,3 +9,6 @@ unset PULP_CURRENT_CONFIG_ARGS
 if [ -e ${scriptDir}/../../init.sh ]; then
     source ${scriptDir}/../../init.sh
 fi
+
+export PULPOS_TARGET=gap8
+export PULPOS_SYSTEM=gapuino
