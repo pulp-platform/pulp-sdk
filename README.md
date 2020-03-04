@@ -23,7 +23,7 @@ Be carefull that this procedure has been validated with a default installation o
 Starting from a fresh Ubuntu 16.04 distribution, here are the commands to be executed to get all required dependencies:
 
     $ sudo apt install git python3-pip python-pip gawk texinfo libgmp-dev libmpfr-dev libmpc-dev swig3.0 libjpeg-dev lsb-core doxygen python-sphinx sox graphicsmagick-libmagick-dev-compat libsdl2-dev libswitch-perl libftdi1-dev cmake scons libsndfile1-dev
-    $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools openpyxl xlsxwriter pyyaml numpy configparser pyvcd
+    $ sudo pip3 install artifactory twisted prettytable sqlalchemy pyelftools 'openpyxl==2.6.4' xlsxwriter pyyaml numpy configparser pyvcd
     $ sudo pip2 install configparser
 
 In case you face a problem regarding python dependencies you may also want to check if the version reported by python3 is matching the python version reported by pip:
