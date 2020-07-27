@@ -10,3 +10,6 @@
 [submodule "plptest"]
 	path = plptest
 	url = https://github.com/pulp-platform/plptest.git
+[submodule "gvsoc"]
+	path = gvsoc
+	url = https://github.com/pulp-platform/gvsoc.git
