@@ -1,0 +1,479 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2018 ETH Zurich and University of Bologna
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Authors: Germain Haugou, ETH (germain.haugou@iis.ee.ethz.ch)
+
+
+import bridge.debug_bridge as db
+import argparse
+import code
+from importlib.machinery import SourceFileLoader
+import os.path
+import sys
+import pulp_config as plpconf
+
+try:
+  import plptree
+except:
+  pass
+
+import json_tools as js
+
+try:
+  from IPython import embed
+except:
+  pass
+
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+def fatal_error(error):
+    print (bcolors.FAIL + 'FATAL ERROR: ' + error + bcolors.ENDC)
+
+
+def read(bridge):
+    if args.addr == None:
+        raise Exception('Access address must be given through option --addr when using command "read"')
+
+    addr = int(args.addr, 0)
+    size = int(args.size, 0)
+    width = args.width
+
+    if args.verbose >= 4:
+        print ('Read access command (addr: 0x%x, size: 0x%x)' % (addr, size))
+
+    data = bridge.read(addr=addr, size=size)
+
+    while size > 0:
+        line = '%8.8x: ' % addr
+        for i in range(0, 16, width):
+
+            line += '%*.*x ' % (width*2, width*2, int.from_bytes(b''.join(data[0:width]), byteorder='little'))
+            size -= width
+            addr += width
+            data = data[width:]
+            if size <= 0:
+                break
+        print (line)
+
+    return 0
+
+
+
+def write(bridge):
+    if args.addr == None:
+        raise Exception('Access address must be given through option --addr when using command "write"')
+
+    if args.value == None:
+        raise Exception('Access value must be given through option --value when using command "write"')
+
+    addr = int(args.addr, 0)
+    size = int(args.size, 0)
+    value = int(args.value, 0)
+
+    if args.verbose >= 4:
+        print ('Write access command (addr: 0x%x, size: 0x%x, value: 0x%x)' % (addr, size, value))
+
+    bridge.write(addr=addr, size=size, buffer=value.to_bytes(size, byteorder='little'))
+
+    return 0
+
+def efuse_write(bridge):
+    addr = int(args.addr, 0)
+    value = int(args.value, 0)
+    mask = int(args.mask, 0)
+
+    bridge.efuse_access(args.flasher_init, True, addr, value, mask)
+
+    return 0
+
+def eeprom_write(bridge):
+    addr = int(args.addr, 0)
+
+    return bridge.eeprom_access(args.flasher_init, 0, 0, True, addr, args.file)
+
+
+def get_flash_id():
+    if args.flash_type == 'hyperflash':
+        return 1
+    elif args.flash_type == 'mram':
+        return 2
+    else:
+        return 0
+
+
+def flash_write(bridge):
+    addr = int(args.addr, 0)
+
+    return bridge.flash_access(args.flasher_init, get_flash_id(), 0, 0, True, addr, 0, args.file)
+
+
+def flash_read(bridge):
+    addr = int(args.addr, 0)
+    size = int(args.size, 0)
+
+    return bridge.flash_access(args.flasher_init, get_flash_id(), 0, 0, False, addr, size, args.file)
+
+
+def flash_erase(bridge):
+    addr = int(args.addr, 0)
+    size = int(args.size, 0)
+
+    return bridge.flash_erase(args.flasher_init, get_flash_id(), 0, 0, addr, size)
+
+
+def flash_erase_sector(bridge):
+    addr = int(args.addr, 0)
+
+    return bridge.flash_erase_sector(args.flasher_init, get_flash_id(), 0, 0, addr)
+
+
+def flash_erase_chip(bridge):
+    return bridge.flash_erase_chip(args.flasher_init, get_flash_id(), 0, 0)
+
+
+def load(bridge):
+
+    if args.verbose >= 4:
+        binaries = []
+        binaries_conf = bridge.config.get('**/runner/binaries')
+        if binaries_conf is not None:
+            binaries = binaries_conf.get_dict()
+        print ('Loading ELF binaries (path: %s)' % ' '.join(binaries))
+
+    return bridge.load()
+
+
+def ioloop(bridge):
+    if args.verbose >= 4:
+        print ('Lauching IO loop')
+
+    return bridge.ioloop()
+
+
+def reqloop(bridge):
+    if args.verbose >= 4:
+        print ('Lauching req loop')
+
+    return bridge.reqloop()
+
+
+def gdb(bridge):
+    if args.verbose >= 4:
+        print ('Lauching GDB server')
+
+    return bridge.gdb(int(args.rsp_port))
+
+
+def start(bridge):
+    if args.verbose >= 4:
+        print ('Starting execution')
+
+    return bridge.start()
+
+
+def stop(bridge):
+    if args.verbose >= 4:
+        print ('Stopping execution')
+
+    return bridge.stop()
+
+
+def wait(bridge):
+    if args.verbose >= 4:
+        print ('Waiting termination')
+
+    return bridge.wait()
+
+def flash(bridge):
+    # When using the flasher, the binaries should be the flasher
+    bridge.binaries= [os.environ["INSTALL_DIR"] + "/bin/flasher"]
+    if args.verbose >=4:
+        print("Flashing the flash image")
+
+    load(bridge)
+    ioloop(bridge)
+    start(bridge)
+    return bridge.flash(args.fimages)
+
+
+def reset(bridge):
+    if args.verbose >= 4:
+        print ('Chip reset')
+
+    return bridge.reset()
+
+
+def script(bridge):
+
+    for script in args.scripts:
+        if args.verbose >= 4:
+            print ('Executing script: ' + script)
+
+        if script.find('@') == -1:
+            script_name = script
+            script_entry = "debug_bridge_entry"
+        else:
+            script_entry, script_name = script.split('@')
+
+        module = SourceFileLoader("user_script", script_name).load_module()
+
+        entry = getattr(module, script_entry)
+        if entry(bridge):
+          return -1
+
+    return 0
+
+
+
+commands = {
+  'read'        : ['Read data from the target',         read],
+  'write'       : ['Write data to the target',          write],
+  'load'        : ['Load a binary into the target',     load],
+  'ioloop'      : ['Activate IO loop',                  ioloop],
+  'reqloop'     : ['Activate request loop',             reqloop],
+  'gdb'         : ['Open RSP server for GDB connection',gdb],
+  'start'       : ['Start execution',                   start],
+  'stop'        : ['Stop execution',                    stop],
+  'flash'       : ['Flash the flash image',             flash],
+  'wait'        : ['Wait termination',                  wait],
+  'reset'       : ['Chip reset',                        reset],
+  'script'      : ['Execute user scripts',              script],
+  'efuse_write' : ['Write to efuse',                    efuse_write],
+  'eeprom_write': ['Write to eeprom',                   eeprom_write],
+  'flash_write' : ['Write to flash',                    flash_write],
+  'flash_read'  : ['Read from flash',                   flash_read],
+  'flash_erase_sector'  : ['Erase flash sector',        flash_erase_sector],
+  'flash_erase'         : ['Erase flash area',          flash_erase],
+  'flash_erase_chip'    : ['Erase flash',               flash_erase_chip],
+}
+
+
+command_help = """Available commands:
+"""
+
+for name, cmd in commands.items():
+  command_help += '  %-10s %s\n' % (name, cmd[0])
+
+parser = argparse.ArgumentParser(description='Control a pulp target',
+  epilog=command_help, formatter_class=argparse.RawDescriptionHelpFormatter, add_help=False
+)
+
+parser.add_argument('command', metavar='CMD', type=str, nargs='*',
+                   help='a command to be executed (see the command help afterwards)')
+
+parser.add_argument("--script", dest="scripts", default=[], action="append", help="Specify a script to be executed with the script command")
+parser.add_argument("--config", dest="config", default=None, help="Specify the system configuration")
+parser.add_argument("--config-path", dest="config_path", default=None, help="Specify the system configuration")
+parser.add_argument("--ipython", dest="ipython", action="store_true", help="Enter ipython shell")
+parser.add_argument("--shell", dest="shell", action="store_true", help="Enter python shell")
+parser.add_argument("--port", dest="port", type=int, default=None, help="Specify port for proxy mode")
+parser.add_argument("--debug", dest="debug", action='store_true', default=False, help="Activate debug mode for this script")
+parser.add_argument("--verbose", dest="verbose", type=int, default=3, help="Verbose mode")
+parser.add_argument("--help", dest="help", action='store_true', default=False, help="Dump help")
+parser.add_argument("--cable", dest="cable", default=None, help="Specify cable")
+parser.add_argument("--chip", dest="chip", default=None, help="Specify target chip")
+parser.add_argument("--binary", dest="binaries", default=[], action="append", help="Specify a binary to be loaded by the load command")
+parser.add_argument("--flash-image", dest="fimages", default=[], action="append", help="Specify a flash image to be flashed")
+parser.add_argument("--flash-type", dest="flash_type", default="hyperflash", help="Specify flash type")
+parser.add_argument("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option')
+
+[args, otherArgs] = parser.parse_known_args()
+
+if 'read' in args.command or 'write' in args.command:
+  parser.add_argument("--addr", dest="addr", default=None, help="Specify the address of the access for read and write commands")
+  parser.add_argument("--size", dest="size", default="4", help="Specify the size of the access for read and write commands")
+
+opt_flasher_init = False
+
+if 'efuse_write' in args.command:
+  opt_flasher_init = True
+  parser.add_argument("--addr", dest="addr", default=None, help="Specify the address of the access for read and write commands")
+  parser.add_argument("--value", dest="value", default=None, help="Specify the value to be written for write command")
+  parser.add_argument("--mask", dest="mask", default="0xffffffff", help="Specify the mask used to select which bit is written")
+
+if 'read' in args.command:
+  parser.add_argument("--width", dest="width", default=1, type=int, help="Specify the word size in bytes used to display numbers for read commands")
+
+if 'write' in args.command:
+  parser.add_argument("--value", dest="value", default=None, help="Specify the value to be written for write command")
+
+if 'eeprom_write' in args.command or 'flash_write' in args.command or 'flash_read' in args.command:
+  parser.add_argument("--file", dest="file", default=None, help="The file to be written for eeprom_write command")
+  parser.add_argument("--addr", dest="addr", default=None, help="Specify the address of the access for read and write commands")
+  opt_flasher_init = True
+
+if 'flash_read' in args.command or 'flash_erase' in args.command:
+  parser.add_argument("--size", dest="size", default="4", help="Specify the size of the access for read and write commands")
+
+if 'flash_erase_sector' in args.command or 'flash_erase' in args.command:
+  parser.add_argument("--addr", dest="addr", default=None, help="Specify the address of the access for read and write commands")
+  opt_flasher_init = True
+
+if 'flash_erase_chip' in args.command:
+  opt_flasher_init = True
+
+if 'gdb' in args.command:
+  parser.add_argument("--rsp-port", dest="rsp_port", default=1234, help="Specify the port number that the RSP will use to open a socket for GDB connection")
+
+if opt_flasher_init:
+  parser.add_argument("--flasher-init", dest="flasher_init", action="store_true", default=True, help="Initialize flasher")
+  parser.add_argument("--no-flasher-init", dest="flasher_init", action="store_false", default=True, help="Initialize flasher")
+
+
+parser.add_argument("--boot-mode", dest="boot_mode", default=None, help="Specify the boot mode")
+
+args = parser.parse_args()
+
+if args.help:
+    parser.print_help()
+    exit(0)
+
+
+
+config_path = args.config_path
+config_name = args.config
+
+
+if config_name is not None:
+    config_path = os.path.join(
+        os.path.dirname(os.path.dirname(sys.argv[0])),
+        'configs', 'config', '%s.json' % config_name
+    )
+
+elif args.chip is not None:
+    config_path = os.path.join(
+        os.path.dirname(os.path.dirname(sys.argv[0])),
+        'configs', 'chips', args.chip, '%s.json' % args.chip
+    )
+
+    if not os.path.exists(config_path):
+        print ("ERROR, didn't find any configuration for specified chip (chip: %s, config: %s)" % (args.chip, config_path))
+        exit(-1)
+
+elif config_path is None:
+    raise Exception('A chip or a config file must be specified')
+
+config = plpconf.get_config(config_path, config_opts=args.configOpt, interpret=True)
+
+
+# And overloads it with the specified options
+if args.boot_mode is not None:
+    if config.get('**/debug_bridge') is None:
+        config.set('debug_bridge', {})
+
+    config.get('**/debug_bridge').set('boot-mode', args.boot_mode)
+
+cable = os.environ.get('PLPBRIDGE_CABLE')
+if cable is not None and args.cable is not None:
+  print ('Overwriting --cable option with PLPBRIDGE_CABLE: %s' % cable)
+  args.cable = cable
+
+if args.cable is not None:
+    if config.get('**/debug_bridge') is None:
+        config.set('debug_bridge', {})
+
+    config.get('**/debug_bridge').set('cable/type', args.cable)
+
+if args.port is not None:
+    if config.get('**/debug_bridge') is None:
+        config.set('debug_bridge', {})
+
+    if config.get('**/debug_bridge/cable') is None:
+        config.get('**/debug_bridge').set('cable', {})
+
+    if config.get('**/debug_bridge/cable/jtag-proxy') is None:
+        config.get('**/debug_bridge/cable').set('jtag-proxy', {})
+
+    config.get('**/debug_bridge/cable/jtag-proxy').set('port', args.port)
+
+for binary in args.binaries:
+    if config.get('**/runner') is None:
+        config.set('runner', {})
+
+    if config.get('**/runner/binaries') is None:
+        config.get('**/runner').set('binaries', [])
+
+    config.get('**/runner').set('binaries', binary)
+
+
+
+
+if len(args.command) == 0:
+    json_commands = config.get('**/debug_bridge/commands')
+    if json_commands is not None: 
+        args.command = json_commands.get().split()
+
+
+binaries = []
+binaries_conf = config.get('**/runner/binaries')
+if binaries_conf is not None:
+    binaries = binaries_conf.get_dict()
+
+bridge = db.get_bridge(config=config, verbose=args.verbose, binaries=binaries)
+
+if args.ipython:
+  embed()
+
+if args.shell:
+  code.interact(local=locals())
+
+#bridge.exec_config()
+
+
+
+
+
+def handle_commands(bridge):
+    if len(args.command) == 0:
+        parser.print_help()
+        exit(0)
+
+    else:
+        for cmd in args.command:
+
+            if commands.get(cmd) is None:
+                fatal_error('Unknown command: ' + cmd)
+                exit(1)
+            else:
+                try:
+                    if commands.get(cmd)[1](bridge) != 0:
+                        print ()
+                        fatal_error('the command \'%s\' has failed' % (cmd))
+                        exit(1)
+                except Exception as e:
+                    fatal_error('the command \'%s\' has failed with an exception: %s' % (cmd, e))
+                    if args.debug:
+                        raise
+                    exit(1)
+
+
+
+
+
+handle_commands(bridge)

@@ -1,0 +1,12 @@
+{
+  "@include@": "boards/gap8_reva_common.json",
+
+  "target": {
+      "@includes@": [ "boards/gapuino_spi.json" ]
+  },
+
+  "openocd": {
+      "cable": "interface/ftdi/gapuino_ftdi.cfg",
+      "script": "target/gap8.tcl"
+  }
+}
