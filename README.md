@@ -4,7 +4,7 @@ Previous version is available at: https://github.com/pulp-platform/pulp-sdk-lega
 
 ## Getting started
 
-These instructions were developed using a fresh Ubuntu 18.04 Bionic Beaver 64-Bit virtual machine from https://www.osboxes.org/ubuntu/#ubuntu-1804-info
+These instructions were developed using a fresh Ubuntu 18.04 Bionic Beaver 64-Bit.
 
 The following packages needed to be installed:
 
@@ -41,15 +41,18 @@ Then, go to a test, for example pmsis_tests/quick/cluster/fork/, and execute:
 make clean all run
 ~~~~~
 
-This will by default execute it on gvsoc, and you can configure the platform with this command:
+This will by default execute it on gvsoc, and you can configure the RTL platform with this command:
 
 ~~~~~shell
 make clean all run platform=rtl
 ~~~~~
 
+Notice that the environment variable `VSIM_PATH` should be set to the directory where the RTL platform has been built.
+This is typically done by sourcing the `setup/vsim.sh` file from the main folder of the RTL platform.
+
 ## Getting a single module
 
-You can also use this SDK to just get one module and his depencies, by doing:
+You can also use this SDK to just get one module and its dependencies, by doing:
 
 ~~~~~shell
 make <module name>.all
