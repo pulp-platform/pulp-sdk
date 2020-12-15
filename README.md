@@ -12,16 +12,33 @@ The following packages needed to be installed:
 sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3-pip libsdl2-dev curl cmake libusb-1.0-0-dev scons gtkwave libsndfile1-dev rsync autoconf automake texinfo libtool pkg-config libsdl2-ttf-dev
 ~~~~~
 
+This version requires PULP toolchain to compile the application exploiting pulp features. PULP toolchain is available at: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain
+
+You can choose also its precompiled version, exploring: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/tag/v1.0.16
+
+Please, refer to the corresponding README for the installation.
+
+Once PULP toolchain is correctly installed, define the path in which there is toolchain bin folder:
+
+~~~~~shell
+export GAP_RISCV_GCC_TOOLCHAIN=<INSTALL_DIR>
+~~~~~
+
 Source the file corresponding to the desired configuration:
 
 ~~~~~shell
+cd pulp-sdk
 source configs/pulp-open.sh
 ~~~~~
 
 At least gcc 4.9.1 is needed. If the default one is not correct, CC and CXX can be set to
-point to a correct one.
+point to a correct one. To check if gcc has the right version:
 
-GAP_RISCV_GCC_TOOLCHAIN must be defined to point to the riscv compiler.
+~~~~~shell
+gcc --version
+~~~~~
+
+Please, refer to official guide to update gcc if is needed.
 
 ## SDK build
 
@@ -49,19 +66,3 @@ make clean all run platform=rtl
 
 Notice that the environment variable `VSIM_PATH` should be set to the directory where the RTL platform has been built.
 This is typically done by sourcing the `setup/vsim.sh` file from the main folder of the RTL platform.
-
-## Getting a single module
-
-You can also use this SDK to just get one module and its dependencies, by doing:
-
-~~~~~shell
-make <module name>.all
-~~~~~
-
-For example, to get GVSOC, you can execute:
-
-~~~~~shell
-make gvsoc.all
-~~~~~
-
-Note that you still need to source a config before doing that.
