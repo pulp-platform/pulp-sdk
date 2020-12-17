@@ -1,6 +1,6 @@
 SHELL=bash
 
-ifndef GAP_SDK_HOME
+ifndef PULP_SDK_HOME
     $(error Please source the proper configuration first)
 endif
 
