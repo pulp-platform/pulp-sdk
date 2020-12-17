@@ -27,7 +27,7 @@ Please, refer to the corresponding README for the installation.
 Once PULP toolchain is correctly installed, define the path in which there is toolchain bin folder:
 
 ~~~~~shell
-export GAP_RISCV_GCC_TOOLCHAIN=<INSTALL_DIR>
+export PULP_RISCV_GCC_TOOLCHAIN=<INSTALL_DIR>
 ~~~~~
 
 Source the file corresponding to the desired configuration:
