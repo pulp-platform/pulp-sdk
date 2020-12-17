@@ -4,11 +4,11 @@
 if [  -n "${ZSH_VERSION:-}" ]; then 
 	DIR="$(readlink -f -- "${(%):-%x}")"
 	DIRNAME="$(dirname $DIR)"
-	GAP_SDK_HOME=$(dirname $DIRNAME)
-	export GAP_SDK_HOME
+	PULP_SDK_HOME=$(dirname $DIRNAME)
+	export PULP_SDK_HOME
 	#echo $(dirname "$(readlink -f ${(%):-%N})")
 else
-	export GAP_SDK_HOME="$(dirname $(dirname "$(readlink -f "${BASH_SOURCE[0]}")"))"
+	export PULP_SDK_HOME="$(dirname $(dirname "$(readlink -f "${BASH_SOURCE[0]}")"))"
 fi
 
 export TARGET_CHIP_FAMILY="PULP"
@@ -24,8 +24,8 @@ export PULPOS_TARGET=pulp
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp
 
-export PULPOS_MODULES="$GAP_SDK_HOME/rtos/pulpos/pulp $GAP_SDK_HOME/rtos/pmsis/pmsis_bsp"
+export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 
-export GVSOC_MODULES="$GAP_SDK_HOME/tools/gvsoc/common $GAP_SDK_HOME/tools/gvsoc/pulp/models"
+export GVSOC_MODULES="$PULP_SDK_HOME/tools/gvsoc/common $PULP_SDK_HOME/tools/gvsoc/pulp/models"
 
-source $GAP_SDK_HOME/configs/common.sh
+source $PULP_SDK_HOME/configs/common.sh
