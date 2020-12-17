@@ -12,6 +12,12 @@ The following packages needed to be installed:
 sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3-pip libsdl2-dev curl cmake libusb-1.0-0-dev scons gtkwave libsndfile1-dev rsync autoconf automake texinfo libtool pkg-config libsdl2-ttf-dev
 ~~~~~
 
+The SDK also requires the `argcomplete` Python package. You can install it for the local user with:
+~~~~~shell
+pip install --user argcomplete
+~~~~~
+Omit `--user` to install at system level instead, which will probably require admin rights.
+
 This version requires PULP toolchain to compile the application exploiting pulp features. PULP toolchain is available at: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain
 
 You can choose also its precompiled version, exploring: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/tag/v1.0.16
