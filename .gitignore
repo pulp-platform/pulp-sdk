@@ -1,6 +1,5 @@
-*~
 __pycache__
-/build
-log_build.txt
-/.sconsign.dblite
-
+BUILD/
+build/
+install/
+.sconsign.dblite

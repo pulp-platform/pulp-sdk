@@ -271,6 +271,7 @@ void iss_reset(iss_t *iss, int active)
   }
 
   iss_csr_init(iss, active);
+  iss_pulp_nn_init(iss);
 }
 
 int iss_open(iss_t *iss)
