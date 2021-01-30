@@ -608,6 +608,7 @@ int Hyper_periph_v3::unpack(int original_size)
   {
     case 4:
       trace.msg("Page bound is not considered\n");
+      return 0;
     break;
 
     default:
@@ -625,6 +626,7 @@ int Hyper_periph_v3::unpack(int original_size)
       }
     break;
   }
+  return 0;
 }
 
 void Hyper_periph_v3::transfer_splitter()
