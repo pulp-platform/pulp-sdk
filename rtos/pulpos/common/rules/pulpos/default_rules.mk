@@ -67,6 +67,14 @@ PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_RTL
 endif
 ifeq '$(platform)' 'fpga'
 PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_FPGA
+ifndef fpga
+fpga=zcu102
+endif
+ifndef io
+io=uart
+endif
+include $(FPGA_CONFIG_PATH)/$(fpga).mk
+PULP_CFLAGS += -DARCHI_FPGA_FREQUENCY=$(CONFIG_FREQUENCY)
 endif
 
 ifdef io

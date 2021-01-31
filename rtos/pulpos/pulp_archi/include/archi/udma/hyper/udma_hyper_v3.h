@@ -34,7 +34,7 @@
 /* Architectural configuration
 */
 #define HYPER_FIFO_DEPTH 8
-#define HYPER_NB_CHANNELS 4 /* 4 tran_id and 1 common space */
+#define HYPER_NB_CHANNELS 8 /* 8 tran_id and 1 common space */
 
 #define HYPER_CHANNELS_OFFSET 0x80
 #define HYPER_CHANNELS_ID_OFFSET(id) HYPER_CHANNELS_OFFSET*id

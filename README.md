@@ -48,7 +48,7 @@ Please, refer to official guide to update gcc if is needed.
 
 ## SDK build
 
-Compile the SDK with this command:
+If you want to run the code on gvsoc, compile the SDK with this command:
 
 ~~~~~shell
 make build
@@ -58,13 +58,19 @@ make build
 
 Some examples are availaible at https://github.com/GreenWaves-Technologies/pmsis_tests
 
+### Gvsoc
+
 Then, go to a test, for example pmsis_tests/quick/cluster/fork/, and execute:
 
 ~~~~~shell
 make clean all run
 ~~~~~
 
-This will by default execute it on gvsoc, and you can configure the RTL platform with this command:
+This will by default execute it on gvsoc.
+
+### RTL
+
+You can configure the RTL platform with this command:
 
 ~~~~~shell
 make clean all run platform=rtl
@@ -72,3 +78,13 @@ make clean all run platform=rtl
 
 Notice that the environment variable `VSIM_PATH` should be set to the directory where the RTL platform has been built.
 This is typically done by sourcing the `setup/vsim.sh` file from the main folder of the RTL platform.
+
+### FPGA
+
+If you want to execute it on FPGA, you can compile the test with this command:
+
+~~~~~shell
+make clean all run platform=fpga fpga=<TARGET_FPGA> io=uart
+~~~~~
+
+By default, the compilation for FPGA targets the ZCU102 Xilinx developer board, with Pulp at 10 MHz (both SoC and Cluster). In case you want to modify the target board, it is needed to add a <TARGET_FPGA>.mk file in the pulp-sdk/rules/fpga/ folder.

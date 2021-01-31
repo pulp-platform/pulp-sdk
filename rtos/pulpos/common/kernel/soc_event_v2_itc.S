@@ -68,8 +68,15 @@
 
 #else
 
+#ifdef CONFIG_NO_STD_RELOC
     lw   x12, %tiny(pos_soc_event_callback)(x11)
     lw   x11, %tiny(pos_soc_event_callback_arg)(x11)
+#else
+    la   t0, pos_soc_event_callback
+    p.lw x12, t0(x11)
+    la   t0, pos_soc_event_callback_arg
+    p.lw x11, t0(x11)
+#endif
     la   x9, pos_soc_event_handler_end_asm
     j    pos_irq_call_external_c_function
 
@@ -89,12 +96,22 @@ pos_soc_event_store_asm:
     # If the event is not handled, store it in the soc event status mask
     srli    x11, x10, 5
     slli    x11, x11, 2
+#ifdef CONFIG_NO_STD_RELOC
     lw      x12, %tiny(pos_soc_event_status)(x11)
+#else
+    la   t0, pos_soc_event_status
+    p.lw x12, t0(x11)
+#endif
     andi    x10, x10, 0x1f
 
     p.bsetr x12, x12, x10
 
+#ifdef CONFIG_NO_STD_RELOC
     sw      x12, %tiny(pos_soc_event_status)(x11)
+#else
+    la      t0, pos_soc_event_status
+    p.sw    x12, t0(x11)
+#endif
 
 
 

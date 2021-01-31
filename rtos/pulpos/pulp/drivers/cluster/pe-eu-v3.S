@@ -117,7 +117,11 @@ pos_master_loop_exec_task:
 
     add     sp, sp, t1
 
+#ifdef CONFIG_NO_STD_RELOC
     sw      t6, %tiny(pos_cluster_nb_active_pe)(x0)
+#else
+    sw      t6, pos_cluster_nb_active_pe, t3
+#endif
 
 pos_no_stack_check:
     // Whatever the number of cores, we need to setup the barrier as the master code is compiled to use it

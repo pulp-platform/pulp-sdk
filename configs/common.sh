@@ -33,7 +33,7 @@ export GVSOC_PATH=$INSTALL_DIR/python
 export GVSOC_INC_PATHS="$PULP_SDK_HOME/rtos/pulpos/gap_archi/include/archi/chips/$TARGET_NAME $PULP_SDK_HOME/rtos/pulpos/gap_archi/include $PULP_SDK_HOME/rtos/pulpos/pulp_archi/include"
 
 # FPGA
-#export PULP_
+export FPGA_CONFIG_PATH=$PULP_SDK_HOME/rules/fpga
 
 # PulpOS 2
 export PULPOS_HOME=$PULP_SDK_HOME/rtos/pulpos/common
