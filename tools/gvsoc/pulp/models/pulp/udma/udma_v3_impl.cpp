@@ -605,7 +605,7 @@ vp::io_req_status_e udma::periph_req(vp::io_req *req, uint64_t offset)
 
   int periph_id = UDMA_PERIPH_GET(offset);
 
-#if HAS_HYPER
+#if HAS_HYPER && (HYPER_VERSION == 3)
   if (periph_id >= nb_periphs + HYPER_NB_CHANNELS || periphs[periph_id] == NULL)
 #else
   if (periph_id >= nb_periphs || periphs[periph_id] == NULL)
@@ -778,10 +778,12 @@ int udma::build()
         {
           Hyper_periph_v3 *periph = new Hyper_periph_v3(this, id, j);
           periphs[id] = periph;
+#if HYPER_VERSION == 3
           for(int channel_count=1; channel_count<=HYPER_NB_CHANNELS; channel_count++)
           {
             periphs[id+channel_count] = periph;
           }
+#endif
         }
         else
         {

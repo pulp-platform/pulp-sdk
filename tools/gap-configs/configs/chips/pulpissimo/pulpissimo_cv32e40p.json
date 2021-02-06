@@ -1,0 +1,18 @@
+{
+  "@includes@": [ "chips/pulpissimo/pulpissimo.json" ],
+
+  "soc": {
+    "fc": {
+      "core"        : "cv32e40p"
+    }
+  },
+
+  "config": {
+
+    "install_name": "pulpissimo_cv32e40p",
+
+    "vsim": {
+      "tcl_args": ["-gCORE_TYPE=1"]
+    }
+  }
+}
