@@ -743,7 +743,7 @@ private:
 // };
 // //#endif
 
-
+#if HYPER_VERSION == 3
 class Hyper_periph_v3;
 
 class Hyper_transfer : public Udma_transfer
@@ -902,7 +902,7 @@ private:
   int mem_sel;
 
 };
-
+#endif
 
 /*
  * UDMA
