@@ -12,17 +12,17 @@ else
 fi
 
 export TARGET_CHIP_FAMILY="PULP"
-export TARGET_CHIP="PULPISSIMO"
-export TARGET_NAME="pulpissimo"
-export BOARD_NAME=pulpissimo
+export TARGET_CHIP="PULP"
+export TARGET_NAME="pulp"
+export BOARD_NAME=pulp
 export PULP_CURRENT_CONFIG=$BOARD_NAME@config_file=config/${BOARD_NAME}_cv32e40p.json
 
 export PULPOS_BOARD=pulp
 export PULPOS_BOARD_VERSION=pulp
 export PULPOS_BOARD_PROFILE=pulp
-export PULPOS_TARGET=pulp
+export PULPOS_TARGET=pulp_cv32e40p
 export PULPOS_SYSTEM=pulp
-export GAPY_TARGET=pulp
+export GAPY_TARGET=pulp_cv32e40p
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 

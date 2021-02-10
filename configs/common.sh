@@ -4,12 +4,7 @@ if [ -n "$PULP_RISCV_GCC_TOOLCHAIN_BASE" ]; then
     export PULP_RISCV_GCC_TOOLCHAIN=$PULP_RISCV_GCC_TOOLCHAIN_BASE/1.3
 fi
 
-if [[ $CORE_NAME = "cv32e40p" ]]
-then
-	export PATH="$COREV_RISCV_GCC_TOOLCHAIN/bin":"$PULP_SDK_HOME/tools/bin":$PATH
-else
-	export PATH="$PULP_RISCV_GCC_TOOLCHAIN/bin":"$PULP_SDK_HOME/tools/bin":$PATH
-fi
+export PATH="$PULP_RISCV_GCC_TOOLCHAIN/bin":"$PULP_SDK_HOME/tools/bin":$PATH
 
 # keep compatibility with gap_sdk
 export GAP_SDK_HOME=$PULP_SDK_HOME
