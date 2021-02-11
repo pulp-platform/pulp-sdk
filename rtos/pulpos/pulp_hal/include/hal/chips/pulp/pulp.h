@@ -29,6 +29,7 @@
 #include "hal/fll/fll_v1.h"
 #include "hal/gpio/gpio_v3.h"
 #include "hal/rom/rom_v2.h"
+#include "hal/ima/ima_v1.h"
 
 #include "hal/udma/udma_v3.h"
 #include "hal/udma/cpi/udma_cpi_v1.h"
