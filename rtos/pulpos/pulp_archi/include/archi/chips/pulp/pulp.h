@@ -33,6 +33,7 @@
 #include "archi/stdout/stdout_v3.h"
 #include "archi/eu/eu_v3.h"
 #include "archi/dma/mchan_v7.h"
+#include "archi/ima/ima_v1.h"
 
 #include "archi/udma/cpi/udma_cpi_v1.h"
 #include "archi/udma/i2c/udma_i2c_v2.h"
