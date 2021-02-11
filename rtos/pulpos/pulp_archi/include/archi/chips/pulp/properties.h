@@ -71,6 +71,7 @@
 #define RISCV_VERSION       4
 #define MCHAN_VERSION       7
 #define PADS_VERSION        2
+#define IMA_VERSION         1
 
 
 /*
