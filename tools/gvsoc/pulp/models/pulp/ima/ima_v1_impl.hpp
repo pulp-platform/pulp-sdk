@@ -76,6 +76,7 @@ public:
   int adc_low;
   int analog_latency;
 
+  int port;
   int latency;
 };
 

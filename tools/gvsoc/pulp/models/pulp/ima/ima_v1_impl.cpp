@@ -52,6 +52,7 @@ void ima_v1::clear_ima()
   this->eval_state = IMA_EVAL_STATE_IDLE;
 
   this->port_id = 0;
+  this->job->port = this->port_id;
 
   memset(this->buffer_in, 0, sizeof(int8_t)*xbar_y);
   memset(this->buffer_out, 0, sizeof(int8_t)*xbar_x);
@@ -738,7 +739,6 @@ void ima_v1::grant(void *__this, vp::io_req *req)
   _this->stalled = false;
 
   _this->check_requests();
-  printf("grant\n");
 }
 
 
@@ -771,7 +771,6 @@ void ima_v1::response(void *__this, vp::io_req *req)
   }
 
   _this->check_requests();
-  printf("response\n");
 }
 
 
@@ -883,6 +882,7 @@ int ima_v1::stream_update(int port, bool is_write)
         {
           this->trace.msg("Line %d is fetched\n", this->feat_count); 
 
+          this->port_id = 0;
           this->step_count = 0;
           this->feat_count++;
         }
@@ -930,6 +930,7 @@ int ima_v1::stream_update(int port, bool is_write)
         {
           this->trace.msg("Line %d is fetched\n", this->feat_count);
 
+          this->port_id = 0;
           this->step_count = 0;
           this->feat_count++;
           this->line_fetch_lfover = job->line_length & 0x3;
@@ -965,8 +966,10 @@ void ima_v1::stream_reqs(bool is_write)
 {
   ima_job_t *job = this->job;
 
+  this->trace.msg("New stream request (is_write: %d, port: %d)\n", is_write, job->port);
+
   /* Every master port fetch 32 bits from L1 contiguously each other */
-  int err = this->stream_update(this->port_id, is_write);
+  int err = this->stream_update(job->port, is_write);
 
   if (err)
   {
@@ -997,8 +1000,8 @@ void ima_v1::stream_reqs(bool is_write)
       /* Streamers fetch without considering leftovers. This block compute the amount of data to neglect, writing in DAC buffer just the right ones */
       if(this->line_fetch_lfover)
       {
-        int8_t temp[4];          
-        *(uint32_t *)(temp) = (*(uint32_t *)(this->reqs[this->port_id].get_data()));
+        int8_t temp[4];
+        *(uint32_t *)(temp) = (*(uint32_t *)(this->reqs[job->port].get_data()));
 
         for(int i=0; i<line_fetch_lfover; i++)
         {
@@ -1009,7 +1012,7 @@ void ima_v1::stream_reqs(bool is_write)
       }
       else
       {
-        *(uint32_t *)(this->buffer_in + job->start_y + this->enqueued_req) = *(uint32_t *)(this->reqs[this->port_id].get_data());
+        *(uint32_t *)(this->buffer_in + job->start_y + this->enqueued_req) = *(uint32_t *)(this->reqs[job->port].get_data());
       }
       this->remaining_in_req--;
       this->enqueued_req+=4;
@@ -1023,7 +1026,13 @@ void ima_v1::stream_reqs(bool is_write)
   }
   else
   {
+    if(this->port_id == 0)
+    {
+      job->latency++;
+    }
+
     this->port_id++;
+    job->port = this->port_id;
   }
 }
 
