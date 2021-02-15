@@ -1,6 +1,5 @@
-*~
 __pycache__
+BUILD/
 build/
 install/
-log_build.txt
-tools/gap-configs/.sconsign.dblite
+.sconsign.dblite
