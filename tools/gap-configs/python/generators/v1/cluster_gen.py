@@ -206,13 +206,16 @@ def get_config(tp, cluster_id):
       ]))
     )
 
+  if has_ima:
+    ima_conf = js.import_config_from_file("ips/ima/ima_v%d.json" % tp.get_child_int('cluster/peripherals/ima/version'), find=True)
+
   l1_interleaver_nb_masters = nb_pe + 4
   if has_hwce:
     l1_interleaver_nb_masters += 4
   if has_hwacc:
     l1_interleaver_nb_masters += 4
   if has_ima:
-    l1_interleaver_nb_masters += 16
+    l1_interleaver_nb_masters += ima_conf.get_int('nb_masters')
 
   cluster.l1_ico.interleaver = Component(properties=OrderedDict([
     ('@includes@', ["ips/interco/l1_interleaver.json"]),
@@ -484,7 +487,7 @@ def get_config(tp, cluster_id):
       cluster.l1_ico.set('hwacc_in_%d' % i, cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4 + i)))
 
   if has_ima:
-    for i in range(0, 16):
+    for i in range(0, ima_conf.get_int('nb_masters')):
       cluster.ima.set('out_%d' % i, cluster.l1_ico.new_itf('ima_in_%d' % i))
       cluster.l1_ico.set('ima_in_%d' % i, cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4 + i)))
 

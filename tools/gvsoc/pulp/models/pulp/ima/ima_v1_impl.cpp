@@ -132,6 +132,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
 
       if(_this->remaining_in_req == 0)
       {
+        /* Due to the streamer FIFOs */
         job->latency+=3;
         /* Count the number of memory fetches completed */
         _this->enqueued_req = 0;
@@ -157,6 +158,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
 
       if(_this->remaining_out_req == 0)
       {
+        /* Due to the streamer FIFOs */
         job->latency+=3;
         _this->enqueued_req = 0;
         _this->remaining_jobs--;
@@ -649,6 +651,7 @@ void ima_v1::exec_job()
 void ima_v1::exec_write_plot()
 {
   ima_pw_t *plot = pw_req;
+
   /* Crossbar values are 4-bit signed in range [-7, 7] */
   this->crossbar[plot->index_y][plot->index_x + 0] = (int8_t) (((((plot->pending_plot & 0x0000000F) >> 0)  & 0x8) == 0x8) ? (((plot->pending_plot & 0x0000000F) >> 0)  | 0xF0) : (((plot->pending_plot & 0x0000000F) >> 0)));
   this->crossbar[plot->index_y][plot->index_x + 1] = (int8_t) (((((plot->pending_plot & 0x000000F0) >> 4)  & 0x8) == 0x8) ? (((plot->pending_plot & 0x000000F0) >> 4)  | 0xF0) : (((plot->pending_plot & 0x000000F0) >> 4)));
@@ -716,10 +719,6 @@ void ima_v1::enqueue_read()
 
 void ima_v1::check_requests()
 {
-  // if(this->job->latency < 1)
-  // {
-  //   this->job->latency = 1;
-  // }
   // We can continue to send requests if we are not stalled, we didn't send all
   // requests and there are less than 2 pending requests.
   if (!this->stalled && this->pending_req < 2)
@@ -798,7 +797,6 @@ void ima_v1::job_update()
     
     job->src_addr = this->regs[IMA_J_SRC_ADDR/4];
   }
-
 
   /* Output tensor */
   if(this->beta_out_count < job->beta_out_length)
@@ -882,7 +880,7 @@ int ima_v1::stream_update(int port, bool is_write)
         {
           this->trace.msg("Line %d is fetched\n", this->feat_count); 
 
-          this->port_id = 0;
+          this->port_id = -1;
           this->step_count = 0;
           this->feat_count++;
         }
@@ -930,7 +928,8 @@ int ima_v1::stream_update(int port, bool is_write)
         {
           this->trace.msg("Line %d is fetched\n", this->feat_count);
 
-          this->port_id = 0;
+          /* After every line, reset the ports counter */
+          this->port_id = -1;
           this->step_count = 0;
           this->feat_count++;
           this->line_fetch_lfover = job->line_length & 0x3;
@@ -1018,22 +1017,25 @@ void ima_v1::stream_reqs(bool is_write)
       this->enqueued_req+=4;
     }
   }
-
+  /* Ports requests are sent in parallel. Add latency if port -1 is fetching/storing from/to L1 */
   if(this->port_id == ((nb_master_ports >> 1) - 1))
   {
+    /* Reset ports counter */
     this->port_id = 0;
     job->latency++;
   }
   else
   {
-    if(this->port_id == 0)
+    if(this->port_id == -1)
     {
       job->latency++;
     }
 
     this->port_id++;
-    job->port = this->port_id;
+    //job->port = this->port_id;
   }
+
+  job->port = this->port_id;
 }
 
 
