@@ -1898,7 +1898,7 @@ corev_insns = [
     R5('cv.insertr',      'I5U2', '1000000 ----- ----- 010 ----- 0110011'),
     R5('cv.bclrr',        'R',    '1000000 ----- ----- 011 ----- 0110011'),
     R5('cv.bsetr',        'R',    '1000000 ----- ----- 100 ----- 0110011'),
-    R5('cv.bitrev',       'BITREV',   '11000-- ----- ----- 101 ----- 0110011', mapTo="gap9_BITREV"),#preso da gap9
+    R5('cv.bitrev',       'BITREV',   '11000-- ----- ----- 101 ----- 0110011', mapTo="cv_bitrev"),#preso da gap9
 
     R5('cv.ror', 'R',  '0000100 ----- ----- 101 ----- 0110011'),
     R5('cv.ff1', 'R1',  '0001000 00000 ----- 000 ----- 0110011'),
@@ -2379,7 +2379,7 @@ isa = Isa(
         IsaDecodeTree('m', [rv32m]),
         IsaDecodeTree('c', [rv32c]),
         IsaDecodeTree('priv', [priv]),
-        IsaDecodeTree('corev', [pulp_v2]),
+        IsaDecodeTree('corev', [corev]),
         IsaDecodeTree('pulp_v2', [pulp_v2]),
         IsaDecodeTree('pulp_nn', [pulp_nn]),
         IsaDecodeTree('rnnext', [pulp_v2_rnnext]),

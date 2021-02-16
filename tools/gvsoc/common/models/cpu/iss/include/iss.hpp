@@ -34,6 +34,7 @@
 #include "rv32Xfaux.hpp"
 #include "priv.hpp"
 #include "pulp_v2.hpp"
+#include "cv32e40p.hpp"
 #include "rvXgap8.hpp"
 #include "rvXgap9.hpp"
 #include "rvXint64.hpp"
