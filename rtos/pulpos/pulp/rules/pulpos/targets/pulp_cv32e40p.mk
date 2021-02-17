@@ -9,10 +9,10 @@ PULP_CFLAGS    += -fdata-sections -ffunction-sections -include pos/chips/pulp/co
 PULP_OMP_CFLAGS    += -fopenmp -mnativeomp
 PULP_LDFLAGS += -nostartfiles -nostdlib -Wl,--gc-sections -L$(PULPOS_PULP_HOME)/kernel -Tchips/pulp/link.ld -lgcc
 
-PULP_CC = riscv32-unknown-elf-gcc 
-PULP_AR ?= riscv32-unknown-elf-ar
-PULP_LD ?= riscv32-unknown-elf-gcc
-PULP_OBJDUMP ?= riscv32-unknown-elf-objdump
+PULP_CC = riscv32-corev-elf-gcc
+PULP_AR ?= riscv32-corev-elf-ar
+PULP_LD ?= riscv32-corev-elf-gcc
+PULP_OBJDUMP ?= riscv32-corev-elf-objdump
 
 fc/archi=riscv
 pe/archi=riscv
