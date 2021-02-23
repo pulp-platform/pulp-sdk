@@ -202,6 +202,8 @@ private:
   int remaining_out_req;
   bool stalled;
 
+  int extra_latency_in;
+
   int step_count;
   int feat_count;
   int roll_count;

@@ -68,6 +68,8 @@ void ima_v1::clear_ima()
   this->remaining_out_req = 0;
   this->stalled = false;
 
+  this->extra_latency_in = 0;
+
   this->step_count = 0;
   this->feat_count = 0;
   this->roll_count = 0;
@@ -81,9 +83,9 @@ void ima_v1::clear_ima()
   this->line_store_lfover = 0;
 
   /* Event cycles depend on analog time to perform the specific task and on the cluster frequency */ 
-  this->job->analog_latency    = ((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) != 0 ? ((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) : 1;
-  this->pw_req->latency        = ((this->get_frequency() * IMA_WRITE_TIME) / 1000000000) != 0 ? ((this->get_frequency() * IMA_WRITE_TIME) / 1000000000) : 1;
-  this->pr_req->latency        = ((this->get_frequency() * IMA_READ_TIME) / 1000000000) != 0 ? ((this->get_frequency() * IMA_READ_TIME) / 1000000000) : 1;  
+  this->job->analog_latency    = (((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) + 1);
+  this->pw_req->latency        = (((this->get_frequency() * IMA_WRITE_TIME) / 1000000000) + 1);
+  this->pr_req->latency        = (((this->get_frequency() * IMA_READ_TIME) / 1000000000) + 1);
 }
 
 /* Stream-in - Compute - Stream-out */
@@ -109,6 +111,19 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
 
       _this->remaining_in_req = job->height >> 2;
       _this->remaining_out_req = job->width >> 2;
+
+      /* Minimum delay between stream-out and new stream-in request is 5.
+      It is mitigated by 2 cycles of FIFOs, 2 cycle of idle state and then other 1 cycle from stream-out
+      itself, if it is larger than 1. Otherwise it has to be considered in the latency of the next stream-in */
+      if((_this->remaining_out_req / (_this->nb_master_ports >> 1)) <= 1)
+      {
+        _this->extra_latency_in = 1;
+      }
+      else
+      {
+        _this->extra_latency_in = 0;  
+      }
+
       _this->eval_state = IMA_EVAL_STATE_STREAM_IN;
 
       if(_this->remaining_jobs == 0)
@@ -122,6 +137,8 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
           _this->job_update();
         }
       }
+      /* Two cycles per idle */
+      job->latency=2;
 
       break;
     }
@@ -133,7 +150,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
       if(_this->remaining_in_req == 0)
       {
         /* Due to the streamer FIFOs */
-        job->latency+=3;
+        job->latency+=(2 + _this->extra_latency_in);
         /* Count the number of memory fetches completed */
         _this->enqueued_req = 0;
         _this->eval_state = IMA_EVAL_STATE_COMPUTATION;
@@ -159,7 +176,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
       if(_this->remaining_out_req == 0)
       {
         /* Due to the streamer FIFOs */
-        job->latency+=3;
+        job->latency+=2;
         _this->enqueued_req = 0;
         _this->remaining_jobs--;
         _this->update_finished_jobs(-1);
@@ -510,9 +527,16 @@ vp::io_req_status_e ima_v1::req(void *__this, vp::io_req *req)
   }
 
   if (!req->get_is_write())
+  {
     *(uint32_t *)(req->get_data()) = _this->regs[reg_id];
-  else 
+  }
+  else
+  {
     _this->regs[reg_id] = *(uint32_t *)(req->get_data());
+  }
+
+  /* Reading/writing a register from peripherals interconnect requires 4 cycles */
+  req->inc_latency(1);
 
   switch (reg_id)
   {
@@ -992,6 +1016,12 @@ void ima_v1::stream_reqs(bool is_write)
     if(is_write)
     {
       this->remaining_out_req--;
+      /* Reset the port id at the stream-out ending */
+      if(this->remaining_out_req == 0)
+      {
+        this->port_id = -1;
+      }
+
       this->enqueued_req+=4;
     }
     else
@@ -1032,7 +1062,6 @@ void ima_v1::stream_reqs(bool is_write)
     }
 
     this->port_id++;
-    //job->port = this->port_id;
   }
 
   job->port = this->port_id;

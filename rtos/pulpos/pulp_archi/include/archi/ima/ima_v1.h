@@ -122,7 +122,7 @@
 #define IMA_PR_VAL              0xa8
 
 /* time in ns */
-#define IMA_EVAL_TIME       1
+#define IMA_EVAL_TIME       69
 #define IMA_WRITE_TIME      1000
 #define IMA_READ_TIME       10
 
