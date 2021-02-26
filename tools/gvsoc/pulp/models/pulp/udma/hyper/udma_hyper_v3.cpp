@@ -458,7 +458,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
   }
   else if (offset == HYPER_CA_SETUP(0))
   {
-    trace.msg("Accessing CA setup register (value: 0x%x, cfg_setup: %d, id: %d)\n", *(uint32_t *)(req->get_data()), id);  
+    trace.msg("Accessing CA setup register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);  
     command_word[id] = true;
   }
   else if (offset == REG_HYPER_CFG(0))
