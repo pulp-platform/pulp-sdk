@@ -78,7 +78,7 @@ This is typically done by sourcing the `setup/vsim.sh` file from the main folder
 To run pre-generated real-world networks, such as MobileNetV1:
 
 ~~~~~shell
-cd application/MobileNetV1
+cd applications/MobileNetV1
 make clean all run platform=<PLATFORM> CORE=<NUM_CORES>
 ~~~~~
 
