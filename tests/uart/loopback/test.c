@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2017 ETH Zurich, University of Bologna and GreenWaves Technologies
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD license.  See the LICENSE file for details.
+ *
+ * Authors: Germain Haugou, ETH (germain.haugou@iis.ee.ethz.ch)
+ */
+
 #include <pmsis.h>
 
 #define BUFFER_SIZE 256
