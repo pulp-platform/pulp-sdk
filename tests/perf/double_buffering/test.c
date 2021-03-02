@@ -104,16 +104,18 @@ int main()
 #ifndef DOUBLE_BUFFERING
     for(int i=0; i<N;i++){
         task_VectProdScalar(A[i], B, tempC, N );
-        pi_ram_write(&ram, hyper_buff+i*N*sizeof(int), tempC, (uint32_t) N);
+        pi_ram_write(&ram, hyper_buff+i*N*sizeof(int), tempC, (uint32_t) N* sizeof(int));
     }
 #else
     int i=1;
+    int buffer_id;
     task_VectProdScalar(A[0], B, tempC, N );
     for(i; i<N;i++){
-        pi_ram_write_async(&ram, hyper_buff+i*N*sizeof(int), tempC, (uint32_t) N, pi_task_callback(&ram_write_tasks[i-1], end_of_tx, NULL));
-        task_VectProdScalar(A[i], B, tempC, N );
+	buffer_id = i & 0x1;
+        pi_ram_write_async(&ram, hyper_buff+i*N*sizeof(int), &tempC[N*(1-buffer_id)], (uint32_t) N * sizeof(int), pi_task_callback(&ram_write_tasks[i-1], end_of_tx, NULL));
+        task_VectProdScalar(A[i], B, &tempC[N*buffer_id], N );
     }
-    pi_ram_write_async(&ram, hyper_buff+(N-1)*N*sizeof(int), tempC, (uint32_t) N, pi_task_callback(&ram_write_tasks[i-1], end_of_tx, NULL));    // last transfer
+    pi_ram_write_async(&ram, hyper_buff+(N-1)*N*sizeof(int), &tempC[N*buffer_id], (uint32_t) N* sizeof(int), pi_task_callback(&ram_write_tasks[i-1], end_of_tx, NULL));    // last transfer
 
     while(count != i) {
         pi_yield();
