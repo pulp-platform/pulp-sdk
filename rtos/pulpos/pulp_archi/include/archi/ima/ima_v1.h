@@ -69,24 +69,24 @@
 // #define IMA_CB_LENGTH_Y		1000
 
 
-#define IMA_TRIGGER          	0x00
-#define IMA_ACQUIRE          	0x04
-#define IMA_FINISHED_JOBS    	0x08
-#define IMA_STATUS           	0x0c
-#define IMA_RUNNING_TASK     	0x10
-#define IMA_SOFT_CLEAR       	0x14
-#define IMA_CHECK_STATE      	0x18
+#define IMA_TRIGGER             0x00
+#define IMA_ACQUIRE             0x04
+#define IMA_FINISHED_JOBS       0x08
+#define IMA_STATUS              0x0c
+#define IMA_RUNNING_TASK        0x10
+#define IMA_SOFT_CLEAR          0x14
+#define IMA_CHECK_STATE         0x18
 
 
 #define IMA_P_START_X           0x20
 #define IMA_P_START_Y           0x24
 #define IMA_P_WIDTH             0x28
-#define IMA_P_HIGHT            	0x2c
+#define IMA_P_HIGHT             0x2c
 #define IMA_SUBMIT_PLOT         0x30
 #define IMA_J_START_X           0x34
 #define IMA_J_START_Y           0x38
 #define IMA_J_WIDTH             0x3c
-#define IMA_J_HIGHT            	0x40
+#define IMA_J_HIGHT             0x40
 #define IMA_J_SRC_ADDR          0x44
 #define IMA_J_DST_ADDR          0x48
 #define IMA_J_SRC_STRID         0x4c
@@ -122,12 +122,12 @@
 #define IMA_PR_VAL              0xa8
 
 /* time in ns */
-#define IMA_EVAL_TIME       69
-#define IMA_WRITE_TIME      1000
-#define IMA_READ_TIME       10
+#define IMA_EVAL_TIME           69
+#define IMA_WRITE_TIME          1000
+#define IMA_READ_TIME           10
 
-#define STOR_DWIDTH 		4
-#define DAC_PRECISION 		8
-#define ADC_PRECISION 		8
+#define STOR_DWIDTH             4
+#define DAC_PRECISION           8
+#define ADC_PRECISION           8
 
 #endif
