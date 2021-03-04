@@ -115,9 +115,9 @@ static inline unsigned int pos_irq_get_fc_vector_base()
 #if defined(__RISCV_GENERIC__)
         return hal_spr_read(0x305) & ~1;
 #elif defined(ARCHI_CORE_HAS_SECURITY) && !defined(ARCHI_CORE_HAS_1_10)
-        return __builtin_pulp_spr_read(SR_MTVEC);
+        return __SPRREAD(SR_MTVEC);
 #elif defined(ARCHI_CORE_HAS_1_10)
-        return __builtin_pulp_spr_read(SR_MTVEC) & ~1;
+        return __SPRREAD(SR_MTVEC) & ~1;
 #elif defined(APB_SOC_VERSION) && APB_SOC_VERSION >= 2
         return apb_soc_ctrl_fc_boot_get(ARCHI_APB_SOC_CTRL_ADDR);
 #endif
@@ -143,9 +143,9 @@ static inline void pos_irq_set_fc_vector_base(unsigned int base)
 #if defined(__RISCV_GENERIC__)
         hal_spr_write(0x305, base);
 #elif defined(ARCHI_CORE_HAS_SECURITY) && !defined(ARCHI_CORE_HAS_1_10)
-        __builtin_pulp_spr_write(SR_MTVEC, base);
+        __SPRWRITE(SR_MTVEC, base);
 #elif defined(ARCHI_CORE_HAS_1_10)
-        __builtin_pulp_spr_write(SR_MTVEC, base | 1);
+        __SPRWRITE(SR_MTVEC, base | 1);
 #elif defined(APB_SOC_VERSION) && APB_SOC_VERSION >= 2
         apb_soc_ctrl_fc_boot_set(ARCHI_APB_SOC_CTRL_ADDR, base);
 #endif

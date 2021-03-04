@@ -72,21 +72,29 @@ static inline uint32_t pulp_read(uint32_t add)
 #endif
 
 #if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
+#if !defined(PLP_NO_BUILTIN)
 #define IP_WRITE_VOL(base, offset, value) __builtin_pulp_write_base_off_v((value), (base), (offset))
-#define IP_WRITE(base, offset, value) __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset))
+#else
+#define IP_WRITE_VOL(base, offset, value) pulp_write32((base) + (offset), (value))
+#endif
+#define IP_WRITE(base, offset, value) __WRITE_BASE_OFF_VOL((value), (int *)(base), (offset))
 #if !defined(CONFIG_PULP)
 #define IP_WRITE_PTR(base, offset, value) __builtin_pulp_OffsetedWritePtr((int *)(value), (int *)(base), (offset))
 #else
 #define IP_WRITE_PTR(base, offset, value) do{asm volatile("":::"memory"); \
-                                            __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset)); \
+                                            __WRITE_BASE_OFF_VOL((value), (int *)(base), (offset)); \
                                             asm volatile("":::"memory"); \
                                             }while(0)
 #endif
-#define IP_READ(base, offset) __builtin_pulp_OffsetedRead((int *)(base), (offset))
+#define IP_READ(base, offset) __READ_BASE_OFF_VOL((int *)(base), (offset))
 #else
 #define IP_WRITE_VOL(base, offset, value) pulp_write32((base) + (offset), (value))
 #define IP_WRITE(base, offset, value) pulp_write32((base) + (offset), (value))
 #define IP_READ(base, offset) pulp_read32((base) + (offset))
+#define IP_WRITE_PTR(base, offset, value) do{asm volatile("":::"memory"); \
+                                            __WRITE_BASE_OFF_VOL((value), (int *)(base), (offset)); \
+                                            asm volatile("":::"memory"); \
+                                            }while(0)
 #endif
 
 #endif

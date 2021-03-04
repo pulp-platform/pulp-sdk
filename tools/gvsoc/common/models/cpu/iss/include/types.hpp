@@ -430,6 +430,15 @@ typedef struct iss_pulpv2_s
 } iss_pulpv2_t;
 
 
+#define COREV_HWLOOP_NB_REGS 7
+
+typedef struct iss_corev_s
+{
+  bool hwloop;
+  iss_reg_t hwloop_regs[COREV_HWLOOP_NB_REGS];
+} iss_corev_t;
+
+
 typedef struct iss_rnnext_s
 {
   iss_insn_t *sdot_insn;
@@ -451,6 +460,7 @@ typedef struct iss_cpu_s {
   iss_irq_t irq;
   iss_csr_t csr;
   iss_pulpv2_t pulpv2;
+  iss_pulpv2_t corev;
   iss_rnnext_t rnnext;
 } iss_cpu_t;
 

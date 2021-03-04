@@ -51,15 +51,18 @@
 
 
 #if defined(__riscv__) && !defined(__LLVM__) && !defined(RV_ISA_RV32)
+#if !defined(PLP_NO_BUILTIN)
 #define ARCHI_WRITE_VOL(base, offset, value) __builtin_pulp_write_base_off_v((value), (base), (offset))
-#define ARCHI_WRITE(base, offset, value)     __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset))
-#define ARCHI_READ(base, offset)             __builtin_pulp_OffsetedRead((int *)(base), (offset))
+#else
+#define ARCHI_WRITE_VOL(base, offset, value) archi_write32((base) + (offset), (value))
+#endif
+#define ARCHI_WRITE(base, offset, value)     __WRITE_BASE_OFF_VOL((value), (int *)(base), (offset))
+#define ARCHI_READ(base, offset)             __READ_BASE_OFF_VOL((int *)(base), (offset))
 #else
 #define ARCHI_WRITE_VOL(base, offset, value) archi_write32((base) + (offset), (value))
 #define ARCHI_WRITE(base, offset, value)     archi_write32((base) + (offset), (value))
 #define ARCHI_READ(base, offset)             archi_read32((base) + (offset))
 #endif
-
 
 #include "archi/riscv/builtins_v2.h"
 #include "archi/riscv/builtins_v2_emu.h"

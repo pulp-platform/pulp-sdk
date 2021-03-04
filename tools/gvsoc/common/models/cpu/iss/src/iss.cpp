@@ -91,6 +91,10 @@ static int iss_parse_isa(iss_t *iss)
           {
             iss_isa_pulpv2_activate(iss);
           }
+          if (strcmp(token, "corev") == 0)
+          {
+            iss_isa_corev_activate(iss);
+          }
           else if (strcmp(token, "gap8") == 0)
           {
             iss_isa_pulpv2_activate(iss);
@@ -276,6 +280,7 @@ void iss_reset(iss_t *iss, int active)
 int iss_open(iss_t *iss)
 {
   iss_isa_pulpv2_init(iss);
+  iss_isa_corev_init(iss);
 
   if (iss_parse_isa(iss)) return -1;
 

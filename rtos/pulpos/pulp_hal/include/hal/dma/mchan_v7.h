@@ -259,8 +259,8 @@ static inline unsigned int plp_dma_status();
 /// @cond IMPLEM
 
 #if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
-#define DMA_WRITE(value, offset) __builtin_pulp_OffsetedWrite((value), (int *)ARCHI_MCHAN_EXT_ADDR, (offset))
-#define DMA_READ(offset) __builtin_pulp_OffsetedRead((int *)ARCHI_MCHAN_EXT_ADDR, (offset))
+#define DMA_WRITE(value, offset) __WRITE_BASE_OFF_VOL((value), (int *)ARCHI_MCHAN_EXT_ADDR, (offset))
+#define DMA_READ(offset) __READ_BASE_OFF_VOL((int *)ARCHI_MCHAN_EXT_ADDR, (offset))
 #else
 #define DMA_WRITE(value, offset) pulp_write32(ARCHI_MCHAN_EXT_ADDR + (offset), (value))
 #define DMA_READ(offset) pulp_read32(ARCHI_MCHAN_EXT_ADDR + (offset))

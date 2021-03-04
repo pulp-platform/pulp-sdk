@@ -23,6 +23,18 @@
 #ifndef __CPU_ISS_COREV_HPP
 #define __CPU_ISS_COREV_HPP
 
+#define COREV_HWLOOP_LPSTART0 0
+#define COREV_HWLOOP_LPEND0   1
+#define COREV_HWLOOP_LPCOUNT0 2
+
+#define COREV_HWLOOP_LPSTART1 3
+#define COREV_HWLOOP_LPEND1   4
+#define COREV_HWLOOP_LPCOUNT1 5
+
+#define COREV_HWLOOP_LPSTART(x) (COREV_HWLOOP_LPSTART0 + (x)*3)
+#define COREV_HWLOOP_LPEND(x) (COREV_HWLOOP_LPEND0 + (x)*3)
+#define COREV_HWLOOP_LPCOUNT(x) (COREV_HWLOOP_LPCOUNT0 + (x)*3)
+
 // static inline iss_insn_t *LB_RR_exec_fast(iss_t *iss, iss_insn_t *insn)
 // {
 //   iss_lsu_load_signed(iss, insn, REG_GET(0) + REG_GET(1), 1, REG_OUT(0));
@@ -385,6 +397,71 @@
 // }
 
 
+static inline iss_insn_t *corev_hwloop_check_exec(iss_t *iss, iss_insn_t *insn)
+{
+  iss_reg_t pc = insn->addr;
+
+  // First execute the instructions as it is the last one of the loop body.
+  // The real handler has been saved when the loop was started.
+  iss_insn_t *insn_next = iss_exec_insn_handler(iss, insn, insn->hwloop_handler);
+
+  // First check HW loop 0 as it has higher priority compared to HW loop 1
+  if (iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT0] && iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPEND0] == pc)
+  {
+    iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT0]--;
+    iss_decoder_msg(iss, "Reached end of HW loop (index: 0, loop count: %d)\n", iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT0]);
+
+    // If counter is not zero, we must jump back to beginning of the loop.
+    if (iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT0]) return iss->cpu.state.hwloop_start_insn[0];
+  }
+
+  // We get here either if HW loop 0 was not active or if the counter reached 0.
+  // In both cases, HW loop 1 can jump back to the beginning of the loop.
+  if (iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT1] && iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPEND1] == pc)
+  {
+    iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT1]--;
+    // If counter is not zero, we must jump back to beginning of the loop.
+    iss_decoder_msg(iss, "Reached end of HW loop (index: 1, loop count: %d)\n", iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT1]);
+    if (iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT1]) return iss->cpu.state.hwloop_start_insn[1];
+  }
+
+  // In case no HW loop jumped back, just continue with the next instruction.
+  return insn_next;
+}
+
+static inline void corev_hwloop_set_start(iss_t *iss, iss_insn_t *insn, int index, iss_reg_t start)
+{
+  iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPSTART(index)] = start;
+  iss->cpu.state.hwloop_start_insn[index] = insn_cache_get(iss, start);  
+}
+
+static inline void corev_hwloop_set_end(iss_t *iss, iss_insn_t *insn, int index, iss_reg_t end)
+{
+  iss_insn_t *end_insn = insn_cache_get_decoded(iss, end);
+
+  if (end_insn->hwloop_handler == NULL)
+  {
+    end_insn->hwloop_handler = end_insn->handler;
+    end_insn->handler = hwloop_check_exec;
+    end_insn->fast_handler = hwloop_check_exec;
+  }
+
+  iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPEND(index)] = end;
+}
+
+static inline void corev_hwloop_set_count(iss_t *iss, iss_insn_t *insn, int index, iss_reg_t count)
+{
+  iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT(index)] = count;
+}
+
+static inline void corev_hwloop_set_all(iss_t *iss, iss_insn_t *insn, int index, iss_reg_t start, iss_reg_t end, iss_reg_t count)
+{
+  corev_hwloop_set_end(iss, insn, index, end);
+  corev_hwloop_set_start(iss, insn, index, start);
+  corev_hwloop_set_count(iss, insn, index, count);
+}
+
+
 
 static inline iss_insn_t *cv_avgu_exec(iss_t *iss, iss_insn_t *insn)
 {
@@ -525,7 +602,7 @@ static inline iss_insn_t *cv_extbz_exec(iss_t *iss, iss_insn_t *insn)
 
 static inline iss_insn_t *cv_starti_exec(iss_t *iss, iss_insn_t *insn)
 {
-  hwloop_set_start(iss, insn, UIM_GET(0), insn->addr + (UIM_GET(1) << 1));
+  corev_hwloop_set_start(iss, insn, UIM_GET(0), insn->addr + (UIM_GET(1) << 1));
   return insn->next;
 }
 
@@ -533,7 +610,7 @@ static inline iss_insn_t *cv_starti_exec(iss_t *iss, iss_insn_t *insn)
 
 static inline iss_insn_t *cv_endi_exec(iss_t *iss, iss_insn_t *insn)
 {
-  hwloop_set_end(iss, insn, UIM_GET(0), insn->addr + (UIM_GET(1) << 1));
+  corev_hwloop_set_end(iss, insn, UIM_GET(0), insn->addr + (UIM_GET(1) << 1));
   return insn->next;
 }
 
@@ -541,7 +618,7 @@ static inline iss_insn_t *cv_endi_exec(iss_t *iss, iss_insn_t *insn)
 
 static inline iss_insn_t *cv_count_exec(iss_t *iss, iss_insn_t *insn)
 {
-  hwloop_set_count(iss, insn, UIM_GET(0), REG_GET(0));
+  corev_hwloop_set_count(iss, insn, UIM_GET(0), REG_GET(0));
   return insn->next;
 }
 
@@ -549,7 +626,7 @@ static inline iss_insn_t *cv_count_exec(iss_t *iss, iss_insn_t *insn)
 
 static inline iss_insn_t *cv_counti_exec(iss_t *iss, iss_insn_t *insn)
 {
-  hwloop_set_count(iss, insn, UIM_GET(0), UIM_GET(1));
+  corev_hwloop_set_count(iss, insn, UIM_GET(0), UIM_GET(1));
   return insn->next;
 }
 
@@ -562,7 +639,7 @@ static inline iss_insn_t *cv_setup_exec(iss_t *iss, iss_insn_t *insn)
   iss_reg_t start = insn->addr + insn->size;
   iss_reg_t end = insn->addr + (UIM_GET(1) << 1);
 
-  hwloop_set_all(iss, insn, index, start, end, count);
+  corev_hwloop_set_all(iss, insn, index, start, end, count);
 
   return insn->next;
 }
@@ -575,7 +652,7 @@ static inline iss_insn_t *cv_setupi_exec(iss_t *iss, iss_insn_t *insn)
   iss_reg_t start = insn->addr + insn->size;
   iss_reg_t end = insn->addr + (UIM_GET(2) << 1);
 
-  hwloop_set_all(iss, insn, index, start, end, count);
+  corev_hwloop_set_all(iss, insn, index, start, end, count);
 
   return insn->next;
 }
@@ -1633,6 +1710,20 @@ static inline iss_insn_t *cv_bitrev_exec(iss_t *iss, iss_insn_t *insn)
 {
   REG_SET(0, LIB_CALL3(lib_BITREV, REG_GET(0), UIM_GET(0), UIM_GET(1)+1));
   return insn->next;
+}
+
+
+static inline void iss_isa_corev_init(iss_t *iss)
+{
+  iss->cpu.corev.hwloop = false;
+}
+
+static inline void iss_isa_corev_activate(iss_t *iss)
+{
+  iss->cpu.corev.hwloop = true;
+  iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT(0)] = 0;
+  iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPCOUNT(1)] = 0;
+
 }
 
 #endif
