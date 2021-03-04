@@ -116,7 +116,10 @@ pos_soc_event_store_asm:
 #endif
     andi    x10, x10, 0x1f
 #ifdef ARCHI_HAS_COREV
-    cv.bsetr x12, x12, x10
+    li     x11, 1
+    sll    x11, x11, x10
+    or     x12, x12, x11
+    #cv.bsetr x12, x12, x10    #rD = rs1 | (((1 << (rs2[9:5]+1)) – 1) << rs2[4:0])
 #else
     p.bsetr x12, x12, x10
 #endif /*ARCHI_HAS_COREV*/

@@ -143,7 +143,8 @@ pos_master_no_slave_barrier:
     // Set stack on slaves
     // For that we push first the function for setting stack, then the stack size and the base
 #ifdef ARCHI_HAS_COREV
-    cv.beqimm t5, 0, pos_master_loop_no_slave
+    //cv.beqimm t5, 0, pos_master_loop_no_slave
+    beqz    t5, pos_master_loop_no_slave
 #else
     p.beqimm t5, 0, pos_master_loop_no_slave
 #endif
@@ -160,7 +161,9 @@ pos_master_loop_no_slave:
 pos_master_sleep:
     sw      s4, EU_CORE_MASK_OR(s3)
 #ifdef ARCHI_HAS_COREV
-    cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+    //cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+    lw         x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+    beqz       x0, hal_itc_wait_for_interrupt
 #else
     p.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
 #endif
@@ -172,7 +175,9 @@ pos_master_sleep:
 pos_push_event_to_fc_wait:
     sw      s4, EU_CORE_MASK_OR(s3)
 #ifdef ARCHI_HAS_COREV
-    cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+    //cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+    lw         x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+    beqz       x0, hal_itc_wait_for_interrupt
 #else
     p.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
 #endif
@@ -223,13 +228,17 @@ pos_fork_return:
     // When the cluster has a controller barrier 0 is used for normal team barrier
     // and barrier 1 is used for end of offload
 #ifdef ARCHI_HAS_COREV
-    cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
+    //cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
+    lw         t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
+    beqz       t0, hal_itc_wait_for_interrupt
 #else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
 #endif /*ARCHI_HAS_COREV*/
 #else
 #ifdef ARCHI_HAS_COREV
-    cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
+    //cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
+    lw         t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
+    beqz       t0, hal_itc_wait_for_interrupt
 #else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
 #endif /*ARCHI_HAS_COREV*/
@@ -239,8 +248,12 @@ pos_wait_for_dispatch:
 
     // Wait for PC + arg information from dispatcher
 #ifdef ARCHI_HAS_COREV
-    cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
-    cv.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    //cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    //cv.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    lw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    beqz t0, hal_itc_wait_for_interrupt
+    lw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    beqz a0, hal_itc_wait_for_interrupt
 #else
     p.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     p.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
@@ -269,7 +282,9 @@ pos_set_slave_stack:
 
     // Multiply the stack size by the core ID and add the stack base to get our stack
 #ifdef ARCHI_HAS_COREV
-    cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    //cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    lw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    beqz t0, hal_itc_wait_for_interrupt
 #else
     p.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
 #endif
@@ -281,7 +296,7 @@ pos_set_slave_stack:
     addi     t5, s3, 1
 #endif
 #ifdef ARCHI_HAS_COREV
-    cv.mul   t4, t5, a0
+    cv.muls   t4, t5, a0
 #else
     p.mul   t4, t5, a0
 #endif

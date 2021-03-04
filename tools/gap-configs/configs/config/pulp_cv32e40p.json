@@ -1,13 +1,1 @@
-{
-  "@includes@": [ "chips/pulp/pulp.json" ],
-
-  "soc": {
-    "fc": {
-      "core"        : "cv32e40p"
-    }
-  },
-
-  "cluster": {
-    "core": "cv32e40p"
-  }
-}
+../chips/pulp/pulp_cv32e40p.json
