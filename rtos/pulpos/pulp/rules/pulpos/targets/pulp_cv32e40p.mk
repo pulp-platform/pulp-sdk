@@ -1,9 +1,9 @@
 CONFIG_NB_CLUSTER_PE ?= 8
 
 PULP_LDFLAGS      += 
-PULP_CFLAGS       +=  -D__riscv__
-PULP_ARCH_CFLAGS ?=  -march=rv32imcxcorev -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
-PULP_ARCH_LDFLAGS ?=  -march=rv32imcxcorev -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
+PULP_CFLAGS       +=  -D__riscv__ -DARCHI_HAS_COREV -DPLP_NO_BUILTIN
+PULP_ARCH_CFLAGS ?=  -march=rv32imc_xcorev
+PULP_ARCH_LDFLAGS ?=  -march=rv32imc_xcorev
 PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxcorev
 PULP_CFLAGS    += -fdata-sections -ffunction-sections -include pos/chips/pulp/config.h -I$(PULPOS_PULP_HOME)/include/pos/chips/pulp
 PULP_OMP_CFLAGS    += -fopenmp -mnativeomp

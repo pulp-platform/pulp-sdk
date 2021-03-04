@@ -73,9 +73,17 @@
     lw   x11, %tiny(pos_soc_event_callback_arg)(x11)
 #else
     la   t0, pos_soc_event_callback
+#ifdef ARCHI_HAS_COREV
+    cv.lw x12, t0(x11)
+#else
     p.lw x12, t0(x11)
+#endif /*ARCHI_HAS_COREV*/
     la   t0, pos_soc_event_callback_arg
+#ifdef ARCHI_HAS_COREV
+    cv.lw x11, t0(x11)
+#else
     p.lw x11, t0(x11)
+#endif /*ARCHI_HAS_COREV*/
 #endif
     la   x9, pos_soc_event_handler_end_asm
     j    pos_irq_call_external_c_function
@@ -100,17 +108,28 @@ pos_soc_event_store_asm:
     lw      x12, %tiny(pos_soc_event_status)(x11)
 #else
     la   t0, pos_soc_event_status
+#ifdef ARCHI_HAS_COREV
+    cv.lw x12, t0(x11)
+#else
     p.lw x12, t0(x11)
+#endif /*ARCHI_HAS_COREV*/
 #endif
     andi    x10, x10, 0x1f
-
+#ifdef ARCHI_HAS_COREV
+    cv.bsetr x12, x12, x10
+#else
     p.bsetr x12, x12, x10
+#endif /*ARCHI_HAS_COREV*/
 
 #ifdef CONFIG_NO_STD_RELOC
     sw      x12, %tiny(pos_soc_event_status)(x11)
 #else
     la      t0, pos_soc_event_status
+#ifdef ARCHI_HAS_COREV
+    cv.sw    x12, t0(x11)
+#else
     p.sw    x12, t0(x11)
+#endif /*ARCHI_HAS_COREV*/
 #endif
 
 

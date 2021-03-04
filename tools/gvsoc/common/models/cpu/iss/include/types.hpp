@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -442,6 +442,13 @@ typedef struct iss_pulp_nn_s
   iss_insn_t *ml_insn;
 } iss_pulp_nn_t;
 
+#define COREV_HWLOOP_NB_REGS 7
+
+typedef struct iss_corev_s
+{
+  bool hwloop;
+  iss_reg_t hwloop_regs[COREV_HWLOOP_NB_REGS];
+} iss_corev_t;
 
 typedef struct iss_rnnext_s
 {
@@ -463,8 +470,10 @@ typedef struct iss_cpu_s {
   iss_config_t config;
   iss_irq_t irq;
   iss_csr_t csr;
-  iss_pulpv2_t pulpv2;  
+  iss_pulpv2_t pulpv2;
   iss_pulp_nn_t pulp_nn;
+  iss_pulpv2_t pulpv2;
+  iss_pulpv2_t corev;
   iss_rnnext_t rnnext;
 } iss_cpu_t;
 
