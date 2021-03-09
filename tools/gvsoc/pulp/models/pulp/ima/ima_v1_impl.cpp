@@ -83,7 +83,7 @@ void ima_v1::clear_ima()
   this->line_store_lfover = 0;
 
   /* Event cycles depend on analog time to perform the specific task and on the cluster frequency */ 
-  this->job->analog_latency    = (((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) + 1);
+  this->job->analog_latency    = (((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) + 2);
   this->pw_req->latency        = (((this->get_frequency() * IMA_WRITE_TIME) / 1000000000) + 1);
   this->pr_req->latency        = (((this->get_frequency() * IMA_READ_TIME) / 1000000000) + 1);
 }
@@ -109,8 +109,8 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
       _this->feat_count = 0;
       _this->roll_count = 0;
 
-      _this->remaining_in_req = job->height >> 2;
-      _this->remaining_out_req = job->width >> 2;
+      _this->remaining_in_req = (job->height >> 2) + ((job->height & 0x3) != 0);
+      _this->remaining_out_req = (job->width >> 2) + ((job->width & 0x3) != 0);
 
       /* Minimum delay between stream-out and new stream-in request is 5.
       It is mitigated by 2 cycles of FIFOs, 2 cycle of idle state and then other 1 cycle from stream-out
@@ -214,7 +214,7 @@ void ima_v1::plot_handler(void *__this, vp::clock_event *event)
       plot->pending_plot = 0;
       plot->index_x+=8;
 
-      if(plot->index_x == plot->start_x + plot->width)
+      if(plot->index_x >= plot->start_x + plot->width)
       {
         plot->index_y++;
 
