@@ -186,12 +186,10 @@ void Udma_channel::check_state()
 
   if (free_reqs->is_full())
   {
-    trace.msg("Inactive\n");;
     this->state_event.event(NULL);
   }
   else
   {
-    trace.msg("Active\n");;
     uint8_t one = 1;
     this->state_event.event(&one);
   }

@@ -117,6 +117,9 @@ int main()
         pi_ram_write_async(&ram, hyper_buff+i_prev*N_BYTE, &tempC[N_WORD*(1-buffer_id)], (uint32_t) N_BYTE, pi_task_callback(&ram_write_tasks[i_prev], end_of_tx, NULL));
         task_VectProdScalar(A[i_curr], B, &tempC[N_WORD*buffer_id], N_WORD);
         i_prev++;
+        while(ram_returns != i_curr) {
+            pi_yield();
+        }
     }
     pi_ram_write_async(&ram, hyper_buff+i_prev*N_BYTE, &tempC[N_WORD*buffer_id], (uint32_t) N_BYTE, pi_task_callback(&ram_write_tasks[i_prev], end_of_tx, NULL));    // last transfer
 
