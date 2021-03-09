@@ -202,10 +202,14 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
     {
       _this->set_busy_reg(_this->channel_id, 0);
       _this->common_regs[(TRANS_ID_ALLOC_OFFSET)/4] = _this->update_trans_id_alloc();
-      if(_this->command_mode)
+      _this->trace.msg("Current transfer is finished\n");
+      if (!_this->ca.read)
       {
-        _this->trace.msg("Current transfer is finished\n");
-        _this->top->trigger_event(ARCHI_UDMA_HYPER_CTL_EVT);
+        _this->top->trigger_event(ARCHI_SOC_EVENT_HYPER_EOT_TX);
+      }
+      else
+      {
+        _this->top->trigger_event(ARCHI_SOC_EVENT_HYPER_EOT_RX);
       }
     }
     _this->ending = false;

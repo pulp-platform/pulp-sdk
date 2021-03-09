@@ -29,9 +29,15 @@ static PI_L2 pos_udma_channel_t hyper_rx_channel;
 static void pos_hyper_setup(pos_hyper_t *hyper)
 {
   if (hyper->type == PI_HYPER_TYPE_FLASH)
+  {
     plp_hyper_setup(hyper->hyper_id, CONFIG_HYPERFLASH_EN_LATENCY_ADD, hyper->cs, CONFIG_HYPERFLASH_T_LATENCY_ACCESS);
+    plp_hyper_set_reg(UDMA_HYPER_BASE_ADDR(0) + REG_PAGE_BOUND, 0x04);
+  }
   else if (hyper->type == PI_HYPER_TYPE_RAM)
+  {
     plp_hyper_setup(hyper->hyper_id, CONFIG_HYPERRAM_EN_LATENCY_ADD, hyper->cs, CONFIG_HYPERRAM_T_LATENCY_ACCESS);
+    plp_hyper_set_reg(UDMA_HYPER_BASE_ADDR(0) + REG_PAGE_BOUND, 0x03);
+  }
 }
 
 static void pos_hyper_wait_done(pos_hyper_t *hyper)
@@ -135,7 +141,6 @@ int32_t pi_hyper_open(struct pi_device *device)
   hyper->cs = cs;
   hyper->tran_id = 0;
 
-  hyper->open_count = &hyper_open_count;
   hyper->rx_channel = &hyper_rx_channel;
   hyper->tx_channel = &hyper_tx_channel;
 
@@ -143,25 +148,16 @@ int32_t pi_hyper_open(struct pi_device *device)
 
   if (hyper_open_count == 0)
   {
-    pos_hyper_create_channel(hyper->rx_channel, UDMA_CHANNEL_ID(periph_id), hyper_channel);
-    pos_hyper_create_channel(hyper->tx_channel, UDMA_CHANNEL_ID(periph_id)+1, hyper_channel+1);
-    // pos_udma_create_channel(hyper->rx_channel, UDMA_CHANNEL_ID(periph_id), hyper_channel);
-    // pos_udma_create_channel(hyper->tx_channel, UDMA_CHANNEL_ID(periph_id)+1, hyper_channel+1);
+    pos_hyper_create_channel(hyper->rx_channel, UDMA_CHANNEL_ID(periph_id), hyper_channel + ARCHI_UDMA_HYPER_EOT_RX_EVT);
+    pos_hyper_create_channel(hyper->tx_channel, UDMA_CHANNEL_ID(periph_id)+1, hyper_channel + ARCHI_UDMA_HYPER_EOT_TX_EVT);
   }
 
   hyper_open_count++;
 
-  hyper->channel = &hyper_channel;
-
   plp_udma_cg_set(plp_udma_cg_get() | (1<<periph_id));
 
-  soc_eu_fcEventMask_setEvent(hyper_channel);
-  soc_eu_fcEventMask_setEvent(hyper_channel+1);
-
-  // soc_eu_prEventMask_setEvent(hyper_channel);
-  // soc_eu_prEventMask_setEvent(hyper_channel+1);
-
-  pos_hyper_setup(hyper);
+  soc_eu_fcEventMask_setEvent(hyper_channel+ ARCHI_UDMA_HYPER_EOT_RX_EVT);
+  soc_eu_fcEventMask_setEvent(hyper_channel + ARCHI_UDMA_HYPER_EOT_TX_EVT);
 
   hal_irq_restore(irq);
 
@@ -286,7 +282,7 @@ void pi_hyper_read_async(struct pi_device *device, uint32_t hyper_addr, void *ad
   unsigned int twd_cmd[HYPER_NB_TWD_REGS] = {0,0,0,0,0,0};
   unsigned int ctl_cmd[HYPER_NB_CTL_REGS] = {0x5, hyper_addr};
 
-  pi_hyper_set_regs(device, PI_HYPER_MEM_SEL, &hyper->cs);
+  pos_hyper_setup(hyper);
 
   hyper->tran_id = plp_hyper_id_alloc(hyper->hyper_id);
 
@@ -308,18 +304,15 @@ void pi_hyper_write(struct pi_device *device, uint32_t hyper_addr, void *addr, u
   unsigned int twd_cmd[HYPER_NB_TWD_REGS] = {0,0,0,0,0,0};
   unsigned int ctl_cmd[HYPER_NB_CTL_REGS] = {0x0, hyper_addr};
 
-  while(plp_hyper_nb_tran(hyper->hyper_id, hyper->tran_id)>HYPER_FIFO_DEPTH-1){}
+  pos_hyper_setup(hyper);
 
-  pi_hyper_set_regs(device, PI_HYPER_MEM_SEL, &hyper->cs);
+  while(plp_hyper_nb_tran(hyper->hyper_id, hyper->tran_id)>HYPER_FIFO_DEPTH-1){}
 
   pi_hyper_set_regs(device, PI_HYPER_TWD, (unsigned int *)twd_cmd);
   pi_hyper_set_regs(device, PI_HYPER_CTL, (unsigned int *)ctl_cmd);
   pi_hyper_set_regs(device, PI_HYPER_CFG, (unsigned short *)addr);
 
   plp_hyper_enqueue(UDMA_HYPER_BASE_ADDR(hyper->hyper_id) + UDMA_HYPER_CHANNEL_TX(hyper->tran_id), 0x0, 0x0, UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8);
-
-  /* TODO: Extremely slow because waits until protocol delays are finished. It should be done as async without interrupting the programming sequence */
-  plp_hyper_wait(hyper->hyper_id, hyper->tran_id);
 }
 
 void pi_hyper_write_async(struct pi_device *device, uint32_t hyper_addr, void *addr, uint32_t size, struct pi_task *task)
@@ -329,7 +322,7 @@ void pi_hyper_write_async(struct pi_device *device, uint32_t hyper_addr, void *a
   unsigned int twd_cmd[HYPER_NB_TWD_REGS] = {0,0,0,0,0,0};
   unsigned int ctl_cmd[HYPER_NB_CTL_REGS] = {0x1, hyper_addr};
 
-  pi_hyper_set_regs(device, PI_HYPER_MEM_SEL, &hyper->cs);
+  pos_hyper_setup(hyper);
 
   hyper->tran_id = plp_hyper_id_alloc(hyper->hyper_id);
 
