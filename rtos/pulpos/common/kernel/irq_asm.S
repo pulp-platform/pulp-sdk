@@ -20,7 +20,7 @@
 
 
   .section .text_l2
-
+  .attribute arch, "rv32i2p0_m2p0_c2p0_xcorev2p0"
   .global pos_irq_call_external_c_function
 pos_irq_call_external_c_function:
 
