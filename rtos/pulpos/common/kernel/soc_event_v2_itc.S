@@ -22,7 +22,10 @@
 
 
     .section .text_l2
-    .attribute arch, "rv32i2p0_m2p0_c2p0_xcorev2p0"
+#ifdef ARCHI_HAS_COREV
+    .attribute arch, "rv32imc_xcorev2p0"
+#endif
+
 
     #
     # SOC event handler entry
