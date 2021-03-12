@@ -21,6 +21,8 @@
 #include "archi/pulp.h"
 
     .section .text_l2
+    .attribute arch, "rv32imc_xcorev2p0"
+
     .global pos_init_entry
 pos_init_entry:
 

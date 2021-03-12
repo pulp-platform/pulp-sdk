@@ -22,6 +22,8 @@
 
     .section .cluster.text , "ax"
 
+    .attribute arch, "rv32i2p0_m2p0_c2p0_xcorev2p0"
+
     .global pos_pe_start
 pos_pe_start:
     csrr    a0, 0xF14
@@ -163,7 +165,11 @@ pos_master_sleep:
 #ifdef ARCHI_HAS_COREV
     //cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
     lw         x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
-    beqz       x0, hal_itc_wait_for_interrupt
+    //beqz       x0, hal_itc_wait_for_interrupt
+    bnez       x0, L10
+    wfi
+L10:
+
 #else
     p.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
 #endif
@@ -177,17 +183,16 @@ pos_push_event_to_fc_wait:
 #ifdef ARCHI_HAS_COREV
     //cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
     lw         x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
-    beqz       x0, hal_itc_wait_for_interrupt
+    //beqz       x0, hal_itc_wait_for_interrupt
+    bnez       x0, L11
+    wfi
+L11:
+
 #else
     p.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
 #endif
     sw      s4, EU_CORE_MASK_AND(s3)
     j       pos_push_event_to_fc_retry
-
-
-
-
-
 
 
 
@@ -230,7 +235,10 @@ pos_fork_return:
 #ifdef ARCHI_HAS_COREV
     //cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
     lw         t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
-    beqz       t0, hal_itc_wait_for_interrupt
+    //beqz       t0, hal_itc_wait_for_interrupt
+    bnez       t0, L0
+    wfi
+L0:
 #else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
 #endif /*ARCHI_HAS_COREV*/
@@ -238,7 +246,10 @@ pos_fork_return:
 #ifdef ARCHI_HAS_COREV
     //cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
     lw         t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
-    beqz       t0, hal_itc_wait_for_interrupt
+    //beqz       t0, hal_itc_wait_for_interrupt
+    bnez       t0, L1
+    wfi
+L1:
 #else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
 #endif /*ARCHI_HAS_COREV*/
@@ -251,9 +262,16 @@ pos_wait_for_dispatch:
     //cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     //cv.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     lw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
-    beqz t0, hal_itc_wait_for_interrupt
+    //beqz t0, hal_itc_wait_for_interrupt
+    bnez       t0, L2
+    wfi
+L2:
+
     lw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
-    beqz a0, hal_itc_wait_for_interrupt
+    //beqz a0, hal_itc_wait_for_interrupt
+    bnez       a0, L3
+    wfi
+L3:
 #else
     p.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     p.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
@@ -284,7 +302,12 @@ pos_set_slave_stack:
 #ifdef ARCHI_HAS_COREV
     //cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     lw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
-    beqz t0, hal_itc_wait_for_interrupt
+//    beqz t0, hal_itc_wait_for_interrupt
+    bnez       t0, L4
+    wfi
+L4:
+
+
 #else
     p.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
 #endif
