@@ -322,32 +322,51 @@ typedef unsigned int rt_pointerT;
 #define __ROUNDNORM(x, scale)       ((int)((x) + (1<<((scale)-1)))>>(scale))
 #define __ROUNDNORM_REG(x, scale)       ((int)((x) + (1<<((scale)-1)))>>(scale))
 
-#define __SPRWRITE(x, y)                (*(volatile unsigned int *)(long)(x) = (y))
-#define __SPRREAD(x)                    (*(unsigned int *)(long)(x))
-#define __SPRREAD_VOL(x)                (*(volatile unsigned int *)(long)(x))
+static inline unsigned int __SPRREAD(unsigned int spr) {
+  unsigned int val;
+  if(spr == 0x305)
+    asm ("csrr %0, 0x305" : "=r" (val)); 
+  return val; 
+}
 
-#define __READ_BASE_OFF(base, off)      (*(unsigned int *)(long)((base) + (off)))
-#define __WRITE_BASE_OFF(base, off, val)(*(unsigned int *)(long)((base) + (off)) = (val))
+static inline unsigned int __SPRREAD_VOL(unsigned int spr) {
+  unsigned int val;
+  if(spr == 0x305)
+    asm volatile("csrr %0, 0x305" : "=r" (val));
+  return val;
+}
 
-#define __READ_BASE_OFF_VOL(base, off)      (*(volatile unsigned int *)(long)((base) + (off)))
-#define __READ_BASE_OFF_HALF_VOL(base, off) (*(volatile unsigned short int *)(long)((base) + (off)))
-#define __READ_BASE_OFF_BYTE_VOL(base, off) (*(volatile unsigned char *)(long)((base) + (off)))
 
-#define __WRITE_BASE_OFF_VOL(x, base, off)          (*(volatile unsigned int *)(long)((base) + (off)) = (x))
-#define __WRITE_BASE_OFF_HALF_VOL(x, base, off)     (*(volatile unsigned short int *)(long)((base) + (off)) = (x))
-#define __WRITE_BASE_OFF_BYTE_VOL(x, base, off)     (*(volatile unsigned char *)(long)((base) + (off)) = (x))
+static inline void __SPRWRITE(unsigned int spr, unsigned int val) {
+  if(spr == 0x305)
+    asm volatile("csrw 0x305, %0" : : "r" (val)); 
+}
+
+
+
+#define __READ_BASE_OFF(base, off)      (*(unsigned int *)((long)(base) + (long)(off)))
+#define __WRITE_BASE_OFF(base, off, val)(*(unsigned int *)((long)(base) + (long)(off)) = (val))
+
+#define __READ_BASE_OFF_VOL(base, off)      (*(volatile unsigned int *)((long)(base) + (long)(off)))
+#define __READ_BASE_OFF_HALF_VOL(base, off) (*(volatile unsigned short int *)((long)(base) + (long)(off)))
+#define __READ_BASE_OFF_BYTE_VOL(base, off) (*(volatile unsigned char *)((long)(base) + (long)(off)))
+
+#define __WRITE_BASE_OFF_VOL(x, base, off)          (*(volatile unsigned int *)((long)(base) + (long)(off)) = (x))
+#define __WRITE_BASE_OFF_HALF_VOL(x, base, off)     (*(volatile unsigned short int *)((long)(base) + (long)(off)) = (x))
+#define __WRITE_BASE_OFF_BYTE_VOL(x, base, off)     (*(volatile unsigned char *)((long)(base) + (long)(off)) = (x))
+
 /* Utilities, Target independant */
 #define FIX2FP(Val, Precision)                      ((float) (Val) / (float) (1<<(Precision)))
 #define FP2FIXR(Val, Precision)                     ((int)((Val)*((1 << (Precision))-1) + 0.5))
 #define FP2FIX(Val, Precision)                      ((int)((Val)*((1 << (Precision))-1)))
 
 #define HARTID_MASK         0xF
-#define CLUSTERID_MASK      0x7E0
+#define CLUSTERID_MASK      0x3F
 #define CLUSTERID_SHIFT     5
 
-#define __COREID()                  __SPRREAD_VOL(HARTID_MASK & RV_CSR_MHARTID)
-#define __CLUSTERID()               __SPRREAD_VOL((CLUSTERID_MASK & RV_CSR_MHARTID) >> CLUSTERID_SHIFT)
-#define __NCORE()                   __SPRREAD_VOL(ARCHI_SOC_PERIPHERALS_ADDR + 0x3000 + 0x12)
+#define __COREID()                  hal_core_id()
+#define __CLUSTERID()               (0)
+#define __NCORE()                   (1)
 
 #endif
 #endif
