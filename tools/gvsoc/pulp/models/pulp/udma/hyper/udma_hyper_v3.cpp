@@ -69,7 +69,7 @@ Hyper_periph_v3::Hyper_periph_v3(udma *top, int id, int itf_id) : Udma_periph(to
   this->cfg_setup = new bool[HYPER_NB_CHANNELS]{false};
   this->command_word = new bool[HYPER_NB_CHANNELS]{false};
 }
- 
+
 
 void Hyper_periph_v3::reset(bool active)
 {
@@ -108,12 +108,9 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (_this->state == HYPER_STATE_IDLE)
   {
-    //_this->top->get_trace()->msg("%d:IDLE\n", _this->channel_id);
-
     if (_this->pending_bytes > 0)
     {
       _this->delay = _this->current_command->latency << _this->current_command->en_add_latency;
-      //_this->delay = 1000;
       if (_this->delay > 0)
       {
         _this->state = HYPER_STATE_DELAY;
@@ -146,14 +143,12 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_DELAY)
   {
-    //_this->top->get_trace()->msg("%d:DELAY (left: %d)\n", _this->channel_id, _this->delay);
     _this->delay--;
     if (_this->delay == 0)
       _this->state = HYPER_STATE_CS;
   }
   else if (_this->state == HYPER_STATE_CS)
   {
-    //_this->top->get_trace()->msg("%d:CS\n", _this->channel_id);
     _this->state = HYPER_STATE_CA;
     send_cs = true;
     _this->set_device(_this->current_command->mem_sel);
@@ -162,7 +157,6 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_CA)
   {
-    //_this->top->get_trace()->msg("%d:CA\n", _this->channel_id);
     send_byte = true;
     _this->ca_count--;
     byte = _this->ca.raw[_this->ca_count];
@@ -173,27 +167,28 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_DATA && _this->pending_bytes > 0)
   {
-    //_this->top->get_trace()->msg("%d:DATA (left: %x of transfer_size)\n", _this->channel_id, _this->transfer_size);
-    send_byte = true;
-    byte = _this->pending_word & 0xff;
-    _this->pending_word >>= 8;
-    _this->pending_bytes--;
-    _this->transfer_size--;
-
-    if (_this->transfer_size == 0)
-    {  
-      _this->pending_bytes = 0;
-      _this->state = HYPER_STATE_CS_OFF;
-      _this->ending = true;
-    }
-    if (_this->pending_bytes == 0)
+    if(!_this->ca.read || _this->rx_channel->is_ready())
     {
-      end = true;
+      send_byte = true;
+      byte = _this->pending_word & 0xff;
+      _this->pending_word >>= 8;
+      _this->pending_bytes--;
+      _this->transfer_size--;
+
+      if (_this->transfer_size == 0)
+      {
+        _this->pending_bytes = 0;
+        _this->state = HYPER_STATE_CS_OFF;
+        _this->ending = true;
+      }
+      if (_this->pending_bytes == 0)
+      {
+        end = true;
+      }
     }
   }
   else if (_this->state == HYPER_STATE_CS_OFF)
   {
-    //_this->top->get_trace()->msg("%d:CS OFF\n", _this->channel_id);
     _this->state = HYPER_STATE_IDLE;
     send_cs = true;
     cs = _this->mem_sel;
@@ -217,14 +212,13 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (send_byte || send_cs)
   {
-    //_this->top->get_trace()->msg("%d:SENDING\n", _this->channel_id);
     if (!_this->hyper_itf.is_bound())
     {
       _this->top->get_trace()->warning("%d: Trying to send to HYPER interface while it is not connected\n", _this->channel_id);
     }
     else
     {
-      _this->next_bit_cycle = _this->top->get_clock()->get_cycles() + _this->clkdiv;
+      _this->next_bit_cycle = _this->top->get_periph_high_speed_clock()->get_cycles() + _this->clkdiv;
       if (send_byte)
       {
         _this->top->get_trace()->msg("%d: Sending byte (value: 0x%x)\n", _this->channel_id, byte);
@@ -240,8 +234,6 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (end)
   {
-    //_this->top->get_trace()->msg("%d:ENDING\n", _this->channel_id);
-
     if(_this->ending)
     {
       _this->free_fifo[_this->channel_id]->push(_this->current_command);
@@ -297,11 +289,11 @@ void Hyper_periph_v3::check_state()
     if (!this->pending_word_event->is_enqueued())
     {
       int latency = 1;
-      int64_t cycles = this->top->get_clock()->get_cycles();
+      int64_t cycles = this->top->get_periph_high_speed_clock()->get_cycles();
       if (this->next_bit_cycle > cycles)
         latency = this->next_bit_cycle - cycles;
 
-      this->top->event_enqueue_ext(this->pending_word_event, latency);
+      this->top->get_periph_high_speed_clock()->enqueue_ext(this->pending_word_event, latency);
     }
   }
 }

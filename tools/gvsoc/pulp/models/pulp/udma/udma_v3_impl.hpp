@@ -46,6 +46,8 @@
 #endif
 #endif
 
+#define RX_FIFO_DEPTH 4
+
 class udma;
 class Udma_channel;
 
@@ -154,6 +156,7 @@ public:
   void reset(bool active);
   void push_data(uint8_t *data, int size);
   bool has_cmd() { return this->current_cmd != NULL; }
+  bool is_ready();
 
 private:
   int pending_byte_index;
@@ -957,6 +960,9 @@ public:
 
   vp::trace *get_trace() { return &this->trace; }
   vp::clock_engine *get_periph_clock() { return this->periph_clock; }
+  vp::clock_engine *get_periph_high_speed_clock() { return this->periph_high_speed_clock; }
+
+  int get_rx_fifo_count() { return this->rx_fifo_count; }
 
 protected:
   vp::io_master l2_itf;
@@ -973,11 +979,15 @@ private:
   static void l2_grant(void *__this, vp::io_req *req);
   static void l2_response(void *__this, vp::io_req *req);
   static void clk_reg(component *_this, component *clock);
+  static void high_speed_clk_reg(component *_this, component *clock);
 
   vp::trace     trace;
   vp::io_slave in;
   vp::clk_slave    periph_clock_itf;
   vp::clock_engine *periph_clock;
+
+  vp::clk_slave    periph_high_speed_clock_itf;
+  vp::clock_engine *periph_high_speed_clock;
   
   int nb_periphs;
   int l2_read_fifo_size;
@@ -991,6 +1001,8 @@ private:
   Udma_queue<vp::io_req> *l2_read_waiting_reqs;
   
   vp::wire_master<int>    event_itf;
+
+  int rx_fifo_count;
 };
 
 

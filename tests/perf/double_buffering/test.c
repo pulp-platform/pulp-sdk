@@ -20,10 +20,13 @@
 int A[N_WORD];
 int B[N_WORD];
 #ifndef DOUBLE_BUFFERING
+char memC[N_BYTE];
 int tempC[N_WORD];
 #else
+char memC[2*N_BYTE];
 int tempC[2*N_WORD];
 static struct pi_task ram_write_tasks[N_WORD];
+static struct pi_task ram_read_tasks[N_WORD];
 static int ram_returns = 0;
 // Callback for asynchronous ram write
 static void end_of_tx(void *arg)
@@ -31,8 +34,13 @@ static void end_of_tx(void *arg)
   //printf("End of %d TX \n", count);
   ram_returns++;
 }
+// Callback for asynchronous ram write
+static void end_of_rx(void *arg)
+{
+  //printf("End of %d RX \n", count);
+  ram_returns++;
+}
 #endif
-char memC[N_BYTE];
 static uint32_t hyper_buff; // result on L3
 
 // global struct define
@@ -94,8 +102,8 @@ int main()
 #endif
     //initialize performance counters
     pi_perf_conf(
-        1 << PI_PERF_CYCLES | 
-        1 << PI_PERF_INSTR 
+        1 << PI_PERF_CYCLES |
+        1 << PI_PERF_INSTR
     );
 
     // measure statistics on matrix operations
@@ -111,7 +119,7 @@ int main()
     int i_curr=1;
     int i_prev=0;
     int buffer_id;
-    task_VectProdScalar(A[0], B, tempC, N_WORD);
+    task_VectProdScalar(A[i_prev], B, tempC, N_WORD);
     for(i_curr; i_curr<N_WORD;i_curr++){
         buffer_id = i_curr & 0x1;
         pi_ram_write_async(&ram, hyper_buff+i_prev*N_BYTE, &tempC[N_WORD*(1-buffer_id)], (uint32_t) N_BYTE, pi_task_callback(&ram_write_tasks[i_prev], end_of_tx, NULL));
@@ -132,10 +140,18 @@ int main()
     uint32_t instr_cnt = pi_perf_read(PI_PERF_INSTR);
     uint32_t cycles_cnt = pi_perf_read(PI_PERF_CYCLES);
 
-    printf("Number of Instructions: %d\nClock Cycles: %d\nCPI: %f%f\n", 
-        instr_cnt, cycles_cnt, (float) cycles_cnt/instr_cnt);
+    printf("Writing to HYPERRAM %d bytes:\nNumber of Instructions: %d\nClock Cycles: %d\nCPI: %f%f\n",
+        N_BYTE*N_BYTE, instr_cnt, cycles_cnt, (float) cycles_cnt/instr_cnt);
 
 #ifdef CHECK_RESULTS
+    pi_perf_conf(
+        1 << PI_PERF_CYCLES |
+        1 << PI_PERF_INSTR
+    );
+
+    pi_perf_reset();
+    pi_perf_start();
+#ifndef DOUBLE_BUFFERING
     for(int i=0; i<N_WORD;i++){
         pi_ram_read(&ram, hyper_buff+i*N_BYTE, memC, (uint32_t) N_BYTE);
         task_VectProdScalar(A[i], B, tempC, N_WORD);
@@ -146,6 +162,34 @@ int main()
             }
         }
     }
+#else
+    ram_returns=0;
+    i_curr=1;
+    i_prev=0;
+    buffer_id;
+    pi_ram_read_async(&ram, hyper_buff+i_prev*N_BYTE, memC+(N_BYTE*buffer_id), (uint32_t) N_BYTE, pi_task_callback(&ram_read_tasks[i_prev], end_of_rx, NULL));
+    for(i_curr; i_curr<N_WORD;i_curr++){
+        buffer_id = i_curr & 0x1;
+        pi_ram_read_async(&ram, hyper_buff+i_curr*N_BYTE, memC+(N_BYTE*buffer_id), (uint32_t) N_BYTE, pi_task_callback(&ram_read_tasks[i_curr], end_of_rx, NULL));
+        task_VectProdScalar(A[i_prev], B, tempC, N_WORD);
+        while(ram_returns < i_curr) {
+            pi_yield();
+        }
+        for(int j=0; j<N_WORD;j++){
+            if(tempC[j] != *((int*) (memC+(N_BYTE*(1-buffer_id)))+j)){
+                printf("Error, row: %d, index: %d, expected: 0x%x, read: 0x%x\n", i_prev, j, tempC[j], *((int*) (memC+(N_BYTE*(1-buffer_id)))+j));
+                pmsis_exit(-5);
+            }
+        }
+        i_prev++;
+    }
+#endif
+    pi_perf_stop();
+    instr_cnt = pi_perf_read(PI_PERF_INSTR);
+    cycles_cnt = pi_perf_read(PI_PERF_CYCLES);
+
+    printf("Reading from HYPERRAM %d bytes:\nNumber of Instructions: %d\nClock Cycles: %d\nCPI: %f%f\n",
+        N_BYTE*N_BYTE, instr_cnt, cycles_cnt, (float) cycles_cnt/instr_cnt);
 
     printf("Test success\n");
 #endif

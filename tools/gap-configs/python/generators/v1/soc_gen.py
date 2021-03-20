@@ -742,9 +742,15 @@ def get_config(tp):
               ('vp_component', "vp.clock_domain_impl"),
               ('frequency', 50000000)
             ]))
+            soc.periph_high_speed_clock = Component(properties=OrderedDict([
+              ('vp_class', "vp/clock_domain"),
+              ('vp_component', "vp.clock_domain_impl"),
+              ('frequency', 1000000000)
+            ]))
             soc.get(fll_name).clock_out = soc.periph_clock.clock_in
             if has_udma:
               soc.periph_clock.out = soc.udma.periph_clock
+              soc.periph_high_speed_clock.out = soc.udma.periph_high_speed_clock
 
 
 

@@ -86,6 +86,11 @@ void Udma_rx_channel::reset(bool active)
 }
 
 
+bool Udma_rx_channel::is_ready()
+{
+  return this->top->get_rx_fifo_count() < RX_FIFO_DEPTH;
+}
+
 
 void Udma_channel::handle_transfer_end()
 {
@@ -445,6 +450,7 @@ udma::udma(js::config *config)
 void udma::push_l2_write_req(vp::io_req *req)
 {
   this->l2_write_reqs->push(req);
+  this->rx_fifo_count++;
   this->check_state();
 }
 
@@ -478,6 +484,7 @@ void udma::event_handler(void *__this, vp::clock_event *event)
     int err = _this->l2_itf.req(req);
     if (err == vp::IO_REQ_OK)
     {
+      _this->rx_fifo_count--;
     }
     else
     {
@@ -648,6 +655,12 @@ void udma::clk_reg(component *__this, component *clock)
   _this->periph_clock = (vp::clock_engine *)clock;
 }
 
+void udma::high_speed_clk_reg(component *__this, component *clock)
+{
+  udma *_this = (udma *)__this;
+  _this->periph_high_speed_clock = (vp::clock_engine *)clock;
+}
+
 int udma::build()
 {
   traces.new_trace("trace", &trace, vp::DEBUG);
@@ -658,6 +671,9 @@ int udma::build()
 
   this->periph_clock_itf.set_reg_meth(&udma::clk_reg);
   new_slave_port("periph_clock", &this->periph_clock_itf);
+
+  this->periph_high_speed_clock_itf.set_reg_meth(&udma::high_speed_clk_reg);
+  new_slave_port("periph_high_speed_clock", &this->periph_high_speed_clock_itf);
 
   nb_periphs = get_config_int("nb_periphs");
   periphs.reserve(nb_periphs);
@@ -867,6 +883,7 @@ void udma::reset(bool active)
   if (active)
   {
     clock_gating = 0;
+    rx_fifo_count = 0;
   }
 
   for (int i=0; i<nb_periphs; i++)
