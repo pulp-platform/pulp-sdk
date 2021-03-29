@@ -216,6 +216,10 @@ private:
   int beta_in_count;
   int beta_out_count;
 
+  int count_stream_in;
+  int count_stream_out;
+  int count_compute;
+
 };
 
 static string get_state_name(int state) {

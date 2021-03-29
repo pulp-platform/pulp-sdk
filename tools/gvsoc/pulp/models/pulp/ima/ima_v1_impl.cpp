@@ -83,9 +83,13 @@ void ima_v1::clear_ima()
   this->line_store_lfover = 0;
 
   /* Event cycles depend on analog time to perform the specific task and on the cluster frequency */ 
-  this->job->analog_latency    = (((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) + 2);
+  this->job->analog_latency    = (((this->get_frequency() * IMA_EVAL_TIME) / 1000000000) + 1);
   this->pw_req->latency        = (((this->get_frequency() * IMA_WRITE_TIME) / 1000000000) + 1);
   this->pr_req->latency        = (((this->get_frequency() * IMA_READ_TIME) / 1000000000) + 1);
+
+  this->count_stream_in  = 0;
+  this->count_stream_out = 0;
+  this->count_compute    = 0;
 }
 
 /* Stream-in - Compute - Stream-out */
@@ -112,6 +116,9 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
       _this->remaining_in_req = (job->height >> 2) + ((job->height & 0x3) != 0);
       _this->remaining_out_req = (job->width >> 2) + ((job->width & 0x3) != 0);
 
+      /* Two cycles per idle */
+      job->latency=2;
+
       /* Minimum delay between stream-out and new stream-in request is 5.
       It is mitigated by 2 cycles of FIFOs, 2 cycle of idle state and then other 1 cycle from stream-out
       itself, if it is larger than 1. Otherwise it has to be considered in the latency of the next stream-in */
@@ -128,6 +135,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
 
       if(_this->remaining_jobs == 0)
       {
+        //printf("Job Statistics (cycles): Stream-in = %d, Compute = %d, Stream-out = %d\n", _this->count_stream_in, _this->count_compute, _this->count_stream_out);
         _this->set_state(IMA_STATE_IDLE);
       }
       else
@@ -137,8 +145,6 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
           _this->job_update();
         }
       }
-      /* Two cycles per idle */
-      job->latency=2;
 
       break;
     }
@@ -155,6 +161,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
         _this->enqueued_req = 0;
         _this->eval_state = IMA_EVAL_STATE_COMPUTATION;
       }
+      _this->count_stream_in+=job->latency;
 
       break;
     }
@@ -164,6 +171,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
       _this->exec_job();
       _this->update_finished_jobs(1);
       job->latency = job->analog_latency;
+      _this->count_compute+=job->latency;
       _this->eval_state = IMA_EVAL_STATE_STREAM_OUT;
 
       break;
@@ -175,12 +183,18 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
 
       if(_this->remaining_out_req == 0)
       {
+        _this->count_stream_out+=job->latency;
+        _this->count_stream_in+=2;
         /* Due to the streamer FIFOs */
         job->latency+=2;
         _this->enqueued_req = 0;
         _this->remaining_jobs--;
         _this->update_finished_jobs(-1);
         _this->eval_state = IMA_EVAL_STATE_IDLE;
+      }
+      else
+      {
+        _this->count_stream_out+=job->latency;
       }
 
       break;
