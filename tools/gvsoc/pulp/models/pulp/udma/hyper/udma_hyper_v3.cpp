@@ -104,7 +104,7 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   int cs_value;
   bool send_byte = false;
   bool send_cs = false;
-  bool end = false;  
+  bool end = false;
 
   if (_this->state == HYPER_STATE_IDLE)
   {
@@ -283,7 +283,6 @@ void Hyper_periph_v3::check_state()
       }
     }
   }
-
   if (this->pending_bytes != 0 || this->ending)
   {
     if (!this->pending_word_event->is_enqueued())

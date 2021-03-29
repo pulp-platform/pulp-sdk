@@ -44,7 +44,7 @@ namespace vp {
 
     bool dequeue_from_engine();
 
-    void apply_frequency(int frequency);
+    void apply_frequency(int64_t frequency);
     
     inline clock_event *reenqueue(clock_event *event, int64_t cycles);
 

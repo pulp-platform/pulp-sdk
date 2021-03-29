@@ -51,7 +51,8 @@ private:
 clock_domain::clock_domain(js::config *config)
 : vp::clock_engine(config)
 {
-  this->apply_frequency(get_config_int("frequency"));
+  //this->apply_frequency(get_config_int("frequency"));
+  this->apply_frequency(this->get_js_config()->get("frequency")->get_int());
 }
 
 void clock_domain::set_frequency(void *__this, int64_t frequency)

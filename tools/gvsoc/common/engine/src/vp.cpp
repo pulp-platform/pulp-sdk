@@ -476,7 +476,7 @@ void vp::clock_engine::reenqueue_to_engine()
     this->engine->enqueue(this, this->next_event_time);
 }
 
-void vp::clock_engine::apply_frequency(int frequency)
+void vp::clock_engine::apply_frequency(int64_t frequency)
 {
     if (frequency > 0)
     {
