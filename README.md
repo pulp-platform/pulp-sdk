@@ -18,6 +18,11 @@ pip install --user argcomplete
 ~~~~~
 Omit `--user` to install at system level instead, which will probably require admin rights.
 
+Also, the SDK requires the 'pyelftools' Python package. You can install it with:
+~~~~~shell
+pip install pyelftools
+~~~~~
+
 This version requires PULP toolchain to compile the application exploiting pulp features. PULP toolchain is available at: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain
 
 You can choose also its precompiled version, exploring: https://github.com/pulp-platform/pulp-riscv-gnu-toolchain/releases/tag/v1.0.16
