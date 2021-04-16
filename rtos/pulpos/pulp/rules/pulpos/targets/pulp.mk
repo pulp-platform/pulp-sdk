@@ -1,7 +1,7 @@
 CONFIG_NB_CLUSTER_PE ?= 8
 
 PULP_LDFLAGS      += 
-PULP_CFLAGS       +=  -D__riscv__
+PULP_CFLAGS       +=  -D__riscv_ -DARCHI_CORE_HAS_PULPV2
 PULP_ARCH_CFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
 PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
 PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9

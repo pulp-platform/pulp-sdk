@@ -326,6 +326,7 @@ static inline unsigned int __SPRREAD(unsigned int spr) {
   unsigned int val;
   if(spr == 0x305)
     asm ("csrr %0, 0x305" : "=r" (val)); 
+
   return val; 
 }
 
@@ -333,13 +334,15 @@ static inline unsigned int __SPRREAD_VOL(unsigned int spr) {
   unsigned int val;
   if(spr == 0x305)
     asm volatile("csrr %0, 0x305" : "=r" (val));
+  
   return val;
 }
 
 
 static inline void __SPRWRITE(unsigned int spr, unsigned int val) {
   if(spr == 0x305)
-    asm volatile("csrw 0x305, %0" : : "r" (val)); 
+    asm volatile("csrw 0x305, %0" : : "r" (val));
+  
 }
 
 
