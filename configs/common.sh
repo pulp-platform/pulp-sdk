@@ -44,3 +44,4 @@ export GAP_PULPOS_ARCHI=$PULP_SDK_HOME/rtos/pulpos/gap_archi
 export PULPOS_ARCHI=$PULP_SDK_HOME/rtos/pulpos/pulp_archi
 export PULPOS_HAL=$PULP_SDK_HOME/rtos/pulpos/pulp_hal
 export PMSIS_API=$PULP_SDK_HOME/rtos/pmsis/pmsis_api
+export PULP_EXT_LIBS=$PULP_SDK_HOME/ext_libs

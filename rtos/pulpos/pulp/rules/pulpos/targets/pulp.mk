@@ -5,9 +5,9 @@ PULP_CFLAGS       +=  -D__riscv__
 PULP_ARCH_CFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
 PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
 PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9
-PULP_CFLAGS    += -fdata-sections -ffunction-sections -include pos/chips/pulp/config.h -I$(PULPOS_PULP_HOME)/include/pos/chips/pulp
+PULP_CFLAGS    += -fdata-sections -ffunction-sections -include pos/chips/pulp/config.h -I$(PULPOS_PULP_HOME)/include/pos/chips/pulp -I$(PULP_EXT_LIBS)/include
 PULP_OMP_CFLAGS    += -fopenmp -mnativeomp
-PULP_LDFLAGS += -nostartfiles -nostdlib -Wl,--gc-sections -L$(PULPOS_PULP_HOME)/kernel -Tchips/pulp/link.ld -lgcc
+PULP_LDFLAGS += -nostartfiles -nostdlib -Wl,--gc-sections -L$(PULP_EXT_LIBS) -L$(PULPOS_PULP_HOME)/kernel -Tchips/pulp/link.ld -lgcc
 
 PULP_CC = riscv32-unknown-elf-gcc 
 PULP_AR ?= riscv32-unknown-elf-ar
