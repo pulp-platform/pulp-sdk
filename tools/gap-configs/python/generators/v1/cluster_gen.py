@@ -31,6 +31,7 @@ def get_config(tp, cluster_id):
   has_hwacc         = tp.get('cluster/peripherals/hwacc') is not None
   has_ima           = tp.get('cluster/peripherals/ima') is not None
   has_ne16          = tp.get('cluster/peripherals/ne16') is not None
+  has_rnnacc        = tp.get('cluster/peripherals/rnnacc') is not None
   dma_irq_0         = tp.get('cluster/pe/irq').get_dict().index('dma_0')
   dma_irq_1         = tp.get('cluster/pe/irq').get_dict().index('dma_1')
   dma_irq_ext       = tp.get('cluster/pe/irq').get_dict().index('dma_ext')
@@ -46,16 +47,19 @@ def get_config(tp, cluster_id):
   #  alias = "0x00000000"
 
   if has_hwce:
-    hwce_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+    hwce_irq   = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
   if has_hwacc:
-    hwacc_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+    hwacc_irq  = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
   if has_ima:
-    ima_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+    ima_irq    = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
   if has_ne16:
-    ne16_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+    ne16_irq   = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+
+  if has_rnnacc:
+    rnnacc_irq = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
   core_conf = js.import_config_from_file("ips/riscv/%s.json" % cluster_core, find=True)
 
@@ -152,6 +156,11 @@ def get_config(tp, cluster_id):
       ("ne16", get_mapping_area(tp.get_child_dict("cluster/peripherals/ne16"), cluster_size, cluster_id, True))
     ]))
 
+  if has_rnnacc:
+    periph_ico_mappings.update(OrderedDict([
+      ("rnnacc", get_mapping_area(tp.get_child_dict("cluster/peripherals/rnnacc"), cluster_size, cluster_id, True))
+    ]))
+
   cluster.periph_ico = Component(properties=OrderedDict([
     ('@includes@', ["ips/interco/router.json"]),
     ('mappings', periph_ico_mappings)
@@ -217,6 +226,8 @@ def get_config(tp, cluster_id):
 
   if has_ima:
     ima_conf = js.import_config_from_file("ips/ima/ima_v%d.json" % tp.get_child_int('cluster/peripherals/ima/version'), find=True)
+  if has_rnnacc:
+    rnnacc_conf = js.import_config_from_file("ips/rnnacc/rnnacc_v%d.json" % tp.get_child_int('cluster/peripherals/rnnacc/version'), find=True)
 
   l1_interleaver_nb_masters = nb_pe + 4
   if has_hwce:
@@ -227,6 +238,8 @@ def get_config(tp, cluster_id):
     l1_interleaver_nb_masters += ima_conf.get_int('nb_masters')
   if has_ne16:
     l1_interleaver_nb_masters += 1
+  if has_rnnacc:
+    l1_interleaver_nb_masters += rnnacc_conf.get_int('nb_masters')
 
   cluster.l1_ico.interleaver = Component(properties=OrderedDict([
     ('@includes@', ["ips/interco/l1_interleaver.json"]),
@@ -327,6 +340,11 @@ def get_config(tp, cluster_id):
       ('@includes@', ["ips/ne16/ne16.json"])
     ]))
 
+  if has_rnnacc:
+    cluster.rnnacc = Component(properties=OrderedDict([
+      ('@includes@', ["ips/rnnacc/rnnacc_v%d.json" % tp.get_child_int('cluster/peripherals/rnnacc/version')])
+    ]))
+
   cluster.icache_ctrl = Component(properties=OrderedDict([
     ('@includes@', ["ips/icache_ctrl/icache_ctrl_v2.json"])
   ]))
@@ -392,6 +410,8 @@ def get_config(tp, cluster_id):
     cluster.periph_ico.ima = cluster.ima.input
   if has_ne16:
     cluster.periph_ico.ne16 = cluster.ne16.input
+  if has_rnnacc:
+    cluster.periph_ico.rnnacc = cluster.rnnacc.input
   cluster.periph_ico.event_unit = cluster.event_unit.input
   cluster.periph_ico.cluster_ctrl = cluster.cluster_ctrl.input
   cluster.periph_ico.timer = cluster.timer.input
@@ -413,6 +433,10 @@ def get_config(tp, cluster_id):
   if has_ne16:
     for i in range(0, nb_pe):
       cluster.ne16.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ne16_irq, i))
+
+  if has_rnnacc:
+    for i in range(0, nb_pe):
+      cluster.rnnacc.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (rnnacc_irq, i))
 
   for i in range(0, nb_pe):
     cluster.icache_ctrl.flush = cluster.get('pe%d' % i).flush_cache
@@ -516,6 +540,10 @@ def get_config(tp, cluster_id):
   if has_ne16:
     cluster.ne16.set('out', cluster.l1_ico.new_itf('ne16_in'))
     cluster.l1_ico.set('ne16_in', cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4)))
+  if has_rnnacc:
+    for i in range(0, rnnacc_conf.get_int('nb_masters')):
+      cluster.rnnacc.set('tcdm_port_%d' % i, cluster.l1_ico.new_itf('rnnacc_in_%d' % i))
+      cluster.l1_ico.set('rnnacc_in_%d' % i, cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4 + i)))
 
   for i in range(0, nb_pe):
     cluster.l1_ico.get('pe%d_ico' % i).dma = cluster.l1_ico.new_itf('dma_%d'%i)

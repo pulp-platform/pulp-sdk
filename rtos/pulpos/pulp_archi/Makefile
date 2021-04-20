@@ -65,6 +65,7 @@ gen:
 	regmap --name=rtc      --input-xls=doc/RTC_UNIT_reference.xlsx    --header=include/archi/rtc/rtc_v2.h
 	regmap --name=apb_soc  --input-xls=doc/WOLFE_APB_SOC_CTRL_reference.xlsx  --header=include/archi/chips/wolfe/apb_soc_ctrl_new.h
 	regmap --name=gpio     --input-xls=doc/APB_GPIO_reference.xlsx    --header=include/archi/gpio/gpio_v2_new.h
+	regmap --name=rnnacc   --input-json=ips/rnnacc/rnnacc_v1.json     --header=include/archi/rnnacc/rnnacc_v1.h
 
 .PHONY: build clean gen
 

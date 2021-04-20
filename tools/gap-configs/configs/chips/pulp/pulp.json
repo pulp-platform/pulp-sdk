@@ -124,6 +124,12 @@
         "version": 1
       },
 
+      "rnnacc": {
+        "base": "0x10202400",
+        "size": "0x00000400",
+        "version": 1
+      },
+
       "dbg_unit": {
         "base": "0x10300000",
         "size"  : "0x00008000"

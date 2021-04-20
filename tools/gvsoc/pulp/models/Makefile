@@ -7,7 +7,8 @@ PULP_PROPERTIES += udma/version timer/version stdout/version soc_eu/version \
 	udma/cpi/version padframe/version pulp_chip_family pmu/version \
 	udma/hyper/version efuse/version udma/i2c/version rtc/version gpio/version \
   fc/iss_class pe/iss_class udma/i2s/version udma/mram/version hwce/version \
-   udma/tcdm/version hwacc/base udma/uart/version udma/hyper/version ima/version
+  udma/tcdm/version hwacc/base udma/uart/version udma/hyper/version \
+  ima/version rnnacc/version
 
 properties := $(foreach prop,$(PULP_PROPERTIES), --property=$(prop))
 
@@ -21,7 +22,8 @@ VP_DIRS=pulp pulp/fll pulp/stdout pulp/chips/pulpissimo \
   pulp/chips/multino pulp/chips/arnold \
   pulp/chips/pulpissimo_v1 \
   pulp/gpio pulp/chips/pulp_v1 pulp/chips/vivosoc3_1 pulp/ima \
-  pulp/ne16 \
+  pulp/ne16 pulp/rnnacc
+
 
 -include $(ROOT_VP_BUILD_DIR)/props.mk
 
