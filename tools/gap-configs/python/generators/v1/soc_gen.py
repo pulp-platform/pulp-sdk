@@ -368,7 +368,8 @@ def get_config(tp):
         ('cluster_id', tp.get_child_int("soc/fc/cluster_id")),
         ('core_id', tp.get_child_int("soc/fc/core_id")),
         ('fetch_enable', tp.get_child_bool("soc/fc/fetch_enable")),
-        ('boot_addr', tp.get_child_str("soc/fc/boot_addr"))
+        ('boot_addr', tp.get_child_str("soc/fc/boot_addr")),
+        ('core', tp.get_child_str("soc/fc/core"))
     ]))
 
 
