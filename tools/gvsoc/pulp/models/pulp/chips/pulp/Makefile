@@ -6,10 +6,10 @@ VP_INSTALL_TARGETS += $(INSTALL_DIR)/python/pulp/chips/pulp/rom.bin
 VP_INSTALL_TARGETS += $(INSTALL_DIR)/python/pulp/chips/pulp/debug_rom.bin
 
 ifeq '$(core)' 'cv32e40p'
-$(INSTALL_DIR)/python/pulp/chips/pulp/rom.bin: $(CURDIR)/pulp/chips/pulp_cv32e40p/rom.bin
+$(INSTALL_DIR)/python/pulp/chips/pulp/rom.bin: $(CURDIR)/pulp/chips/pulp/cv32e40p/rom.bin
 	install -D $^ $@
 
-$(INSTALL_DIR)/python/pulp/chips/pulp/debug_rom.bin: $(CURDIR)/pulp/chips/pulp_cv32e40p/debug_rom.bin
+$(INSTALL_DIR)/python/pulp/chips/pulp/debug_rom.bin: $(CURDIR)/pulp/chips/pulp/cv32e40p/debug_rom.bin
 	install -D $^ $@
 
 else
