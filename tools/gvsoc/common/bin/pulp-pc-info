@@ -63,8 +63,22 @@ if toolchain is None:
 	toolchain = os.environ.get('PULP_RISCV_GCC_TOOLCHAIN')
 
 if toolchain is not None:
-	readelf = toolchain + '/bin/riscv32-unknown-elf-readelf'
-	addr2line = toolchain + '/bin/riscv32-unknown-elf-addr2line'
+	# To be compatible with other toolchains
+	readelf_tool = 'readelf'
+	addr2line_tool = 'addr2line'
+
+	tools = os.listdir(toolchain + "/bin/")
+
+	for tool in tools:
+		tool_name = tool.split('-')[-1]
+		if tool_name == readelf_tool:
+			readelf = toolchain + '/bin/' + tool
+		if tool_name == addr2line_tool:
+			addr2line = toolchain + '/bin/' + tool
+
+	# Previous implementation. It doesn't work with corev toolchain
+	# readelf = toolchain + '/bin/riscv32-unknown-elf-readelf'
+	# addr2line = toolchain + '/bin/riscv32-unknown-elf-addr2line'
 else:
 	readelf = 'riscv32-unknown-elf-readelf'
 	addr2line = 'riscv32-unknown-elf-addr2line'

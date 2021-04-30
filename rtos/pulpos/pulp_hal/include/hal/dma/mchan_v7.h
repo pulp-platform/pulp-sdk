@@ -277,13 +277,13 @@ static inline void plp_dma_counter_free(int counter) {
 static inline unsigned int plp_dma_getCmd(int ext2loc, unsigned int size, int is2D, int trigEvt, int trigIrq, int broadcast) {
 #if defined(__riscv__)
   unsigned int res;
-  res = __builtin_bitinsert(0,  ext2loc,      1, MCHAN_CMD_CMD_TYPE_BIT);
-  res = __builtin_bitinsert(res, PLP_DMA_INC, 1, MCHAN_CMD_CMD_INC_BIT);
-  res = __builtin_bitinsert(res, is2D,        1, MCHAN_CMD_CMD__2D_EXT_BIT);
-  res = __builtin_bitinsert(res, size,        MCHAN_CMD_CMD_LEN_WIDTH, MCHAN_CMD_CMD_LEN_BIT);
-  res = __builtin_bitinsert(res, trigEvt,     1, MCHAN_CMD_CMD_ELE_BIT);
-  res = __builtin_bitinsert(res, trigIrq,     1, MCHAN_CMD_CMD_ILE_BIT);
-  res = __builtin_bitinsert(res, broadcast,   1, MCHAN_CMD_CMD_BLE_BIT);
+  res = __BITINSERT(0,  ext2loc,      1, MCHAN_CMD_CMD_TYPE_BIT);
+  res = __BITINSERT(res, PLP_DMA_INC, 1, MCHAN_CMD_CMD_INC_BIT);
+  res = __BITINSERT(res, is2D,        1, MCHAN_CMD_CMD__2D_EXT_BIT);
+  res = __BITINSERT(res, size,        MCHAN_CMD_CMD_LEN_WIDTH, MCHAN_CMD_CMD_LEN_BIT);
+  res = __BITINSERT(res, trigEvt,     1, MCHAN_CMD_CMD_ELE_BIT);
+  res = __BITINSERT(res, trigIrq,     1, MCHAN_CMD_CMD_ILE_BIT);
+  res = __BITINSERT(res, broadcast,   1, MCHAN_CMD_CMD_BLE_BIT);
   return res;
 #else
   return (ext2loc << MCHAN_CMD_CMD_TYPE_BIT) | (PLP_DMA_INC << MCHAN_CMD_CMD_INC_BIT) | (is2D << MCHAN_CMD_CMD__2D_EXT_BIT) | (size << MCHAN_CMD_CMD_LEN_BIT) | (trigEvt<<MCHAN_CMD_ELE_BIT) | (trigIrq<<MCHAN_CMD_ILE_BIT) | (broadcast<<MCHAN_CMD_CMD_BLE_BIT);

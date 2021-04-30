@@ -474,6 +474,7 @@ typedef struct iss_cpu_s {
   iss_pulp_nn_t pulp_nn;
   iss_pulpv2_t pulpv2;
   iss_pulpv2_t corev;
+  iss_corev_t corev;
   iss_rnnext_t rnnext;
 } iss_cpu_t;
 

@@ -22,7 +22,11 @@
 #include "archi/chips/pulp/apb_soc_ctrl.h"
 
 #include "archi/gpio/gpio_v3.h"
+#ifdef ARCHI_HAS_COREV
+#include "archi/riscv/priv_corev_1_1.h"
+#else
 #include "archi/riscv/priv_1_10.h"
+#endif
 #include "archi/riscv/pcer_v2.h"
 #include "archi/itc/itc_v1.h"
 
