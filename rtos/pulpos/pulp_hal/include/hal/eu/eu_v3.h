@@ -49,20 +49,24 @@ static inline unsigned int evt_read32(unsigned int base, unsigned int offset)
   return value;
 }
 #else
+#if !defined(CONFIG_PULP)
 #define evt_read32(base,offset) \
   ({ \
     unsigned int value; \
-#if !defined(CONFIG_PULP)
     value = __builtin_pulp_event_unit_read_fenced((int *)base, offset); \
+    value; \
+  })
 #else
+#define evt_read32(base,offset) \
+  ({ \
+    unsigned int value; \
   __asm__ __volatile__ ("" : : : "memory"); \
-  value = pulp_read32(base + offset); \
+  value = pulp_read32((base) + (offset)); \
   __asm__ __volatile__ ("" : : : "memory"); \
-#endif
     value; \
   })
 #endif
-
+#endif
 /** Get event status. 
   Return the value of the event status register. This register contains one bit per event, 1 means the event is set. Note that this register is actually used
   as a status register for both events and interrupts, so clearing one will clear the other. This register is a buffer, which means if an event is received

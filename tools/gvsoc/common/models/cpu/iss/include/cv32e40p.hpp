@@ -442,8 +442,8 @@ static inline void corev_hwloop_set_end(iss_t *iss, iss_insn_t *insn, int index,
   if (end_insn->hwloop_handler == NULL)
   {
     end_insn->hwloop_handler = end_insn->handler;
-    end_insn->handler = hwloop_check_exec;
-    end_insn->fast_handler = hwloop_check_exec;
+    end_insn->handler = corev_hwloop_check_exec;
+    end_insn->fast_handler = corev_hwloop_check_exec;
   }
 
   iss->cpu.corev.hwloop_regs[COREV_HWLOOP_LPEND(index)] = end;

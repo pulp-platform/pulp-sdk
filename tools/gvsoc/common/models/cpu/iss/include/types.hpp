@@ -460,7 +460,7 @@ typedef struct iss_cpu_s {
   iss_irq_t irq;
   iss_csr_t csr;
   iss_pulpv2_t pulpv2;
-  iss_pulpv2_t corev;
+  iss_corev_t corev;
   iss_rnnext_t rnnext;
 } iss_cpu_t;
 

@@ -17,7 +17,11 @@
 #ifndef __HAL_CHIPS_PULP_PULP_H__
 #define __HAL_CHIPS_PULP_PULP_H__
 
+#ifdef ARCHI_HAS_COREV
+#include "hal/riscv/riscv_corev_v1.h"
+#else
 #include "hal/riscv/riscv_v5.h"
+#endif
 #include "hal/eu/eu_v3.h"
 #include "hal/itc/itc_v1.h"
 #include "hal/dma/mchan_v7.h"
