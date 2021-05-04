@@ -416,6 +416,10 @@ static inline int pi_ram_id_alloc(struct pi_device *device);
 
 static inline int pi_ram_ctl_status_regs(struct pi_device *device, uint32_t cmd, void *arg);
 
+static inline void pi_ram_copy_bi2d_async(struct pi_device *device,
+  uint32_t pi_ram_addr, void *data, uint32_t size, uint32_t dir,
+  uint32_t stride, uint32_t length, int ext2loc, pi_task_t *task);
+
 /** \brief Allocate RAM memory from cluster side.
  *
  * This function is a remote call that the cluster can do to the
@@ -715,6 +719,7 @@ typedef struct __pi_ram_api_t
     int (*free)(struct pi_device *device, uint32_t addr, uint32_t size);
     int (*id_alloc)(struct pi_device *device);
     int (*status_regs)(struct pi_device *device, uint32_t cmd, void *arg);
+    void (*copy_bi2d_async)(struct pi_device *device, uint32_t pi_ram_addr, void *data, uint32_t size, uint32_t dir, uint32_t stride, uint32_t length, int ext2loc, pi_task_t *task);
 } pi_ram_api_t;
 
 
@@ -758,6 +763,12 @@ static inline void pi_ram_copy_2d_async(struct pi_device *device, uint32_t pi_ra
 {
     pi_ram_api_t *api = (pi_ram_api_t *)device->api;
     api->copy_2d_async(device, pi_ram_addr, data, size, stride, length, ext2loc, task);
+}
+
+static inline void pi_ram_copy_bi2d_async(struct pi_device *device, uint32_t pi_ram_addr, void *data, uint32_t size, uint32_t dir, uint32_t stride, uint32_t length, int ext2loc, pi_task_t *task)
+{
+    pi_ram_api_t *api = (pi_ram_api_t *)device->api;
+    api->copy_bi2d_async(device, pi_ram_addr, data, size, dir, stride, length, ext2loc, task);
 }
 
 static inline void pi_ram_read(struct pi_device *device, uint32_t pi_ram_addr, void *data, uint32_t size)

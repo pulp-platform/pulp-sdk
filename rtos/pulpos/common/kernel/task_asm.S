@@ -31,18 +31,36 @@ pos_task_push_asm:
     //   x11/a1: the task
     //   x12/a2: temporary register
 
+#ifdef CONFIG_NO_STD_RELOC
     lw      x12, %tiny(pos_sched_first)(x0)
+#else
+    la      t0, pos_sched_first
+    lw      x12, 0(t0)
+#endif
     sw      x0, PI_TASK_T_NEXT(x11)
     beqz    x12, __rt_no_first
+#ifdef CONFIG_NO_STD_RELOC
     lw      x12, %tiny(pos_sched_last)(x0)
+#else
+    la      t0, pos_sched_last
+    lw      x12, 0(t0)
+#endif
     sw      x11, PI_TASK_T_NEXT(x12)
     j       __rt_common
 
     __rt_no_first:
+#ifdef CONFIG_NO_STD_RELOC
     sw      x11, %tiny(pos_sched_first)(x0)
+#else
+    sw      x11, pos_sched_first, t0
+#endif
 
     __rt_common:
+#ifdef CONFIG_NO_STD_RELOC
     sw      x11, %tiny(pos_sched_last)(x0)
+#else
+    sw      x11, pos_sched_last, t0
+#endif
 
     enqueue_end:
     jr          x9

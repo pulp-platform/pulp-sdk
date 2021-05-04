@@ -341,6 +341,15 @@ int pi_hyper_id_alloc(struct pi_device *device);
 
 int pi_hyper_ctl_status_regs(struct pi_device *device, uint32_t cmd, void *arg);
 
+/* If dir=0, 2d transfer is for L2. If dir=1, 2d transfer is for RAM */
+void pi_hyper_write_bi2d_async(struct pi_device *device,
+  uint32_t hyper_addr, void *addr, uint32_t size, uint32_t dir,
+  uint32_t stride, uint32_t length, struct pi_task *task);
+
+void pi_hyper_read_bi2d_async(struct pi_device *device,
+  uint32_t hyper_addr, void *addr, uint32_t size, uint32_t dir,
+  uint32_t stride, uint32_t length, struct pi_task *task);
+
 /** \brief Enqueue a read copy to the Hyperbus from cluster side (from Hyperbus
  * to processor).
  *
