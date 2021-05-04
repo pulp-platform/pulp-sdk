@@ -127,7 +127,6 @@ void Udma_channel::push_ready_req(vp::io_req *req)
 {
   current_cmd->received_size += req->get_size();
 
-  trace.msg("Received\n");
   trace.msg("Received data from L2 (cmd: %p, data_size: 0x%x, transfer_size: 0x%x, received_size: 0x%x, value: 0x%x)\n",
     current_cmd, req->get_size(), current_cmd->size, current_cmd->received_size, *(uint32_t *)req->get_data());
 
@@ -410,13 +409,29 @@ vp::io_req_status_e Udma_periph::req(vp::io_req *req, uint64_t offset)
 
 
 
+// bool Udma_transfer::prepare_req(vp::io_req *req)
+// {
+//   req->prepare();
+//   // The UDMA is dropping the address LSB to always have 32 bits aligned
+//   // requests
+//   req->set_addr(current_addr & ~0x3);
+//   // The UDMA always sends 32 bits requests to L2 whatever the remaining size
+//   req->set_size(4);
+
+//   *(Udma_channel **)req->arg_get(0) = channel;
+//   req->set_actual_size(remaining_size > 4 ? 4 : remaining_size);
+
+//   current_addr += 4;
+//   remaining_size -= 4;
+
+//   return remaining_size <= 0;
+// }
+/* The UDMA cannot do misaligned access. It uses strobes to mask the byte to not overwrite the memory and split the request*/
 bool Udma_transfer::prepare_req(vp::io_req *req)
 {
   req->prepare();
-  // The UDMA is dropping the address LSB to always have 32 bits aligned
-  // requests
-  req->set_addr(current_addr & ~0x3);
-  // The UDMA always sends 32 bits requests to L2 whatever the remaining size
+  // The UDMA has current_addr always aligned to 32-bit word. The model not
+  req->set_addr(current_addr);
   req->set_size(4);
 
   *(Udma_channel **)req->arg_get(0) = channel;
