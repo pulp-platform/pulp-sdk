@@ -317,6 +317,8 @@ typedef struct iss_insn_s {
   iss_insn_t *(*saved_handler)(iss_t *, iss_insn_t*);
   iss_insn_t *branch;
 
+  int in_spregs[6];
+
   int latency;
 
 } iss_insn_t;
@@ -430,6 +432,17 @@ typedef struct iss_pulpv2_s
 } iss_pulpv2_t;
 
 
+typedef struct iss_pulp_nn_s
+{
+  int qnt_step;
+  iss_reg_t qnt_regs[4];
+  iss_addr_t addr_reg;  // need to be extended with address reg
+  iss_reg_t qnt_reg_out;
+  iss_reg_t spr_ml[6];
+  iss_insn_t *ml_insn;
+} iss_pulp_nn_t;
+
+
 typedef struct iss_rnnext_s
 {
   iss_insn_t *sdot_insn;
@@ -450,7 +463,8 @@ typedef struct iss_cpu_s {
   iss_config_t config;
   iss_irq_t irq;
   iss_csr_t csr;
-  iss_pulpv2_t pulpv2;
+  iss_pulpv2_t pulpv2;  
+  iss_pulp_nn_t pulp_nn;
   iss_rnnext_t rnnext;
 } iss_cpu_t;
 
