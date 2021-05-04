@@ -644,7 +644,7 @@ int Hyper_periph_v3::unpack(int original_size)
   switch (page_bound)
   {
     case 4:
-      trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is not considered\n");
+      trace.msg("Page bound is not considered\n");
       return 0;
     break;
 
