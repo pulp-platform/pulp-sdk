@@ -149,6 +149,17 @@ static void hyperram_copy_2d_async(struct pi_device *device, uint32_t addr, void
 
 
 
+static void hyperram_copy_bi2d_async(struct pi_device *device, uint32_t addr, void *data, uint32_t size, uint32_t dir, uint32_t stride, uint32_t length, int ext2loc, pi_task_t *task)
+{
+  hyperram_t *hyperram = (hyperram_t *)device->data;
+
+  if (ext2loc)
+    pi_hyper_read_bi2d_async(&hyperram->hyper_device, addr, data, size, dir, stride, length, task);
+  else
+    pi_hyper_write_bi2d_async(&hyperram->hyper_device, addr, data, size, dir, stride, length, task);
+}
+
+
 
 int hyperram_alloc(struct pi_device *device, uint32_t *addr, uint32_t size)
 {
@@ -254,6 +265,7 @@ static pi_ram_api_t hyperram_api = {
   .free                 = &hyperram_free,
   .id_alloc             = &hyperram_id_alloc,
   .status_regs          = &hyperram_ctl_status_regs,
+  .copy_bi2d_async   = &hyperram_copy_bi2d_async,
 };
 
 
