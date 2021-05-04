@@ -758,6 +758,12 @@ public:
   bool cfg_setup;
   int channel_id;
   bool is_write;
+  bool twd_act;
+  int twd_count;
+  int twd_stride;
+  bool twd_is_l2;
+  int extra_size;
+
   void set_next(Hyper_transfer *next) { this->next = next; }
   Hyper_transfer *get_next() { return next; }
   Hyper_transfer *next;
@@ -886,8 +892,9 @@ private:
 
   bool *cfg_setup;
   bool *command_word;
-  bool ending = false;
-  bool command_mode = false;
+  bool ending;
+  bool command_mode;
+  int twd_count;
   bool write_trans;
   bool continuous_mode;
   int transfer_size_mode;
