@@ -34,7 +34,7 @@
 /* Architectural configuration
 */
 #define HYPER_FIFO_DEPTH 8
-#define HYPER_NB_CHANNELS 4 /* 4 tran_id and 1 common space */
+#define HYPER_NB_CHANNELS 8 /* 8 tran_id and 1 common space */
 
 #define HYPER_CHANNELS_OFFSET 0x80
 #define HYPER_CHANNELS_ID_OFFSET(id) HYPER_CHANNELS_OFFSET*(id)
@@ -62,11 +62,11 @@
 #define ARCHI_UDMA_HYPER_EOT_RX_EVT       2
 #define ARCHI_UDMA_HYPER_EOT_TX_EVT       3
 
-
-#define ARCHI_SOC_EVENT_HYPER_RX      28
-#define ARCHI_SOC_EVENT_HYPER_TX      29
-#define ARCHI_SOC_EVENT_HYPER_EOT_RX  30
-#define ARCHI_SOC_EVENT_HYPER_EOT_TX  31
+/* Start from periph id*4 */
+#define ARCHI_SOC_EVENT_HYPER_RX      32
+#define ARCHI_SOC_EVENT_HYPER_TX      33
+#define ARCHI_SOC_EVENT_HYPER_EOT_RX  34
+#define ARCHI_SOC_EVENT_HYPER_EOT_TX  35
 
 
 /* Common registers offsets
