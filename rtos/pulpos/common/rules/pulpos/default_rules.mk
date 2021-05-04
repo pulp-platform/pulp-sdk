@@ -18,14 +18,17 @@ CONFIG_BUILD_DIR=$(TARGET_BUILD_DIR)
 ifdef PULP_RISCV_GCC_TOOLCHAIN_CI
 PULP_CC := $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_LD)
+PULP_AR := $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_AR)
 else
 ifdef PULP_RUNTIME_GCC_TOOLCHAIN
 PULP_CC := $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_LD)
+PULP_AR := $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_AR)
 else
 ifdef PULP_RISCV_GCC_TOOLCHAIN
 PULP_CC := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_LD)
+PULP_AR := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_AR)
 endif
 endif
 endif
@@ -230,13 +233,58 @@ INSTALL_TARGETS += $(TARGET_INSTALL_DIR)/bin/$(1)
 endef
 
 
-
-
 ifdef PULP_APP
 PULP_APPS += $(PULP_APP)
 endif
 
 $(foreach app, $(PULP_APPS), $(eval $(call declare_app,$(app))))
+
+
+
+define declare_static_lib
+
+$(eval PULP_STATIC_LIB_SRCS_$(1) += $(PULP_STATIC_LIB_SRCS) $(PULP_STATIC_LIB_FC_SRCS)  $(PULP_STATIC_LIB_CL_SRCS) )
+$(eval PULP_STATIC_LIB_ASM_SRCS_$(1) += $(PULP_STATIC_LIB_ASM_SRCS) $(PULP_STATIC_LIB_FC_ASM_SRCS)  $(PULP_STATIC_LIB_CL_ASM_SRCS))
+$(eval PULP_STATIC_LIB_OBJS_$(1) += $(patsubst %.c,$(TARGET_BUILD_DIR)/$(1)/%.o,$(PULP_STATIC_LIB_SRCS_$(1))))
+$(eval PULP_STATIC_LIB_OBJS_$(1) += $(patsubst %.S,$(TARGET_BUILD_DIR)/$(1)/%.o,$(PULP_STATIC_LIB_ASM_SRCS_$(1))))
+
+$(eval PULP_STATIC_LIB_CFLAGS_$(1) += $(PULP_ARCH_CFLAGS) $(PULP_CFLAGS) $(PULP_APP_CFLAGS))
+
+-include $(PULP_STATIC_LIB_OBJS_$(1):.o=.d)
+
+$(TARGET_BUILD_DIR)/$(1)/%.o: %.c
+	@echo "CC  $$<"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP $(PULP_STATIC_LIB_CFLAGS_$(1))
+
+$(TARGET_BUILD_DIR)/$(1)/%.o: %.cpp
+	@echo "CXX $$<"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_CC) -c $< -o $@ -MMD -MP $(PULP_STATIC_LIB_CFLAGS_$(1))
+
+$(TARGET_BUILD_DIR)/$(1)/%.o: %.S
+	@echo "CC  $$<"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP -DLANGUAGE_ASSEMBLY $(PULP_STATIC_LIB_CFLAGS_$(1))
+
+$(TARGET_BUILD_DIR)/lib/lib$(1).a: $(PULP_STATIC_LIB_OBJS_$(1))
+	@echo "AR  $$@"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_AR) -r $$@ $$^
+
+STATIC_LIB_TARGETS += $(TARGET_BUILD_DIR)/lib/lib$(1).a
+
+endef
+
+
+ifdef PULP_STATIC_LIB
+PULP_STATIC_LIBS += $(PULP_STATIC_LIB)
+endif
+
+$(foreach static_lib, $(PULP_STATIC_LIBS), $(eval $(call declare_static_lib,$(static_lib))))
+
+
+
 
 conf:
 
@@ -266,6 +314,15 @@ run:
 dis:
 	$(PULP_OBJDUMP) $(PULP_ARCH_OBJDFLAGS) $(disopt) $(TARGETS)
 
+build-lib: $(STATIC_LIB_TARGETS)
+
+install-lib: build-lib
+	@echo "INSTALL  $(STATIC_LIB_TARGETS)"
+	$(V)mkdir -p $(PULP_EXT_LIBS)
+	$(V)mkdir -p $(PULP_EXT_LIBS)/include
+	$(V)cp $(STATIC_LIB_TARGETS) $(PULP_EXT_LIBS)
+	$(V)cp -t $(PULP_EXT_LIBS)/include  $(PULP_STATIC_LIB_HEADERS)
+
 size:
 	$(PULPOS_HOME)/bin/pos-size --binary=$(TARGETS) --depth=10
 
@@ -279,4 +336,4 @@ help:
 	@echo "  CONFIG_TRACE_LEVEL=<level>    Activate traces for the specified level (0=none, 1=fatal, 2=error, 3=warning, 4=info, 5=debug, 6=trace)."
 	@echo "  CONFIG_TRACE_ALL=1            Activate all traces. Other traces can be individually activated with CONFIG_TRACE_<NAME>."
 
-.PHONY: image flash exec run dis size help clean all conf
+.PHONY: image flash exec run dis size help clean all conf build-lib install-lib

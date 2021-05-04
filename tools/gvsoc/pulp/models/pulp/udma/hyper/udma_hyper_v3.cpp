@@ -16,7 +16,6 @@
 
 /* 
  * Authors: Nazareno Bruschi, Unibo (nazareno.bruschi@unibo.it)
-            Germain Haugou, ETH (germain.haugou@iis.ee.ethz.ch)
  */
 
 
@@ -85,6 +84,9 @@ void Hyper_periph_v3::reset(bool active)
 
     this->current_command = NULL;
     this->channel_id = 0;
+    this->ending = false;
+    this->command_mode = false;
+    this->twd_count = 0;
   }
 }
 
@@ -108,12 +110,12 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (_this->state == HYPER_STATE_IDLE)
   {
-    //_this->top->get_trace()->msg("%d:IDLE\n", _this->channel_id);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:IDLE\n", _this->channel_id);
 
     if (_this->pending_bytes > 0)
     {
       _this->delay = _this->current_command->latency << _this->current_command->en_add_latency;
-      //_this->delay = 1000;
+
       if (_this->delay > 0)
       {
         _this->state = HYPER_STATE_DELAY;
@@ -136,33 +138,37 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
           _this->transfer_size = _this->rx_channel->current_cmd->size;         
         }
         else
+        {
           _this->transfer_size = _this->tx_channel->current_cmd->size;
+        }
       }
       else
       {
+        /* Command mode writes just an half-word */
         _this->transfer_size = 2;
       }
     }
   }
   else if (_this->state == HYPER_STATE_DELAY)
   {
-    //_this->top->get_trace()->msg("%d:DELAY (left: %d)\n", _this->channel_id, _this->delay);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:DELAY (left: %d)\n", _this->channel_id, _this->delay);
     _this->delay--;
     if (_this->delay == 0)
       _this->state = HYPER_STATE_CS;
   }
   else if (_this->state == HYPER_STATE_CS)
   {
-    //_this->top->get_trace()->msg("%d:CS\n", _this->channel_id);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:CS\n", _this->channel_id);
     _this->state = HYPER_STATE_CA;
     send_cs = true;
+    /* Selects first  the right device */
     _this->set_device(_this->current_command->mem_sel);
     cs = _this->mem_sel;
     cs_value = 1;
   }
   else if (_this->state == HYPER_STATE_CA)
   {
-    //_this->top->get_trace()->msg("%d:CA\n", _this->channel_id);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:CA\n", _this->channel_id);
     send_byte = true;
     _this->ca_count--;
     byte = _this->ca.raw[_this->ca_count];
@@ -173,8 +179,17 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_DATA && _this->pending_bytes > 0)
   {
-    //_this->top->get_trace()->msg("%d:DATA (left: %x of transfer_size)\n", _this->channel_id, _this->transfer_size);
     send_byte = true;
+    // /* If L2 request is misaligned skips the number of more loaded bytes, just the first time and during transaction from L2 to memory */
+    // if(_this->current_command->is_write && _this->current_command->extra_size)
+    // {
+    //   _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:DATA (skipping %d bytes)\n", _this->channel_id, _this->current_command->extra_size);
+    //   _this->pending_word >>= (8 * _this->current_command->extra_size);
+    //   _this->pending_bytes -= _this->current_command->extra_size;
+    //   _this->transfer_size -= _this->current_command->extra_size;
+    //   _this->current_command->extra_size = 0;
+    // }
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:DATA (left: %x of transfer_size)\n", _this->channel_id, _this->transfer_size);
     byte = _this->pending_word & 0xff;
     _this->pending_word >>= 8;
     _this->pending_bytes--;
@@ -184,6 +199,7 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
     {  
       _this->pending_bytes = 0;
       _this->state = HYPER_STATE_CS_OFF;
+      /* To naturally conclude the transaction */
       _this->ending = true;
     }
     if (_this->pending_bytes == 0)
@@ -193,19 +209,32 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_CS_OFF)
   {
-    //_this->top->get_trace()->msg("%d:CS OFF\n", _this->channel_id);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:CS OFF\n", _this->channel_id);
     _this->state = HYPER_STATE_IDLE;
     send_cs = true;
     cs = _this->mem_sel;
     cs_value = 0;
-    if(_this->get_nb_tran(_this->channel_id) == 0)
+
+    /* Nothing will be fetched until the whole 2d transaction is completed */
+    if(_this->twd_count)
     {
-      _this->set_busy_reg(_this->channel_id, 0);
-      _this->common_regs[(TRANS_ID_ALLOC_OFFSET)/4] = _this->update_trans_id_alloc();
-      if(_this->command_mode)
+      _this->transfer_splitter();
+    }
+    else
+    {
+      if(_this->get_nb_tran(_this->channel_id) == 0)
       {
+        _this->set_busy_reg(_this->channel_id, 0);
+        _this->common_regs[(TRANS_ID_ALLOC_OFFSET)/4] = _this->update_trans_id_alloc();
         _this->trace.msg("Current transfer is finished\n");
-        _this->top->trigger_event(ARCHI_UDMA_HYPER_CTL_EVT);
+        if (!_this->ca.read)
+        {
+          _this->top->trigger_event(ARCHI_SOC_EVENT_HYPER_EOT_TX);
+        }
+        else
+        {
+          _this->top->trigger_event(ARCHI_SOC_EVENT_HYPER_EOT_RX);
+        }
       }
     }
     _this->ending = false;
@@ -213,7 +242,7 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (send_byte || send_cs)
   {
-    //_this->top->get_trace()->msg("%d:SENDING\n", _this->channel_id);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:SENDING\n", _this->channel_id);
     if (!_this->hyper_itf.is_bound())
     {
       _this->top->get_trace()->warning("%d: Trying to send to HYPER interface while it is not connected\n", _this->channel_id);
@@ -236,9 +265,10 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (end)
   {
-    //_this->top->get_trace()->msg("%d:ENDING\n", _this->channel_id);
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:END, ending: %d\n", _this->channel_id, _this->ending);
 
-    if(_this->ending)
+    /* Transaction is resetted only when whole 2d transfer is completed */
+    if(_this->ending && _this->twd_count == 0)
     {
       _this->free_fifo[_this->channel_id]->push(_this->current_command);
       _this->current_command = NULL;
@@ -266,6 +296,7 @@ void Hyper_periph_v3::check_state()
 {
   if (this->pending_bytes == 0 && !this->ending)
   {
+    /* If transaction is resetted, a new transaction is fetched */
     if(this->current_command == NULL)
     {
       this->fetch_from_fifos();
@@ -308,6 +339,7 @@ void Hyper_periph_v3::handle_ready_reqs()
   this->check_state();
 }
 
+/* Fetches from channels fifos the transaction and enqueues request to uDMA */
 void Hyper_periph_v3::fetch_from_fifos()
 {
   int id = transfer_arbiter(channel_id);
@@ -320,7 +352,16 @@ void Hyper_periph_v3::fetch_from_fifos()
     {
       vp_warning_always(&trace, "Wrong request. Fetching from %d but it is request from %d\n", channel_id, current_command->channel_id);        
     }
-    trace.msg("Fetching new request from %d (cfg_setup: %d, nb_tran: %d)\n", channel_id, current_command->cfg_setup, get_nb_tran(id));
+    trace.msg(vp::trace::LEVEL_INFO, "Fetching new request from %d (cfg_setup: %d, twd: %d, nb_tran: %d)\n", channel_id, current_command->cfg_setup, current_command->twd_act, get_nb_tran(id));
+
+    if(current_command->twd_act)
+    {
+      trace.msg(vp::trace::LEVEL_INFO, "Splitting 2d transfer request from %d (size: %x, stride: %x, count: %x, from_l2: %d)\n", channel_id, current_command->size, current_command->twd_stride, current_command->twd_count, current_command->twd_is_l2);
+      twd_count = current_command->size;
+      current_command->size = (current_command->twd_count);
+      current_command->remaining_size = current_command->size;
+      twd_count -= current_command->twd_count;
+    }
 
     command_mode = current_command->cfg_setup;
     if(command_mode)
@@ -332,6 +373,14 @@ void Hyper_periph_v3::fetch_from_fifos()
     {
       if(current_command->is_write)
       {
+        // /* A misaligned L2 address */
+        // if(current_command->addr & 0x3)
+        // {
+          // trace.msg(vp::trace::LEVEL_DEBUG, "Trying to enqueue a misaligned L2 access request (extra_size: %x)\n", (current_command->addr & 0x3));
+          // current_command->extra_size = (current_command->addr & 0x3);
+        // }
+        // else
+          //current_command->extra_size = 0;
         channel1->build_reqs_and_enqueue(current_command);
       }
       else
@@ -342,6 +391,7 @@ void Hyper_periph_v3::fetch_from_fifos()
   }
 }
 
+/* Kickes the transaction writing RX or TX CFG register */
 vp::io_req_status_e Hyper_periph_v3::hyper_cfg_req(vp::io_req *req, int id)
 {
   uint32_t *data = (uint32_t *)req->get_data();
@@ -349,7 +399,7 @@ vp::io_req_status_e Hyper_periph_v3::hyper_cfg_req(vp::io_req *req, int id)
   transfer_size_mode = ARCHI_REG_FIELD_GET(*data, UDMA_CHANNEL_CFG_SIZE_BIT, 1);
   bool channel_enabled = ARCHI_REG_FIELD_GET(*data, UDMA_CHANNEL_CFG_EN_BIT, 1);
   bool channel_clear = ARCHI_REG_FIELD_GET(*data, UDMA_CHANNEL_CFG_CLEAR_BIT, 1);
-  trace.msg("Setting cfg register (continuous: %d, size: %s, enable: %d, clear: %d)\n",
+  trace.msg(vp::trace::LEVEL_INFO, "Setting cfg register (continuous: %d, size: %s, enable: %d, clear: %d)\n",
     continuous_mode, transfer_size_mode == 0 ? "8bits" : transfer_size_mode == 1 ? "16bits" : "32bits",
     channel_enabled, channel_clear);
 
@@ -403,7 +453,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg("Accessing RX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);    
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing RX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);    
     write_trans = false;
   }
   else if (offset == REG_RX_SIZE(0))
@@ -413,7 +463,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg("Accessing RX size register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing RX size register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == REG_RX_CFG(0))
   {
@@ -422,7 +472,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg("Accessing RX cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing RX cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
 
     return hyper_cfg_req(req, id);
   }
@@ -433,7 +483,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg("Accessing TX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing TX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
     write_trans = true;  
   }
   else if (offset == REG_TX_SIZE(0))
@@ -443,7 +493,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg("Accessing TX size register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing TX size register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == REG_TX_CFG(0))
   {
@@ -452,24 +502,49 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg("Accessing TX cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing TX cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
 
     return hyper_cfg_req(req, id);
   }
   else if (offset == HYPER_CA_SETUP(0))
   {
-    trace.msg("Accessing CA setup register (value: 0x%x, cfg_setup: %d, id: %d)\n", *(uint32_t *)(req->get_data()), id);  
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing CA setup register (value: 0x%x, cfg_setup: %d, id: %d)\n", *(uint32_t *)(req->get_data()), id);  
     command_word[id] = true;
   }
   else if (offset == REG_HYPER_CFG(0))
   {
-    trace.msg("Accessing hyper cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing hyper cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
     cfg_setup[id] = true;  
+  }
+  else if (offset == TWD_ACT(0))
+  {
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd activation register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+  }
+  else if (offset == TWD_COUNT(0))
+  {
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd count register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+  }
+  else if (offset == TWD_STRIDE(0))
+  {
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd stride register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+  }
+  else if (offset == TWD_ACT_L2(0))
+  {
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd activation register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+  }
+  else if (offset == TWD_COUNT_L2(0))
+  {
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd count register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+  }
+  else if (offset == TWD_STRIDE_L2(0))
+  {
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd stride register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
   }
 
   return vp::IO_REQ_OK;
 }
 
+/* Selects if is a request of module (common regs) or a specific channel request. Depends from the id */
 vp::io_req_status_e Hyper_periph_v3::custom_req(vp::io_req *req, uint64_t offset, int id)
 {
   if (req->get_size() != 4)
@@ -489,55 +564,7 @@ vp::io_req_status_e Hyper_periph_v3::custom_req(vp::io_req *req, uint64_t offset
   return vp::IO_REQ_OK;
 }
 
-int Hyper_periph_v3::get_nb_tran(int id)
-{
-  return ARCHI_REG_FIELD_GET(this->regs[id][(STATUS(0))/4], HYPER_NB_TRAN_OFFSET, HYPER_NB_TRAN_SIZE);
-}
-
-void Hyper_periph_v3::update_nb_tran(int id, int value)
-{
-  uint8_t nb_tran = get_nb_tran(id);
-  this->regs[id][(STATUS(0))/4] = ARCHI_REG_FIELD_SET(this->regs[id][(STATUS(0))/4], (nb_tran + value), HYPER_NB_TRAN_OFFSET, HYPER_NB_TRAN_SIZE);
-}
-
-void Hyper_periph_v3::set_busy_reg(int id, int value)
-{
-  this->regs[id][(STATUS(0))/4] = ARCHI_REG_FIELD_SET(this->regs[id][(STATUS(0))/4], value, HYPER_BUSY_OFFSET, HYPER_BUSY_SIZE);
-}
-
-int Hyper_periph_v3::get_busy_reg(int id)
-{
-  return ARCHI_REG_FIELD_GET(this->regs[id][(STATUS(0))/4], HYPER_BUSY_OFFSET, HYPER_BUSY_SIZE);
-}
-
-void Hyper_periph_v3::set_device(int cs)
-{
-  int dev = cs;
-  switch (dev)
-  {
-    case 0:
-      trace.msg("Choosing HyperRam\n");
-      this->mem_sel = dev;
-    break;
-    case 1:
-      trace.msg("Choosing HyperFlash\n");
-      this->mem_sel = dev;
-    break;
-    case 2:
-      trace.msg("Choosing PSRAM(x8)\n");
-      this->mem_sel = dev;
-    break;
-    case 3:
-      trace.msg("Choosing PSRAM(x16)\n");
-      this->mem_sel = dev;
-    break;
-    default:
-      trace.warning("Choosing invalid device. Default is set to 0\n");
-      this->mem_sel = 0;
-    break;
-  }
-}
-
+/* Enqueues the transaction in the right id fifo */
 void Hyper_periph_v3::enqueue_transfer(int id)
 {
   if (free_fifo[id]->is_empty())
@@ -558,6 +585,15 @@ void Hyper_periph_v3::enqueue_transfer(int id)
   else
   {
     req->cfg_setup = false;
+    
+    req->twd_act = (regs[id][(TWD_ACT(0))/4] == 1 || regs[id][(TWD_ACT_L2(0))/4] == 1) ? true : false;
+    if (req->twd_act)
+    {
+      /* count and stride are common. Count describes a square matrix */
+      req->twd_count = (regs[id][(TWD_ACT(0))/4] == 1) ? regs[id][(TWD_COUNT(0))/4] : regs[id][(TWD_COUNT_L2(0))/4];
+      req->twd_stride = (regs[id][(TWD_ACT(0))/4] == 1) ? regs[id][(TWD_STRIDE(0))/4] : regs[id][(TWD_STRIDE_L2(0))/4];
+      req->twd_is_l2 = (regs[id][(TWD_ACT_L2(0))/4] == 1) ? true : false;
+    }
     if(!write_trans)
     {
       req->addr = regs[id][(REG_RX_SADDR(0))/4];
@@ -576,6 +612,7 @@ void Hyper_periph_v3::enqueue_transfer(int id)
     }
   }
 
+  //req->extra_size = 0;
   req->transfer_size = transfer_size_mode;      
   req->received_size = 0;
   req->continuous_mode = continuous_mode;
@@ -614,13 +651,13 @@ int Hyper_periph_v3::unpack(int original_size)
     default:
       if(original_size < page_bound)
       {
-        trace.msg("Page bound is considered (value: %d) but unpacking is not necessary (value: %d)\n", 
+        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) but unpacking is not necessary (value: %d)\n", 
           page_bound == 0 ? 128 : page_bound == 1 ? 256 : page_bound == 2 ? 512 : page_bound == 3 ? 1024 : 0, original_size);
         return original_size;
       }
       else
       {
-        trace.msg("Page bound is considered (value: %d) and unpacking is necessary (original: %d, new: %d)\n", 
+        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) and unpacking is necessary (original: %d, new: %d)\n", 
           page_bound == 0 ? 128 : page_bound == 1 ? 256 : page_bound == 2 ? 512 : page_bound == 3 ? 1024 : 0, original_size, page_bound - original_size);
         return page_bound - original_size;
       }
@@ -629,9 +666,46 @@ int Hyper_periph_v3::unpack(int original_size)
   return 0;
 }
 
+/* When 2d transfer is detected, it divides the job in 1d transfers. A 2d transfer is enqueued in tran_id fifo and after its fetching, nothing will be fetched until every transfers are completed */
 void Hyper_periph_v3::transfer_splitter()
 {
+  if(current_command->twd_is_l2)
+  {
+    current_command->addr += current_command->twd_stride;
+    current_command->current_addr += current_command->twd_stride;
+    // /* Striding provides a misaligned L2 address */
+    // if(current_command->is_write && (current_command->addr & 0x3))
+    // {
+      // trace.msg(vp::trace::LEVEL_DEBUG, "Trying to enqueue a misaligned L2 access request (extra_size: %x)\n", (current_command->addr & 0x3));
+      // current_command->extra_size = (current_command->addr & 0x3);
+    // }
+    // else
+      // current_command->extra_size = 0;
 
+    current_command->size = current_command->twd_count;// + current_command->extra_size;
+    current_command->remaining_size = current_command->size;
+    current_command->ex_addr += current_command->twd_count;
+  }
+  else
+  {
+    current_command->ex_addr += current_command->twd_stride;
+
+    current_command->addr += current_command->size;
+    current_command->current_addr += current_command->size;
+  }
+  /* twd_count is useful also when current_command will be resetted */
+  twd_count -= current_command->twd_count; 
+
+  trace.msg(vp::trace::LEVEL_INFO, "Updating pointer for 2D transfer (addr: 0x%x, 1D remaining transfer: %d)\n", current_command->twd_is_l2 ? current_command->addr : current_command->ex_addr, twd_count);
+
+  if(current_command->is_write)
+  {
+    channel1->build_reqs_and_enqueue(current_command);
+  }
+  else
+  {
+    channel0->build_reqs_and_enqueue(current_command);
+  }
 }
 
 void Hyper_periph_v3::width_modulator_16b_32b()
@@ -644,6 +718,59 @@ void Hyper_periph_v3::width_modulator_32b_16b()
 
 }
 
+void Hyper_periph_v3::set_device(int cs)
+{
+  int dev = cs;
+  switch (dev)
+  {
+    case 0:
+      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing HyperRam\n");
+      this->mem_sel = dev;
+    break;
+    case 1:
+      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing HyperFlash\n");
+      this->mem_sel = dev;
+    break;
+    case 2:
+      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing PSRAM(x8)\n");
+      this->mem_sel = dev;
+    break;
+    case 3:
+      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing PSRAM(x16)\n");
+      this->mem_sel = dev;
+    break;
+    default:
+      trace.warning("Choosing invalid device. Default is set to 0\n");
+      this->mem_sel = 0;
+    break;
+  }
+}
+
+/* nb_tran is encoded in the status register with mask equal to 0x1fe */
+int Hyper_periph_v3::get_nb_tran(int id)
+{
+  return ARCHI_REG_FIELD_GET(this->regs[id][(STATUS(0))/4], HYPER_NB_TRAN_OFFSET, HYPER_NB_TRAN_SIZE);
+}
+
+/* nb_tran is a counter of how much transfers is already enqueued in tran_id fifo */
+void Hyper_periph_v3::update_nb_tran(int id, int value)
+{
+  uint8_t nb_tran = get_nb_tran(id);
+  this->regs[id][(STATUS(0))/4] = ARCHI_REG_FIELD_SET(this->regs[id][(STATUS(0))/4], (nb_tran + value), HYPER_NB_TRAN_OFFSET, HYPER_NB_TRAN_SIZE);
+}
+
+/* busy is encoded in the status register with mask equal to 0x001 */
+void Hyper_periph_v3::set_busy_reg(int id, int value)
+{
+  this->regs[id][(STATUS(0))/4] = ARCHI_REG_FIELD_SET(this->regs[id][(STATUS(0))/4], value, HYPER_BUSY_OFFSET, HYPER_BUSY_SIZE);
+}
+
+int Hyper_periph_v3::get_busy_reg(int id)
+{
+  return ARCHI_REG_FIELD_GET(this->regs[id][(STATUS(0))/4], HYPER_BUSY_OFFSET, HYPER_BUSY_SIZE);
+}
+
+/* Updates tran_id_alloc register with the smallest tran_id which is not busy */
 int Hyper_periph_v3::update_trans_id_alloc()
 {
   int trans_id_alloc;
@@ -660,6 +787,7 @@ int Hyper_periph_v3::update_trans_id_alloc()
   return HYPER_NB_CHANNELS;
 }
 
+/* fetches from tran_id fifo in round robin manner */
 int Hyper_periph_v3::transfer_arbiter(int id)
 {
   int new_id = id;
@@ -690,6 +818,7 @@ int Hyper_periph_v3::transfer_arbiter(int id)
   return new_id;
 }
 
+/* Entry point of module. Is called by udma::periph_req */
 vp::io_req_status_e Hyper_periph_v3::req(vp::io_req *req, uint64_t offset)
 {
   if (!get_periph_status())
@@ -719,6 +848,7 @@ vp::io_req_status_e Hyper_periph_v3::req(vp::io_req *req, uint64_t offset)
 
   return vp::IO_REQ_OK;
 }
+
 
 
 
