@@ -39,6 +39,12 @@ endif
 endif
 
 
+# OPENMP
+
+ifeq '$(CONFIG_OPENMP)' '1'
+PULP_SRCS += $(wildcard $(PULPOS_OPENMP_DIR)/*.c)
+PULP_CFLAGS += -I$(PULPOS_OPENMP_DIR)/include
+endif
 
 
 # HYPER
