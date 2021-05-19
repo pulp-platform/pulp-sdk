@@ -24,4 +24,8 @@ export PULPOS_TARGET=pulp
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp_rnnext
 
+export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
+
+export GVSOC_MODULES="$PULP_SDK_HOME/tools/gvsoc/common $PULP_SDK_HOME/tools/gvsoc/pulp/models"
+
 source $PULP_SDK_HOME/configs/common.sh
