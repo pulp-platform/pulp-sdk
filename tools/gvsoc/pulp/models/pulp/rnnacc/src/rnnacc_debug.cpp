@@ -42,11 +42,6 @@ void Rnnacc_v1::debug_buf_x(){
     }
     std::string copyOfStr = stringStream.str();
     this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
-
-//   std::ostringstream stringStream;
-//   stringStream << "buf_x[" << this->NR_REGS_X << ",1] = \n" << this->buf_x << "\n";
-//   std::string copyOfStr = stringStream.str();
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
 }
 
 void Rnnacc_v1::debug_buf_h(){

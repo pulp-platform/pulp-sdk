@@ -64,6 +64,34 @@ static inline int rnnacc_get_state() {
   return RNNACC_READ(RNNACC_CHECK_STATE);
 }
 
+// // set addresses for matmul computation without bias
+// static inline void rnnacc_update_x_addr( unsigned int start_x, 
+//                                          unsigned int start_wx) {
+//   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
+//   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
+//   // RNNACC_WRITE(0x0000, RNNACC_JOB_MODE);
+
+//   RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
+//   RNNACC_WRITE(n_input, RNNACC_N_INPUT);
+//   RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
+
+
+// }
+
+// // set addresses for matmul computation without bias
+// static inline void rnnacc_setup_matmul( unsigned int start_dst,
+//                                         unsigned int start_x, unsigned int start_wx,
+//                                         unsigned int n_input, unsigned int n_output ) {
+//   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
+//   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
+//   RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
+//   RNNACC_WRITE(n_input, RNNACC_N_INPUT);
+//   RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
+
+//   RNNACC_WRITE(0x0000, RNNACC_JOB_MODE);
+
+// }
+
 // set addresses for matmul computation without bias
 static inline void rnnacc_set_matmul( unsigned int start_dst,
                                       unsigned int start_x, unsigned int start_wx,

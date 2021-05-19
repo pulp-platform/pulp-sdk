@@ -96,11 +96,14 @@ void Rnnacc_v1::regfile_cxt() {
         break;
 
       case RNNACC_N_INPUT:
+        // this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE -  %d \n", this->n_input_external);
         this->n_input_external = value;
+        // this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE -  %d \n", this->n_input_external);
         break;
 
       case RNNACC_N_OUTPUT:
-        this->n_output = value;
+        this->n_output_external = value;
+        this->n_hidden_external = value;
         break;
 
       case RNNACC_JOB_MODE:
@@ -157,6 +160,7 @@ void Rnnacc_v1::printout() {
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) twomatmul=%d\n", this->twomatmul);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) multi_job=%d\n", this->multi_job);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) multijob_counter=%d\n", this->multijob_counter);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) matmul_state=%d\n", this->matmul_state);
   // CONVENIENCE configuration
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) addr_b=%x\n", this->addr_b);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) addr_x=%x\n", this->addr_x);
@@ -165,15 +169,20 @@ void Rnnacc_v1::printout() {
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) addr_wh=%x\n", this->addr_wh);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) addr_dst=%x\n", this->addr_dst);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_input=%d\n", this->n_input);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_hidden=%d\n", this->n_hidden);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_output=%d\n", this->n_output);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_input_external=%d\n", this->n_input_external);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_hidden_external=%d\n", this->n_hidden_external);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_output_external=%d\n", this->n_output_external);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_i_tile_en=%d\n", this->mj_i_tile_en);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_i_tile_nr=%d\n", this->mj_i_tile_nr);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_i_tile_cnt=%d\n", this->mj_i_tile_cnt);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_h_tile_en=%d\n", this->mj_h_tile_en);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_h_tile_nr=%d\n", this->mj_h_tile_nr);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_h_tile_cnt=%d\n", this->mj_h_tile_cnt);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_o_tile_en=%d\n", this->mj_o_tile_en);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_o_tile_nr=%d\n", this->mj_o_tile_nr);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_o_tile_cnt=%d\n", this->mj_o_tile_cnt);
 }
 
 void Rnnacc_v1::commit() {

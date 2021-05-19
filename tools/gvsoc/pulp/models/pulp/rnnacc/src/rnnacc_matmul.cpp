@@ -28,6 +28,7 @@ void Rnnacc_v1::setup_streamer_matmul_x() {
     // int base_addr = this->addr_wx;
     int word_stride = 0;
     int line_length = 0;
+    int tiles_total = 0;
 
     // define tile numbers
     this->n_w_o_rest  = this->n_output % (this->NR_MASTER_PORTS); 
@@ -49,33 +50,20 @@ void Rnnacc_v1::setup_streamer_matmul_x() {
 
     // set line length
     line_length = this->n_output;
-    int tiles_total = this->n_w_i_tiles*this->n_w_o_tiles;
-
-    // int line_length2 = 4*this->NR_MASTER_PORTS;
-    // int line_length2 = 2*this->NR_MASTER_PORTS*this->n_input;
+    tiles_total = this->n_w_i_tiles*this->n_w_o_tiles;
 
     // create streamer
     this->vl_w = RnnaccVectorLoad<uint8_t>(
         this,
 
         base_addr,         // base_addr
-        2*line_length,     // tot_length -> 2byte * n_output
+        2*line_length,     // tot_length
         2*this->n_input_external*this->NR_MASTER_PORTS, // d0_stride
         this->n_w_o_tiles, // d0_length
         4,                 // d1_stride
         this->n_w_i_tiles, // d1_length
         0,                 // d2_stride
         true               // debug
-
-        // WORKING WITHOUT TILING
-        // base_addr,         // base_addr
-        // 2*line_length,     // tot_length -> 2byte * n_output
-        // 2*this->n_input*this->NR_MASTER_PORTS, //4*this->NR_MASTER_PORTS, //2*line_length,   // d0_stride
-        // this->n_w_o_tiles, // d0_length
-        // 4,                 // d1_stride
-        // this->n_w_i_tiles, // d1_length
-        // 0,                 // d2_stride
-        // true               // debug
     );
 
     this->trace.msg(vp::trace::LEVEL_DEBUG, "STREAMER - vl_w created\n");
@@ -94,25 +82,13 @@ int Rnnacc_v1::load_wx_cycle() {
     } else {
         width = 4*this->NR_MASTER_PORTS;
     }
-    // tcdm_data = this->vl_w.execute(width, cycles, 4);
     tcdm_data = this->vl_w.execute(width, cycles, this->n_input_external*2);
-
-    // std::ostringstream stringStream;
-    // xt::print_options::set_line_width(1000);
-    // stringStream << "Read data: " << std::hex << tcdm_data << std::dec << "\n";
-    // string s = stringStream.str();
-    // this->trace.msg(vp::trace::LEVEL_DEBUG, s.c_str());
 
     this->buf_w = xt::zeros<int8_t>({ 2*this->NR_MASTER_PORTS, 1});
 
     for (auto i=0; i<this->NR_MASTER_PORTS*2; i+=2) {
-        // if(i>=2*this->n_output){
         if((i%this->NR_MASTER_PORTS*2)>=width){
-            // xt::view(this->buf_w, i, 1) = 0;
-            // xt::view(this->buf_w, i+1, 1) = 0;
             break;
-            // this->trace.msg(vp::trace::LEVEL_DEBUG, "BREAK\n");
-            // this->trace.msg(vp::trace::LEVEL_DEBUG, "i+1: %d tcdm: %d\n", i+1,(i/2-this->n_x_idx*this->NR_MASTER_PORTS)*4+3);
         }
         xt::view(this->buf_w, i, 1) = 
             ((xt::cast<int32_t>(xt::view(tcdm_data, (i/2)*4+0)) << 0 ) |
@@ -120,12 +96,6 @@ int Rnnacc_v1::load_wx_cycle() {
         xt::view(this->buf_w, i+1, 1) =
             ((xt::cast<int32_t>(xt::view(tcdm_data, (i/2)*4+2)) << 0) |
              (xt::cast<int32_t>(xt::view(tcdm_data, (i/2)*4+3)) << 8));
-        // xt::view(this->buf_w, i, 1) = 
-        //     ((xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->w_o_idx*this->NR_MASTER_PORTS)*4+0)) << 0 ) |
-        //      (xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->w_o_idx*this->NR_MASTER_PORTS)*4+1)) << 8 ));
-        // xt::view(this->buf_w, i+1, 1) =
-        //     ((xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->w_o_idx*this->NR_MASTER_PORTS)*4+2)) << 0) |
-        //      (xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->w_o_idx*this->NR_MASTER_PORTS)*4+3)) << 8));
     }
 
     return (int) cycles;
@@ -291,7 +261,7 @@ void Rnnacc_v1::setup_streamer_matmul_h() {
 
         base_addr,         // base_addr
         2*line_length,     // tot_length -> 2byte * n_output
-        2*this->n_hidden_external*this->NR_MASTER_PORTS, // d0_stride
+        2*this->n_output_external*this->NR_MASTER_PORTS, // d0_stride
         this->n_w_o_tiles, // d0_length
         4,                 // d1_stride
         this->n_w_h_tiles, // d1_length
@@ -326,7 +296,7 @@ int Rnnacc_v1::load_wh_cycle() {
         width = 4*this->NR_MASTER_PORTS;
     }
     // tcdm_data = this->vl_w.execute(width, cycles, 4);
-    tcdm_data = this->vl_w.execute(width, cycles, this->n_hidden_external*2);
+    tcdm_data = this->vl_w.execute(width, cycles, this->n_output_external*2);
 
     // std::ostringstream stringStream;
     // xt::print_options::set_line_width(1000);
@@ -414,9 +384,13 @@ int Rnnacc_v1::perform_matmul_h() {
         //     this->trace.msg(vp::trace::LEVEL_DEBUG, "i+1: %d buf_w: %d\n", i+1, ((i/2)*4+3)%(this->NR_MASTER_PORTS*2));
         // }
 
-        // Multiply X0 and X1 with two new weights
+        // Multiply H0 and H1 with two new weights WH0, WH1
         mult0 = xt::view(this->buf_h, 2*this->w_h_idx+0) * xt::view(this->buf_w, ((i/2)*4+0)%(this->NR_MASTER_PORTS*2), 1);
         mult1 = xt::view(this->buf_h, 2*this->w_h_idx+1) * xt::view(this->buf_w, ((i/2)*4+1)%(this->NR_MASTER_PORTS*2), 1);
+
+        // Multiply H0 and H1 with two new weights WH2, WH3
+        mult2 = xt::view(this->buf_h, 2*this->w_h_idx+0) * xt::view(this->buf_w, ((i/2)*4+2)%(this->NR_MASTER_PORTS*2), 1);
+        mult3 = xt::view(this->buf_h, 2*this->w_h_idx+1) * xt::view(this->buf_w, ((i/2)*4+3)%(this->NR_MASTER_PORTS*2), 1);
 
         // debug print
         if(this->matmul_traces) {
@@ -428,10 +402,6 @@ int Rnnacc_v1::perform_matmul_h() {
                 std::cout << "[MULT] mult1="<< std::dec << std::setw(16) << mult1 << " x=" << xt::view(this->buf_h, 2*this->w_h_idx+1) << " w=" << xt::view(this->buf_w, ((i/2)*4+1)%(this->NR_MASTER_PORTS*2), 1) << std::dec << std::endl;
             }
         }
-
-        // Multiply X0 and X1 with two new weights
-        mult2 = xt::view(this->buf_h, 2*this->w_h_idx+0) * xt::view(this->buf_w, ((i/2)*4+2)%(this->NR_MASTER_PORTS*2), 1);
-        mult3 = xt::view(this->buf_h, 2*this->w_h_idx+1) * xt::view(this->buf_w, ((i/2)*4+3)%(this->NR_MASTER_PORTS*2), 1);
 
         // debug print
         if(this->matmul_traces) {

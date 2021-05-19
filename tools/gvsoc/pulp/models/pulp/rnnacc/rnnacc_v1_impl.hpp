@@ -164,15 +164,7 @@ public:
     Rnnacc_v1(js::config *config);
 
     int build();
-//   void start();
     void reset(bool active);
-
-//   static vp::io_req_status_e req(void *__this, vp::io_req *req);
-//   static void job_handler(void *_this, vp::clock_event *event);
-//   static void plot_handler(void *_this, vp::clock_event *event);
-//   static void grant(void *_this, vp::io_req *req);
-//   static void response(void *_this, vp::io_req *req);
-//   void check_requests();
 
     void enqueue_write();
     void enqueue_read();
@@ -214,43 +206,34 @@ private:
     void clear_buf_h();
     void clear_buf_accum();
 
-    // void stream_reqs(bool is_write);
-    // int stream_access(int port, uint32_t addr, uint8_t *data, int size, bool is_write, int64_t *latency);
-    // int stream_update(int port, bool is_write);
+    // unsigned int *regs;
+    // int8_t *buffer_in;
+    // int8_t *buffer_out;
+    // int8_t **crossbar;
 
-    unsigned int *regs;
-    int8_t *buffer_in;
-    int8_t *buffer_out;
-    int8_t **crossbar;
+    // int remaining_jobs;
+    // bool pending_write;
+    // bool pending_read;
 
-//   rnnacc_job_t *job;
-      int remaining_jobs;
+    // int pending_req;
+    // int enqueued_req;
+    // int remaining_in_req;
+    // int remaining_out_req;
+    // bool stalled;
 
-//   rnnacc_pw_t *pw_req;
-      bool pending_write;
+    // int extra_latency_in;
 
-//   rnnacc_pr_t *pr_req;
-     bool pending_read;
+    // int step_count;
+    // int feat_count;
+    // int roll_count;
 
-    int pending_req;
-    int enqueued_req;
-    int remaining_in_req;
-    int remaining_out_req;
-    bool stalled;
+    // int line_fetch_lfover;
+    // int line_store_lfover;
 
-//   int extra_latency_in;
-
-//   int step_count;
-//   int feat_count;
-//   int roll_count;
-
-//   int line_fetch_lfover;
-//   int line_store_lfover;
-
-//   int alpha_in_count;
-//   int alpha_out_count;
-//   int beta_in_count;
-//   int beta_out_count;
+    // int alpha_in_count;
+    // int alpha_out_count;
+    // int beta_in_count;
+    // int beta_out_count;
 
     static vp::io_req_status_e hwpe_slave(void *__this, vp::io_req *req);
     static void data_access_test_handler(void *__this, vp::clock_event *event);
@@ -301,20 +284,25 @@ private:
     int addr_wh;
     int addr_dst;
     int n_input_external;
-    int n_output;
+    int n_output_external;
+    int n_hidden_external;
   
     // CONFIG BASED ON HWPE SLAVE REGS
     int n_input;
-    int n_hidden_external;
+    int n_hidden;
+    int n_output;
 
     bool mj_i_tile_en;
     bool mj_h_tile_en;
+    bool mj_o_tile_en;
 
     int mj_i_tile_nr;
     int mj_h_tile_nr;
+    int mj_o_tile_nr;
 
     int mj_i_tile_cnt;
     int mj_h_tile_cnt;
+    int mj_o_tile_cnt;
 
     // bool mj_i_tile_cnt;
     // int mj_i_tile_nr;

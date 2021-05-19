@@ -37,7 +37,7 @@ void Rnnacc_v1::clear_all() {
   this->multi_job = 0;
 
   // this->multijob_counter = 0;
-  this->matmul_state = false;
+  // this->matmul_state = false;
 
   // this->clear_buf_x();
   // this->clear_buf_h();
