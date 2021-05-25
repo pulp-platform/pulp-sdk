@@ -209,7 +209,8 @@ def get_config(tp, cluster_id):
   if has_ima:
     ima_conf = js.import_config_from_file("ips/ima/ima_v%d.json" % tp.get_child_int('cluster/peripherals/ima/version'), find=True)
 
-  l1_interleaver_nb_masters = nb_pe + 4
+  mchan_conf = js.import_config_from_file("ips/mchan/mchan_v%d.json" % tp.get_child_int("cluster/peripherals/dma/version"), find=True)
+  l1_interleaver_nb_masters = nb_pe + mchan_conf.get_int("nb_loc_ports")
   if has_hwce:
     l1_interleaver_nb_masters += 4
   if has_hwacc:
@@ -470,10 +471,10 @@ def get_config(tp, cluster_id):
   cluster.l1_ico.cluster_ico = cluster.cluster_ico.input
   cluster.dma.ext_itf = cluster.cluster_ico.input
 
-  for i in range(0, 4):
+  for i in range(0, mchan_conf.get_int("nb_loc_ports")):
     cluster.dma.set('loc_itf_%d' % i, cluster.l1_ico.new_itf('dma_in_%d' % i))
    
-  for i in range(0, 4):
+  for i in range(0, mchan_conf.get_int("nb_loc_ports")):
     cluster.l1_ico.set('dma_in_%d' % i, cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + i)))
 
   if has_hwce:

@@ -973,7 +973,7 @@ void mchan::check_loc_transfer_handler(void *__this, vp::clock_event *event)
     vp::io_req *ext_req;
     bool is_write;
 
-    if (i < 2)
+    if (i < (_this->nb_loc_ports/2))
     {
       ext_req = _this->pending_write_reqs->get_first();
       if (ext_req == NULL)

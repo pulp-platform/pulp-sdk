@@ -211,10 +211,12 @@ def get_config(tp):
 
   soc.soc_ico.debug                  = soc.soc_ico.ll_ico.input
   soc.soc_ico.axi_slave              = soc.soc_ico.ll_ico.input
-  soc.soc_ico.hb_ico.out_0           = soc.soc_ico.l2_shared_0
-  soc.soc_ico.hb_ico.out_1           = soc.soc_ico.l2_shared_1
-  soc.soc_ico.hb_ico.out_2           = soc.soc_ico.l2_shared_2
-  soc.soc_ico.hb_ico.out_3           = soc.soc_ico.l2_shared_3
+
+  l2_shared_size = tp.get_child_int("soc/l2/shared/size")
+  l2_shared_nb_banks = tp.get_child_int("soc/l2/shared/nb_banks")
+
+  for i in range(0, l2_shared_nb_banks):
+    soc.soc_ico.hb_ico.set('out_%d' % i, soc.soc_ico.new_itf('l2_shared_%d' % i))
 
   if has_fc:
     soc.soc_ico.fc_fetch               = soc.soc_ico.fc_fetch_ico.input
@@ -405,8 +407,6 @@ def get_config(tp):
         ('map_size', tp.get_child_str("soc/l2/shared/size"))
     ]))
 
-    l2_shared_size = tp.get_child_int("soc/l2/shared/size")
-    l2_shared_nb_banks = tp.get_child_int("soc/l2/shared/nb_banks")
     for i in range(0, l2_shared_nb_banks):
       soc.add_component(
         'l2_shared_%d' % i,
@@ -824,10 +824,8 @@ def get_config(tp):
   soc.soc_ico.axi_master = soc.axi_ico.input
 
   if l2_is_partitioned:
-    soc.soc_ico.l2_shared_0 = soc.l2_shared_0.input
-    soc.soc_ico.l2_shared_1 = soc.l2_shared_1.input
-    soc.soc_ico.l2_shared_2 = soc.l2_shared_2.input
-    soc.soc_ico.l2_shared_3 = soc.l2_shared_3.input
+    for i in range(0, l2_shared_nb_banks):
+      soc.soc_ico.set('l2_shared_%d' % i, soc.get('l2_shared_%d' % i).input)
     soc.soc_ico.l2_priv0 = soc.l2_priv0.input
     soc.soc_ico.l2_priv1 = soc.l2_priv1.input
   else:
