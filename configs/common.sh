@@ -30,6 +30,7 @@ export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_
 # GVSOC
 export PULP_SDK_INSTALL=$INSTALL_DIR
 export GVSOC_PATH=$INSTALL_DIR/python
+export XTENSOR_INCLUDE_DIR=$PULP_SDK_HOME/ext/xtensor/include
 export GVSOC_INC_PATHS="$PULP_SDK_HOME/rtos/pulpos/gap_archi/include/archi/chips/$TARGET_NAME $PULP_SDK_HOME/rtos/pulpos/gap_archi/include $PULP_SDK_HOME/rtos/pulpos/pulp_archi/include"
 
 # FPGA
