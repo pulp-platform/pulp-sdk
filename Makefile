@@ -1,3 +1,9 @@
+# the MAGICK_ROOT variable can be used to pass an alternative installation
+# prefix for the GraphicsMagick library. 
+ifdef MAGICK_ROOT
+export MAGICK_ROOT := $(realpath $(MAGICK_ROOT))
+endif
+
 SHELL=bash
 
 ifndef PULP_SDK_HOME
