@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -22,7 +22,7 @@
 
     .section .cluster.text , "ax"
 
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && !defined(__PULP_TOOLCHAIN__)
     .attribute arch, "rv32imc_xcorev2p0"
 #endif
 
@@ -146,7 +146,7 @@ pos_master_no_slave_barrier:
 
     // Set stack on slaves
     // For that we push first the function for setting stack, then the stack size and the base
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && !defined(__PULP_TOOLCHAIN__)
     //cv.beqimm t5, 0, pos_master_loop_no_slave
     beqz    t5, pos_master_loop_no_slave
 #else
@@ -164,7 +164,7 @@ pos_master_loop_no_slave:
 
 pos_master_sleep:
     sw      s4, EU_CORE_MASK_OR(s3)
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && !defined(__PULP_TOOLCHAIN__)
     //cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
     lw         x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
     //beqz       x0, hal_itc_wait_for_interrupt
@@ -182,7 +182,7 @@ L10:
 
 pos_push_event_to_fc_wait:
     sw      s4, EU_CORE_MASK_OR(s3)
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && !defined(__PULP_TOOLCHAIN__)
     //cv.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
     lw         x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
     //beqz       x0, hal_itc_wait_for_interrupt
@@ -234,7 +234,7 @@ pos_fork_return:
 #ifdef ARCHI_HAS_CC
     // When the cluster has a controller barrier 0 is used for normal team barrier
     // and barrier 1 is used for end of offload
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     //cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
     lw         t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
     //beqz       t0, hal_itc_wait_for_interrupt
@@ -245,7 +245,7 @@ L0:
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
 #endif /*ARCHI_HAS_COREV*/
 #else
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     //cv.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
     lw         t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
     //beqz       t0, hal_itc_wait_for_interrupt
@@ -255,12 +255,12 @@ L1:
 #else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
 #endif /*ARCHI_HAS_COREV*/
-#endif    
+#endif
 
 pos_wait_for_dispatch:
 
     // Wait for PC + arg information from dispatcher
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     //cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     //cv.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     lw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
@@ -301,7 +301,7 @@ pos_other_entry:
 pos_set_slave_stack:
 
     // Multiply the stack size by the core ID and add the stack base to get our stack
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     //cv.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     lw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
 //    beqz t0, hal_itc_wait_for_interrupt
@@ -320,7 +320,7 @@ L4:
     // and thus we need to take the next stack
     addi     t5, s3, 1
 #endif
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     cv.muls   t4, t5, a0
 #else
     p.mul   t4, t5, a0
