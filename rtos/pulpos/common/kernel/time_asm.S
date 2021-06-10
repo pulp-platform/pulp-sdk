@@ -22,7 +22,7 @@
 
     .section .text_l2
 
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     .attribute arch, "rv32imc_xcorev2p0"
 #endif
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# 
+#
 # Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
 #
 
@@ -22,7 +22,7 @@
 
 
     .section .text_l2
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     .attribute arch, "rv32imc_xcorev2p0"
 #endif
 
@@ -77,13 +77,13 @@
     lw   x11, %tiny(pos_soc_event_callback_arg)(x11)
 #else
     la   t0, pos_soc_event_callback
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     cv.lw x12, t0(x11)
 #else
     p.lw x12, t0(x11)
 #endif /*ARCHI_HAS_COREV*/
     la   t0, pos_soc_event_callback_arg
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     cv.lw x11, t0(x11)
 #else
     p.lw x11, t0(x11)
@@ -112,14 +112,14 @@ pos_soc_event_store_asm:
     lw      x12, %tiny(pos_soc_event_status)(x11)
 #else
     la   t0, pos_soc_event_status
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     cv.lw x12, t0(x11)
 #else
     p.lw x12, t0(x11)
 #endif /*ARCHI_HAS_COREV*/
 #endif
     andi    x10, x10, 0x1f
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     li     x11, 1
     sll    x11, x11, x10
     or     x12, x12, x11
@@ -132,7 +132,7 @@ pos_soc_event_store_asm:
     sw      x12, %tiny(pos_soc_event_status)(x11)
 #else
     la      t0, pos_soc_event_status
-#ifdef ARCHI_HAS_COREV
+#if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     cv.sw    x12, t0(x11)
 #else
     p.sw    x12, t0(x11)
