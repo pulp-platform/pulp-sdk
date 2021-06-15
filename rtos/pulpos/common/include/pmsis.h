@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -39,6 +39,8 @@
 #elif defined(__GAP9__)
 #include "pmsis/chips/gap9/pad.h"
 #include "pmsis/chips/gap9/gpio.h"
+#elif defined(ARCHI_HAS_COREV)
+#include "pmsis/chips/default_cv32e40p.h"
 #else
 #include "pmsis/chips/default.h"
 #endif
@@ -76,4 +78,3 @@
 #include <pos/implem/implem.h>
 
 #endif
-
