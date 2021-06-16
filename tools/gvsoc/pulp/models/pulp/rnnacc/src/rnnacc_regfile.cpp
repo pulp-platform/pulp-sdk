@@ -40,13 +40,30 @@ int Rnnacc_v1::regfile_rd(int addr) {
 }
 
 void Rnnacc_v1::regfile_wr(int addr, int value) {
+  // printf("addr %d\n",addr);
   if(addr < RNNACC_NB_REG) {
-    // this->regfile_wr_cxt(addr, value);
-    if (this->cxt_cfg_ptr == 0) {
+    if((addr== RNNACC_N_INPUT) || (addr ==RNNACC_N_OUTPUT) || (addr== RNNACC_JOB_MODE)) {
+    // if(addr=> RNNACC_N_INPUT) {
       this->cxt0[addr] = value;
+      if (this->cxt_use_ptr_global == 0) {
+        // printf("ctx0 global write\n");
+        this->cxt0[addr] = value;
+      }
+      else if(this->cxt_use_ptr_global == 1) {
+        // printf("ctx1 global write\n");
+        this->cxt1[addr] = value;
+      }
     }
-    else if(this->cxt_cfg_ptr == 1) {
-      this->cxt1[addr] = value;
+    else {
+      // this->regfile_wr_cxt(addr, value);
+      if (this->cxt_cfg_ptr == 0) {
+        // printf("ctx0 write\n");
+        this->cxt0[addr] = value;
+      }
+      else if(this->cxt_cfg_ptr == 1) {
+        // printf("ctx1 write\n");
+        this->cxt1[addr] = value;
+      }
     }
   }
   else if (addr < 2*RNNACC_NB_REG) {
@@ -67,7 +84,16 @@ void Rnnacc_v1::regfile_cxt() {
 
   for(auto addr=0; addr<RNNACC_NB_REG; addr++) {
 
+    // if(addr == RNNACC_JOB_MODE) {
+    //   // this->cxt_cfg_ptr_global = 1-this->cxt_cfg_ptr_global;
+    //   printf("write RNNACC_JOB_MODE %x\n", addr);
+    //   this->cxt_use_ptr_global = 1-this->cxt_use_ptr_global;
+    // }
+
     auto value = this->cxt_use_ptr == 0 ? this->cxt0[addr] : this->cxt1[addr];
+    // printf("value: %d this->cxt_use_ptr %d\n", value, this->cxt_use_ptr);
+    auto value_global = this->cxt_use_ptr_global == 0 ? this->cxt0[addr] : this->cxt1[addr];
+    // printf("value_global: %d this->cxt_use_ptr_global %d\n", value_global, this->cxt_use_ptr_global);
 
     switch(addr) {
 
@@ -96,14 +122,15 @@ void Rnnacc_v1::regfile_cxt() {
         break;
 
       case RNNACC_N_INPUT:
-        // this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE -  %d \n", this->n_input_external);
-        this->n_input_external = value;
-        // this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE -  %d \n", this->n_input_external);
+        // this->n_input_external = this->cxt0[addr];
+        this->n_input_external = value_global;
         break;
 
       case RNNACC_N_OUTPUT:
-        this->n_output_external = value;
-        this->n_hidden_external = value;
+        // this->n_output_external = this->cxt0[addr];
+        // this->n_hidden_external = this->cxt0[addr];
+        this->n_output_external = value_global;
+        this->n_hidden_external = value_global;
         break;
 
       case RNNACC_JOB_MODE:
@@ -111,7 +138,8 @@ void Rnnacc_v1::regfile_cxt() {
         uint32_t masked_value = 0;
         
         mask         = 1;
-        masked_value = (value & mask);
+        // masked_value = (this->cxt0[addr] & mask);
+        masked_value = (value_global & mask);
         this->bias   = masked_value;
 
         mask         = 2;
@@ -133,24 +161,14 @@ void Rnnacc_v1::regfile_cxt() {
 }
 
 void Rnnacc_v1::printout() {
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) TP_IN=%d\n", this->TP_IN);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) TP_IN_LINEAR=%d\n", this->TP_IN_LINEAR);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) TP_OUT=%d\n", this->TP_OUT);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) QA_IN=%d\n", this->QA_IN);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) QA_OUT=%d\n", this->QA_OUT);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) NR_COLUMN=%d\n", this->NR_COLUMN);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) COLUMN_SIZE=%d\n", this->COLUMN_SIZE);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) BLOCK_SIZE=%d\n", this->BLOCK_SIZE);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) F_BUFFER_SIZE=%d\n", this->F_BUFFER_SIZE);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) FILTER_SIZE=%d\n", this->FILTER_SIZE);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) SHIFT_CYCLES=%d\n", this->SHIFT_CYCLES);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) OVERHEAD_LD_1X1=%d\n", this->OVERHEAD_LD_1X1);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) OVERHEAD_LD_3X3=%d\n", this->OVERHEAD_LD_3X3);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) OVERHEAD_MV=%d\n", this->OVERHEAD_MV);
-//   this->trace.msg(vp::trace::LEVEL_DEBUG, "(archi) QUANT_PER_CYCLE=%d\n", this->QUANT_PER_CYCLE);
   // REGISTER FILE and HWPE CTRL
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) ctx[0]=%d\n", this->cxt0);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) ctx[1]=%d\n", this->cxt1);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) \n");
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) cxt_cfg_ptr=%d\n", this->cxt_cfg_ptr);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) cxt_cfg_ptr_global=%d\n", this->cxt_cfg_ptr_global);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) cxt_use_ptr=%d\n", this->cxt_use_ptr);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) cxt_use_ptr_global=%d\n", this->cxt_use_ptr_global);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) job_pending=%d\n", this->job_pending);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) job_state=%d\n", this->job_state);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (ctrl) job_id=%d\n", this->job_id);
@@ -183,12 +201,24 @@ void Rnnacc_v1::printout() {
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_o_tile_en=%d\n", this->mj_o_tile_en);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_o_tile_nr=%d\n", this->mj_o_tile_nr);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) mj_o_tile_cnt=%d\n", this->mj_o_tile_cnt);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) n_h_idx=%d\n", this->n_h_idx);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) w_i_idx=%d\n", this->w_i_idx);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) w_o_idx=%d\n", this->w_o_idx);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) store_idx=%d\n", this->store_idx);
+
+  // this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) w_o_idx=%d\n", this->w_o_idx);
+  // this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) w_o_idx=%d\n", this->w_o_idx);
+  // this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) w_o_idx=%d\n", this->w_o_idx);
 }
 
 void Rnnacc_v1::commit() {
   this->job_pending++;
   this->job_state = 0;
   this->cxt_cfg_ptr = 1-this->cxt_cfg_ptr;
+  // this->cxt_use_ptr_global = this->cxt_cfg_ptr_global;
+  // if(this->cxt_use_ptr_global != this->cxt_cfg_ptr_global) {
+  //   this->cxt_use_ptr_global = 1-this->cxt_use_ptr_global;
+  // }
 }
 
 int Rnnacc_v1::acquire() {

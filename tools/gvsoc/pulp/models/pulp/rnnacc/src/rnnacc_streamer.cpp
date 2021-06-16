@@ -102,15 +102,21 @@ void RnnaccStreamAccess::reset_iteration() {
 int RnnaccStreamAccess::iterate() {
   if (this->d1_length < 0) {
     this->current_addr = this->base_addr + this->wa;
-    std::cout << "[STREAMER] current_addr0=" << std::hex << this->current_addr << std::dec  << std::endl;
+    if(this->debug) {
+      std::cout << "[STREAMER] current_addr0=" << std::hex << this->current_addr << std::dec  << std::endl;
+    }
   }
   else if(this->d2_length < 0) {
     this->current_addr = this->base_addr + this->la + this->wa;
-    std::cout << "[STREAMER] current_addr1=" << std::hex << this->current_addr << std::dec  << std::endl;
+    if(this->debug) {
+      std::cout << "[STREAMER] current_addr1=" << std::hex << this->current_addr << std::dec  << std::endl;
+    }
   }
   else {
     this->current_addr = this->base_addr + this->ba + this->la + this->wa;
-    std::cout << "[STREAMER] current_addr2="<< std::hex << this->current_addr << std::dec << std::endl;
+    if(this->debug) {
+      std::cout << "[STREAMER] current_addr2="<< std::hex << this->current_addr << std::dec << std::endl;
+    }
   }
   this->oc++;
   if(this->debug) {
@@ -120,14 +126,14 @@ int RnnaccStreamAccess::iterate() {
   if((this->wc < this->d1_length) || (this->d1_length < 0)) {
     this->wa += this->d0_stride;
     this->wc += 1;
-    std::cout << "[STREAMER] 0" << std::endl;
+    // std::cout << "[STREAMER] 0" << std::endl;
   }
   else if ((this->lc < this->d2_length) || (this->d2_length < 0)) {
     this->wa = 0;
     this->la += this->d1_stride;
     this->wc = 1;
     this->lc += 1;
-    std::cout << "[STREAMER] 1" << std::endl;
+    // std::cout << "[STREAMER] 1" << std::endl;
   }
   else {
     this->wa = 0;
@@ -136,10 +142,10 @@ int RnnaccStreamAccess::iterate() {
     this->wc = 1;
     this->lc = 1;
     this->bc += 1;
-    std::cout << "[STREAMER] 2" << std::endl;
+    // std::cout << "[STREAMER] 2" << std::endl;
   }
 
-  std::cout << "[STREAMER] iterate done Bla" << std::endl;
+  // std::cout << "[STREAMER] iterate done Bla" << std::endl;
   return this->current_addr;
 }
 

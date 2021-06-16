@@ -8,6 +8,11 @@
   },
 
   "cluster": {
-    "core": "ri5ky_v2_6_sfloat_single_regfile_rnnext"
+    "core": "ri5ky_v2_6_sfloat_single_regfile_rnnext",
+    "l1": {
+      "base": "0x10000000",
+      "size": "0x00100000",
+      "banking_factor": 2
+    }
   }
 }

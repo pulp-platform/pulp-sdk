@@ -60,14 +60,25 @@ vp::io_req_status_e Rnnacc_v1::hwpe_slave(void *__this, vp::io_req *req)
     // Dispatch the register file access to the correct function
     if(req->get_is_write()) {
         if((req->get_addr() & 0x17f) == 0x0) { // RNNACC_TRIGGER
+            _this->trace.msg("HWPE SLAVE - RNNACC_TRIGGER\n");
             _this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE - commit(addr: 0x%x, size: 0x%x, is_write: %d, data: %p\n", req->get_addr(), req->get_size(), req->get_is_write(), req->get_data());
             _this->commit();
-            if (!_this->fsm_start_event->is_enqueued() && *(uint32_t *) data == 0) {
+            if (!_this->fsm_start_event->is_enqueued() && !_this->fsm_event->is_enqueued() && *(uint32_t *) data == 0) {
                 _this->event_enqueue(_this->fsm_start_event, 1);
                 _this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE - enqueded(addr: 0x%x, size: 0x%x, is_write: %d, data: %p\n", req->get_addr(), req->get_size(), req->get_is_write(), req->get_data());
             }
         }
+        else if((req->get_addr() & 0x17f) == 0x14) { // RNNACC_SOFT_CLEAR
+            // printf("SOFTCLEAR");
+            _this->trace.msg("HWPE SLAVE - RNNACC_SOFT_CLEAR\n");
+            _this->softclear();
+        }
         else { // Write Job-Dependent Registers
+            if((req->get_addr() & 0x17f) == 0x40) {  // RNNAC_JOB_MODE
+                // this->cxt_cfg_ptr_global = 1-this->cxt_cfg_ptr_global;
+                // printf("write RNNACC_JOB_MODE %ld\n", (req->get_addr() & 0x17f));
+                _this->cxt_use_ptr_global = 1-_this->cxt_use_ptr_global;
+            }
             _this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE - offset: %d data: %08x\n", ((req->get_addr() & 0x17f) - 0x20) >> 2, *(uint32_t *) data);
             _this->regfile_wr(((req->get_addr() & 0x17f) - 0x20)>> 2, *(uint32_t *) data);
         }
@@ -75,10 +86,13 @@ vp::io_req_status_e Rnnacc_v1::hwpe_slave(void *__this, vp::io_req *req)
     else {
         if((req->get_addr() & 0x17f) == 0x4) { // RNNACC_ACQUIRE
             *(uint32_t *) data = _this->acquire();
+            _this->trace.msg("HWPE SLAVE - RNNACC_ACQUIRE\n");
+            _this->trace.msg("HWPE SLAVE - _this->cxt_use_ptr %d _this->cxt_cfg_ptr %d \n", _this->cxt_use_ptr, _this->cxt_cfg_ptr);
             _this->trace.msg("HWPE SLAVE - Returning %x\n", *(uint32_t *) data);
         }
         else if((req->get_addr() & 0x17f) == 0xc) { // RNNACC_STATUS
             *(uint32_t *) data = _this->status() ? 1 : 0;
+            _this->trace.msg("HWPE SLAVE - RNNACC_STATUS\n");
             _this->trace.msg("HWPE SLAVE - Returning %x\n", *(uint32_t *) data);
         }
         else { // Read Job-Dependent Registers

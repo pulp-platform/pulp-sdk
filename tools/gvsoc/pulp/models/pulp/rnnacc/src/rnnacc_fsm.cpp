@@ -28,12 +28,7 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
     // clear state and propagate context
     _this->clear_all();
     _this->regfile_cxt();
-
-    // n_output must be <= NR_REGS_ACCUM
-    assert(_this->n_output <= _this->NR_REGS_ACCUM);
-
-    // n_output must be <= NR_REGS_ACCUM
-    assert(_this->n_input <= _this->NR_REGS_X);
+    // _this->cxt_use_ptr_global = _this->cxt_cfg_ptr_global;
 
     // convenience parameters based on regfile
     // input
@@ -69,8 +64,21 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
         _this->mj_h_tile_nr = 1;
     }
 
-    if(((_this->n_hidden_external % _this->NR_REGS_ACCUM) != 0) & (_this->mj_h_tile_cnt == _this->mj_h_tile_nr-1)){
-        _this->n_output = (_this->n_hidden_external % _this->NR_REGS_ACCUM);
+    // if(((_this->n_hidden_external % _this->NR_REGS_ACCUM) != 0) && (_this->mj_h_tile_cnt == _this->mj_h_tile_nr-1)){
+    //     _this->n_output = (_this->n_hidden_external % _this->NR_REGS_ACCUM);
+    // }
+    // else{
+    //     _this->n_output = _this->NR_REGS_ACCUM;
+    // }
+    // printf("results %d \n",(_this->n_hidden_external % _this->NR_REGS_ACCUM));
+    // printf("results %d %d\n", _this->mj_h_tile_cnt, _this->mj_h_tile_nr-1);
+    if(((_this->n_hidden_external < _this->NR_REGS_ACCUM)) || (_this->mj_h_tile_cnt == (_this->mj_h_tile_nr-1))){
+        // _this->n_output = (_this->n_hidden_external % _this->NR_REGS_ACCUM);
+        if (_this->n_hidden_external % _this->NR_REGS_ACCUM == 0) {
+            _this->n_output = _this->NR_REGS_ACCUM;
+        } else {
+            _this->n_output = (_this->n_hidden_external % _this->NR_REGS_ACCUM);
+        }
     }
     else{
         _this->n_output = _this->NR_REGS_ACCUM;
@@ -89,18 +97,20 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
         _this->mj_o_tile_nr = 1;
     }
 
-    if(((_this->n_output_external % _this->NR_REGS_ACCUM) != 0) & (_this->mj_o_tile_cnt == _this->mj_o_tile_nr-1)){
-        _this->n_output = (_this->n_output_external % _this->NR_REGS_ACCUM);
-    }
-    else{
-        _this->n_output = _this->NR_REGS_ACCUM;
-    }
+    // if(((_this->n_output_external % _this->NR_REGS_ACCUM) != 0) & (_this->mj_o_tile_cnt == _this->mj_o_tile_nr-1)){
+    //     _this->n_output = (_this->n_output_external % _this->NR_REGS_ACCUM);
+    // }
+    // else{
+    //     _this->n_output = _this->NR_REGS_ACCUM;
+    // }
 
-    // _this->n_output_external =_this->n_output;
+    // n_output must be <= NR_REGS_ACCUM
+    assert(_this->n_output <= _this->NR_REGS_ACCUM);
+    assert(_this->n_output > 0);
 
-    // _this->mj_o_tile_en = false;
-    // _this->mj_o_tile_nr = 1;
-    // _this->mj_o_tile_cnt = 0;
+    // n_output must be <= NR_REGS_ACCUM
+    assert(_this->n_input <= _this->NR_REGS_X);
+    assert(_this->n_input > 0);
 
     _this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM HANDLER - Starting a job with the following configuration:\n");
     _this->printout();
@@ -115,10 +125,15 @@ void Rnnacc_v1::fsm_handler(void *__this, vp::clock_event *event) {
 void Rnnacc_v1::fsm_end_handler(void *__this, vp::clock_event *event) {
   Rnnacc_v1 *_this = (Rnnacc_v1 *)__this;
   _this->cxt_use_ptr = 1-_this->cxt_use_ptr;
+//   if(_this->cxt_use_ptr_global != _this->cxt_cfg_ptr_global) {
+//     // _this->cxt_use_ptr_global = 1-_this->cxt_use_ptr_global;
+//     _this->cxt_use_ptr_global = _this->cxt_cfg_ptr_global;
+//   }
   _this->job_pending--;
   _this->irq.sync(true);
   if (!_this->fsm_start_event->is_enqueued() && _this->job_pending > 0) {
       _this->event_enqueue(_this->fsm_start_event, 1);
+      _this->trace.msg(vp::trace::LEVEL_DEBUG, "HWPE SLAVE - enqueded");
   }
 }
 
@@ -139,26 +154,29 @@ int Rnnacc_v1::fsm() {
     auto state_next = this->state;
     auto latency = 0;
 
-    this->debug_hex_format = false;
-    // this->debug_hex_format = true;
+    this->debug_streamer = false;
+    // this->debug_streamer = true;
+
+    // this->debug_hex_format = false;
+    this->debug_hex_format = true;
 
     // this->fsm_traces = false;
     this->fsm_traces = true;
 
-    // this->buf_x_traces = false;
-    this->buf_x_traces = true;
+    this->buf_x_traces = false;
+    // this->buf_x_traces = true;
 
-    // this->buf_accum_traces = false;
-    this->buf_accum_traces = true;
+    this->buf_accum_traces = false;
+    // this->buf_accum_traces = true;
 
-    // this->buf_w_traces = false;
-    this->buf_w_traces = true;
+    this->buf_w_traces = false;
+    // this->buf_w_traces = true;
 
-    // this->buf_h_traces = false;
-    this->buf_h_traces = true;
+    this->buf_h_traces = false;
+    // this->buf_h_traces = true;
 
-    // this->matmul_traces = false;
-    this->matmul_traces = true;
+    this->matmul_traces = false;
+    // this->matmul_traces = true;
 
 
   switch(this->state) {
@@ -174,48 +192,29 @@ int Rnnacc_v1::fsm() {
         }
 
         if( (this->matmul_state==0) || (this->mj_i_tile_en && (this->mj_i_tile_nr>1)) ) {
-            // if(this->mj_o_tile_en || this->matmul_state) {
-            //     if(this->matmul_state==1) {
-            //         this->setup_streamer_h();
-            //         state_next = LOAD_H;
-            //     }
-            //     else {
-            //         this->setup_streamer_x();
-            //         state_next = LOAD_X;
-            //     }
-            // }
-            // else { //if(this->mj_i_tile_en) {
-                this->setup_streamer_x();
-                state_next = LOAD_X;
-            // }
+            this->setup_streamer_x();
+            latency += CYCLES_STREAMER_LD_CHANGE;
+            state_next = LOAD_X;
         } else if((this->mj_h_tile_cnt==0 && this->matmul_state==1) || (this->mj_o_tile_en && (this->mj_o_tile_nr>1))) {
-            // if(this->mj_o_tile_en || this->matmul_state) {
-                // if(this->matmul_state==1) {
-                    this->setup_streamer_h();
-                    state_next = LOAD_H;
-            //     }
-            //     else {
-            //         this->setup_streamer_x();
-            //         state_next = LOAD_X;
-            //     }
-            // }
-            // else { //if(this->mj_i_tile_en) {
-            //     this->setup_streamer_x();
-            //     state_next = LOAD_X;
-            // }
+            this->setup_streamer_h();
+            latency += CYCLES_STREAMER_LD_CHANGE;
+            state_next = LOAD_H;
         } else {
             if(this->mj_o_tile_en || this->matmul_state) {
                 if(this->matmul_state==1) {
                     this->setup_streamer_matmul_h();
+                    latency += CYCLES_STREAMER_LD_CHANGE;
                     state_next = STREAM_MATMUL_H;
                 }
                 else {
                     this->setup_streamer_matmul_x();
+                    latency += CYCLES_STREAMER_LD_CHANGE;
                     state_next = STREAM_MATMUL_X;
                 }
             }
-            else { //if(this->mj_i_tile_en) {
+            else {
                 this->setup_streamer_matmul_x();
+                latency += CYCLES_STREAMER_LD_CHANGE;
                 state_next = STREAM_MATMUL_X;
             }
         }
@@ -248,14 +247,17 @@ int Rnnacc_v1::fsm() {
                     if(this->buf_accum_traces) this->debug_buf_accum();
                     if(this->bias) {
                         this->setup_streamer_bias();
+                        latency += CYCLES_STREAMER_LD_CHANGE;
                         state_next = LOAD_BIAS;
                     } else {
                         this->setup_streamer_matmul_x();
+                        latency += CYCLES_STREAMER_LD_CHANGE;
                         state_next = STREAM_MATMUL_X;
                     }
                 } else {
                     if(this->buf_accum_traces) this->debug_buf_accum();
                     this->setup_streamer_matmul_x();
+                    latency += CYCLES_STREAMER_LD_CHANGE;
                     state_next = STREAM_MATMUL_X;
                 }
             }
@@ -268,97 +270,24 @@ int Rnnacc_v1::fsm() {
                         if(this->buf_accum_traces) this->debug_buf_accum();
                         if(this->bias) {
                             this->setup_streamer_bias();
+                            latency += CYCLES_STREAMER_LD_CHANGE;
                             state_next = LOAD_BIAS;
                         } else {
-                        // this->setup_streamer_h();
-                        // state_next = LOAD_H;
                             this->setup_streamer_matmul_x();
+                            latency += CYCLES_STREAMER_LD_CHANGE;
                             state_next = STREAM_MATMUL_X;
                         }
                     } else {
                         this->setup_streamer_matmul_x();
+                        latency += CYCLES_STREAMER_LD_CHANGE;
                         state_next = STREAM_MATMUL_X;
                     }
                 } else {
                     this->setup_streamer_h();
+                    latency += CYCLES_STREAMER_LD_CHANGE;
                     state_next = LOAD_H;
                 }
             }
-
-            // if(this->mj_i_tile_en) {
-            //     if(this->mj_i_tile_cnt==0) {
-            //         if(this->bias) {
-            //             this->clear_buf_accum();
-            //             this->setup_streamer_bias();
-            //             state_next = LOAD_BIAS;
-            //         } else {
-            //             this->clear_buf_accum();
-            //             // debug accumulation buffer
-            //             if(this->buf_accum_traces) {
-            //                 this->debug_buf_accum();
-            //             }
-            //             // new start
-            //             if(this->matmul){
-            //                 this->setup_streamer_matmul_x();
-            //                 state_next = STREAM_MATMUL_X;
-            //             }
-            //             else if(this->twomatmul){
-            //                 this->setup_streamer_h();
-            //                 state_next = LOAD_H;
-            //             }
-            //             // new stop
-            //             // old start
-            //             // this->setup_streamer_matmul_x();
-            //             // state_next = STREAM_MATMUL_X;
-            //             // old stop
-            //         }
-            //     }
-            //     else{
-            //         if(this->buf_accum_traces) {
-            //             this->debug_buf_accum();
-            //         }
-            //         // new start
-            //         if(this->matmul){
-            //             this->setup_streamer_matmul_x();
-            //             state_next = STREAM_MATMUL_X;
-            //         }
-            //         else if(this->twomatmul){
-            //             this->setup_streamer_h();
-            //             state_next = LOAD_H;
-            //         }
-            //         // new stop
-            //         // old start
-            //         // this->setup_streamer_matmul_x();
-            //         // state_next = STREAM_MATMUL_X;
-            //         // old stop
-            //     }
-            // }
-            // else {
-            //     // new start
-            //     if(this->matmul) {
-            //         // old start
-            //         if(this->bias) {
-            //             this->clear_buf_accum();
-            //             this->setup_streamer_bias();
-            //             state_next = LOAD_BIAS;
-            //         } else {
-            //             this->clear_buf_accum();
-            //             // debug accumulation buffer
-            //             if(this->buf_accum_traces) {
-            //                 this->debug_buf_accum();
-            //             }
-
-            //             this->setup_streamer_matmul_x();
-            //             state_next = STREAM_MATMUL_X;
-            //         }
-            //         // old stop
-            //     }
-            //     else if(this->twomatmul){
-            //         this->setup_streamer_h();
-            //         state_next = LOAD_H;
-            //     }
-            //     // new stop
-            // }
         }
         else {
             this->x_update_idx();
@@ -384,34 +313,17 @@ int Rnnacc_v1::fsm() {
             
             if(this->matmul_state==0) {
                 this->matmul_state = 1;
-                // this->setup_streamer_matmul_x();
-                // state_next = STREAM_MATMUL_X;
                 this->clear_buf_accum();
                 if(this->buf_accum_traces) this->debug_buf_accum();
                 this->setup_streamer_bias();
+                latency += CYCLES_STREAMER_LD_CHANGE;
                 state_next = LOAD_BIAS;
             } else {
                 this->matmul_state = 1;
                 this->setup_streamer_matmul_h();
+                latency += CYCLES_STREAMER_LD_CHANGE;
                 state_next = STREAM_MATMUL_H;
             }
-
-            // // if(this->mj_i_tile_en) {
-            // //     if(this->mj_i_tile_cnt==0) {
-            //         if(this->bias) {
-            //             this->clear_buf_accum();
-            //             this->setup_streamer_bias();
-            //             state_next = LOAD_BIAS;
-            //         } else {
-            //             this->clear_buf_accum();
-            //             if(this->buf_accum_traces) {
-            //                 this->debug_buf_accum();
-            //             }
-            //             this->setup_streamer_matmul_x();
-            //             state_next = STREAM_MATMUL_X;
-            //         }
-            // //     }
-            // // }
         }
         else {
             this->h_update_idx();
@@ -434,12 +346,13 @@ int Rnnacc_v1::fsm() {
         if(this->bias_exit_idx()) {
             if(this->matmul_state==0) {
                 this->setup_streamer_matmul_x();
+                latency += CYCLES_STREAMER_LD_CHANGE;
                 state_next = STREAM_MATMUL_X;
             } else {
                 this->setup_streamer_matmul_h();
+                latency += CYCLES_STREAMER_LD_CHANGE;
                 state_next = STREAM_MATMUL_H;
             }
-            
         }
         else {
             this->bias_update_idx();
@@ -455,7 +368,6 @@ int Rnnacc_v1::fsm() {
             this->trace.msg(vp::trace::LEVEL_DEBUG, "  n_w_i_tiles=%d\n", this->n_w_i_tiles);
             this->trace.msg(vp::trace::LEVEL_DEBUG, "  n_w_i_rest=%d\n", this->n_w_i_rest);
             this->trace.msg(vp::trace::LEVEL_DEBUG, "  w_i_idx=%d\n", this->w_i_idx);
-            // this->trace.msg(vp::trace::LEVEL_DEBUG, "  w_i_idx=%d\n", this->w_i_idx);matmul_state
         }
         latency = this->load_wx_cycle();
         latency += this->perform_matmul_x();
@@ -471,6 +383,7 @@ int Rnnacc_v1::fsm() {
                 if((this->mj_i_tile_en == 0) || (this->mj_i_tile_cnt == mj_i_tile_nr-1)) {
                     this->mj_i_tile_cnt = 0;
                     this->streamout_setup();
+                    latency += CYCLES_STREAMER_ST_CHANGE;
                     state_next = STREAMOUT;
                 } else {
                     this->mj_i_tile_cnt++;
@@ -479,34 +392,13 @@ int Rnnacc_v1::fsm() {
             }
             else if(this->twomatmul) {
                 if((this->mj_i_tile_en == 0) || (this->mj_i_tile_cnt == mj_i_tile_nr-1)) {
-                    // this->mj_i_tile_cnt = 0;
                     this->matmul_state = 1;
-                    printf("MATMUL_STATE=1");
-                    // this->setup_streamer_matmul_h();
-                    // state_next = STREAM_MATMUL_H;
                     state_next = END;
                 } else {
                     this->mj_i_tile_cnt++;
                     state_next = END;
                 }
             }
-
-
-            // if(this->matmul) {
-            //     if((this->mj_i_tile_en == 0) || (this->mj_i_tile_cnt == mj_i_tile_nr-1)){
-            //         this->mj_i_tile_cnt = 0;
-            //         this->streamout_setup();
-            //         state_next = STREAMOUT;
-            //     }
-            //     else {
-            //         this->mj_i_tile_cnt++;
-            //         state_next = END;
-            //     }
-            // }
-            // else if(this->twomatmul) {
-            //     this->setup_streamer_matmul_h();
-            //     state_next = STREAM_MATMUL_H;
-            // }
         }
         else {
             this->wx_update_idx();
@@ -537,8 +429,8 @@ int Rnnacc_v1::fsm() {
 
             if(this->twomatmul) {
                 if((this->mj_o_tile_en == 0) || (this->mj_o_tile_cnt == mj_o_tile_nr-1)){
-                    // this->mj_o_tile_cnt = 0;
                     this->streamout_setup();
+                    latency += CYCLES_STREAMER_ST_CHANGE;
                     state_next = STREAMOUT;
                 }
                 else {
@@ -546,40 +438,6 @@ int Rnnacc_v1::fsm() {
                     state_next = END;
                 }
             }
-            // else if(this->twomatmul) {
-            //     // if((this->mj_i_tile_en == 0) || (this->mj_i_tile_cnt == mj_i_tile_nr-1)){
-            //     //     this->mj_i_tile_cnt = 0;
-            //         this->streamout_setup();
-            //         state_next = STREAMOUT;
-            //     // }
-            //     // else{
-            //         // this->mj_i_tile_cnt++;
-            //         // state_next = END;
-            //     // }
-            // }
-
-            // if(this->matmul) {
-            //     if((this->mj_o_tile_en == 0) || (this->mj_o_tile_cnt == mj_o_tile_nr-1)){
-            //         this->mj_o_tile_cnt = 0;
-            //         this->streamout_setup();
-            //         state_next = STREAMOUT;
-            //     }
-            //     else {
-            //         this->mj_o_tile_cnt++;
-            //         state_next = END;
-            //     }
-            // }
-            // else if(this->twomatmul) {
-            //     // if((this->mj_i_tile_en == 0) || (this->mj_i_tile_cnt == mj_i_tile_nr-1)){
-            //     //     this->mj_i_tile_cnt = 0;
-            //         this->streamout_setup();
-            //         state_next = STREAMOUT;
-            //     // }
-            //     // else{
-            //         // this->mj_i_tile_cnt++;
-            //         // state_next = END;
-            //     // }
-            // }
         }
         else {
             this->wh_update_idx();
@@ -596,12 +454,23 @@ int Rnnacc_v1::fsm() {
         latency = this->streamout_cycle();
         if(this->streamout_exit_idx()) {
             if((this->mj_h_tile_en == 1) || (this->mj_h_tile_cnt < mj_h_tile_nr-1)){
-                this->mj_h_tile_cnt += 1;
+                // printf("CHECK\n");
+                // printf("mj_h_tile_cnt %d mj_h_tile_nr %d \n", mj_h_tile_cnt, mj_h_tile_nr);
+                // printf("mj_i_tile_cnt %d mj_i_tile_nr %d \n", mj_i_tile_cnt, mj_i_tile_nr);
+                // if ((this->mj_h_tile_cnt == mj_h_tile_nr-1) && (this->mj_i_tile_cnt == mj_i_tile_nr-1)){
+                if ((this->mj_h_tile_cnt == mj_h_tile_nr-1)){
+                    this->mj_h_tile_cnt = 0;
+                } else {
+                    this->mj_h_tile_cnt += 1;
+                }
+                
                 this->matmul_state = 0;
                 this->mj_i_tile_cnt = 0;
                 this->mj_o_tile_cnt = 0;
-                printf("RESET MATMUL_STATE, H_TILE INCREMENT ");
             }
+            // else{
+            //     this->mj_h_tile_cnt = 0;
+            // }
             this->clear_buf_accum();
             state_next = END;
         }
@@ -618,6 +487,14 @@ int Rnnacc_v1::fsm() {
       break;
 
   }
+
+//   printf("FSM state: %d, latency: %d \n", state_next, latency);
+
+  if (this->state != state_next)
+  {
+    //   printf("STATE CHANGE: old %d new %d \n", this->state, state_next);
+      latency += 1;
+  } 
 
   this->state = state_next;
   return latency;

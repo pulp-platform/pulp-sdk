@@ -35,9 +35,13 @@
 #if defined(__riscv__) && !defined(RV_ISA_RV32)
 #define RNNACC_WRITE(value, offset) __builtin_pulp_OffsetedWrite(value, (int *)RNNACC_ADDR_BASE, offset)
 #define RNNACC_READ(offset) __builtin_pulp_OffsetedRead((int *)RNNACC_ADDR_BASE, offset)
+#define RNNACC_WRITE(value, offset) __builtin_pulp_OffsetedWriteByte(value, (int *)RNNACC_ADDR_BASE, offset)
+#define RNNACC_READ(offset) __builtin_pulp_OffsetedReadByte((int *)RNNACC_ADDR_BASE, offset)
 #else
 #define RNNACC_WRITE(value, offset) pulp_write32(RNNACC_ADDR_BASE + (offset), value)
 #define RNNACC_READ(offset) pulp_read32(RNNACC_ADDR_BASE + (offset))
+#define RNNACC_WRITE_B(value, offset) pulp_write8(RNNACC_ADDR_BASE + (offset), value)
+#define RNNACC_READ_B(offset) pulp_read8(RNNACC_ADDR_BASE + (offset))
 #endif
 
 
@@ -64,6 +68,13 @@ static inline int rnnacc_get_state() {
   return RNNACC_READ(RNNACC_CHECK_STATE);
 }
 
+#define RNNACC_BARRIER_NOSTATUS()      eu_evt_maskWaitAndClr (1 << RNNACC_EVT0)
+#define RNNACC_BARRIER()               do { eu_evt_maskWaitAndClr (1 << RNNACC_EVT0); } while((*(int volatile *)(RNNACC_STATUS)) != 0)
+#define RNNACC_BUSYWAIT()              do { } while((*(int volatile *)(RNNACC_STATUS)) != 0)
+// #define RNNACC_BARRIER_ACQUIRE(job_id) job_id = RNNACC_READ(job_id, RNNACC_ACQUIRE);
+#define RNNACC_BARRIER_ACQUIRE(job_id) job_id = RNNACC_READ(RNNACC_ACQUIRE); \
+                                while(job_id < 0) { eu_evt_maskWaitAndClr (1 << RNNACC_EVT0);job_id = RNNACC_READ(RNNACC_ACQUIRE); };
+                        
 // // set addresses for matmul computation without bias
 // static inline void rnnacc_update_x_addr( unsigned int start_x, 
 //                                          unsigned int start_wx) {
@@ -108,8 +119,46 @@ static inline void rnnacc_set_matmul( unsigned int start_dst,
 
 // set parameters for matmul computation with bias
 static inline void rnnacc_set_biased_matmul( unsigned int start_dst, unsigned int start_bias, 
-                                             unsigned int start_x, unsigned int start_wx,
-                                             unsigned int n_input, unsigned int n_output ) {
+                                             unsigned int start_x, unsigned int start_wx) {
+  RNNACC_WRITE(start_x, RNNACC_ADDR_X);
+  RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
+  RNNACC_WRITE(start_bias, RNNACC_ADDR_B);
+  RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
+  // RNNACC_WRITE(n_input, RNNACC_N_INPUT);
+  // RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
+  // RNNACC_WRITE(0x0001, RNNACC_JOB_MODE);
+}
+
+// static inline void rnnacc_set_biased_matmul( unsigned int start_dst, unsigned int start_bias, 
+//                                              unsigned int start_x, unsigned int start_wx,
+//                                              unsigned int n_input, unsigned int n_output ) {
+//   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
+//   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
+//   RNNACC_WRITE(start_bias, RNNACC_ADDR_B);
+//   RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
+//   RNNACC_WRITE(n_input, RNNACC_N_INPUT);
+//   RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
+//   RNNACC_WRITE(0x0001, RNNACC_JOB_MODE);
+// }
+
+// set parameters for matmul computation with bias
+static inline void rnnacc_set_biased_matmul_i_tile( unsigned int start_dst, unsigned int start_bias, 
+                                                    unsigned int start_x, unsigned int start_wx,
+                                                    unsigned int n_input, unsigned int n_output ) {
+  RNNACC_WRITE(start_x, RNNACC_ADDR_X);
+  RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
+  RNNACC_WRITE(start_bias, RNNACC_ADDR_B);
+  RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
+  RNNACC_WRITE(n_input, RNNACC_N_INPUT);
+  RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
+
+  RNNACC_WRITE(0x0001, RNNACC_JOB_MODE);
+
+}
+
+static inline void rnnacc_set_biased_matmul_o_tile( unsigned int start_dst, unsigned int start_bias, 
+                                                    unsigned int start_x, unsigned int start_wx,
+                                                    unsigned int n_input, unsigned int n_output ) {
   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
   RNNACC_WRITE(start_bias, RNNACC_ADDR_B);

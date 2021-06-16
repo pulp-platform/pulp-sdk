@@ -44,21 +44,13 @@ void Rnnacc_v1::streamout_setup() {
     this->vs_y = RnnaccVectorStore<uint8_t>(
         this,
         base_addr,     // base_addr
-        2*line_length, // tot_length -> 2byte * n_output
-        4*this->NR_MASTER_PORTS, //line_length,   // d0_stride
+        2*line_length, // tot_length
+        4*this->NR_MASTER_PORTS, // d0_stride
         n_store_tiles, // d0_length
         0,             // d1_stride
         0,             // d1_length
         0,             // d2_stride
-        true           // debug
-        // base_addr,   // base_addr
-        // 2,           // word_length -> 16bit = 2byte
-        // 0,           // word_stride
-        // line_length, // line_length -> n_output * 2bytes or NR_REGS_ACCUM * 2
-        // 0,           // line_stride
-        // 0,           // block_length
-        // 0,           // block_stride
-        // true         // debug
+        this->debug_streamer // debug
     );
 
     this->trace.msg(vp::trace::LEVEL_DEBUG, "STREAMER - vs_y created\n");
@@ -72,13 +64,6 @@ void Rnnacc_v1::streamout_setup() {
     if(this->buf_accum_traces) {
         this->debug_buf_accum();
     }
-
-    // int32_t clip_min = -pow(2, 16);
-    // int32_t clip_max = pow(2, 16)-1;
-    
-    // xt::view(this->buf_accum, xt::all()) = xt::clip(this->buf_accum, clip_min, clip_max);
-    // this->trace.msg(vp::trace::LEVEL_DEBUG, "STREAMER - clip buf_accum to: %d to %d\n", clip_min, clip_max);
-
 
     if(this->buf_accum_traces) {
         this->debug_buf_accum();
@@ -110,15 +95,6 @@ int Rnnacc_v1::streamout_cycle() {
         xt::view(tcdm_data, (i/2-this->store_idx*this->NR_MASTER_PORTS)*4+2) = (xt::cast<int16_t>(xt::view(this->buf_accum, i+1, 1)) >> 0) & 0xff;
         xt::view(tcdm_data, (i/2-this->store_idx*this->NR_MASTER_PORTS)*4+3) = (xt::cast<int16_t>(xt::view(this->buf_accum, i+1, 1)) >> 8) & 0xff;
     }
-
-    // for (auto i=this->store_idx*this->NR_MASTER_PORTS*2; i<(this->store_idx+1)*this->NR_MASTER_PORTS*2; i+=2) {
-    //     xt::view(this->buf_accum, i, 1) = 
-    //         (xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->store_idx*8)*4+0)) << 0 ) |
-    //         (xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->store_idx*8)*4+1)) << 8 );
-    //     xt::view(this->buf_accum, i+1, 1) = 
-    //         (xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->store_idx*8)*4+2)) << 0) |
-    //         (xt::cast<int32_t>(xt::view(tcdm_data, (i/2-this->store_idx*8)*4+3)) << 8);
-    // }
 
     this->vs_y.execute(tcdm_data, width, cycles, 1);
 

@@ -8,7 +8,7 @@
     "vp_component": "pulp.rnnacc.rnnacc_v1_impl",
 
     "nb_masters": 32,
-    "nb_regs_x": 16,
-    "nb_regs_h": 4,
-    "nb_regs_accum": 4
+    "nb_regs_x": 512,
+    "nb_regs_h": 512,
+    "nb_regs_accum": 512
 }

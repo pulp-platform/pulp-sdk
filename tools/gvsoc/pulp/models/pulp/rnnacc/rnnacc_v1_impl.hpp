@@ -67,6 +67,11 @@ enum RnnaccState {
     END
 };
 
+// LATENCY DEFINITIONS
+#define CYCLES_STREAMER_LD_CHANGE 1 // new streamer config latency
+#define CYCLES_STREAMER_ST_CHANGE 2 // post compute latency
+
+
 // forward definitions
 class Rnnacc_v1;
 
@@ -200,6 +205,7 @@ private:
     void set_id(int id);
 
     // CLEAR
+    void softclear();
     void clear_all();
     void clear_all_buf();
     void clear_buf_x();
@@ -271,7 +277,9 @@ private:
     int  cxt0[RNNACC_NB_REG];
     int  cxt1[RNNACC_NB_REG];
     int  cxt_cfg_ptr;
+    int  cxt_cfg_ptr_global;
     int  cxt_use_ptr;
+    int  cxt_use_ptr_global;
     int  job_pending;
     int  job_state;
     unsigned char job_id;
@@ -403,6 +411,7 @@ private:
     xt::xarray<int16_t> buf_w;      // weight fifo?
 
     // DEBUG settings
+    bool debug_streamer;
     bool fsm_traces;
     bool buf_x_traces;
     bool buf_h_traces;

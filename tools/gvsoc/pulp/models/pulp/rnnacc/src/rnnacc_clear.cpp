@@ -21,6 +21,40 @@
 
 #include "../rnnacc_v1_impl.hpp"
 
+
+void Rnnacc_v1::softclear() {
+  // this->addr_b   = 0;
+  // this->addr_x   = 0;
+  // this->addr_wx  = 0;
+  // this->addr_h   = 0;
+  // this->addr_wh  = 0;
+  // this->addr_dst = 0;
+
+  // this->n_input  = 0;
+  // this->n_output = 0;
+
+  // this->w_i_idx = 0;
+  // this->w_o_idx = 0;
+  // this->w_h_idx = 0;
+
+  // this->bias      = 0;
+  // this->matmul    = 0;
+  // this->twomatmul = 0;
+  // this->multi_job = 0;
+
+  // this->mj_h_tile_cnt = 0;
+  // this->mj_o_tile_cnt = 0;
+  // this->mj_i_tile_cnt = 0;
+
+  // this->multijob_counter = 0;
+  // this->matmul_state = false;
+
+  // this->clear_buf_x();
+  // this->clear_buf_h();
+  // this->clear_buf_accum();
+}
+
+
 void Rnnacc_v1::clear_all() {
   this->addr_b   = 0;
   this->addr_x   = 0;
@@ -58,7 +92,6 @@ void Rnnacc_v1::clear_buf_h() {
 }
 
 void Rnnacc_v1::clear_buf_accum() {
-  printf("CLEAR BUF_ACCUM");
   xt::view(this->buf_accum, xt::all()) = 0;
   xt::view(this->buf_w,     xt::all()) = 0;
 }

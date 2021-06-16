@@ -51,7 +51,7 @@ void Rnnacc_v1::setup_streamer_bias() {
         0,             // d1_stride
         0,             // d1_length
         0,             // d2_stride
-        true           // debug
+        this->debug_streamer // debug
     );
 
     this->trace.msg(vp::trace::LEVEL_DEBUG, "STREAMER - vl_bias created\n");
@@ -137,7 +137,7 @@ void Rnnacc_v1::setup_streamer_x() {
         0,             // d1_stride
         0,             // d1_length
         0,             // d2_stride
-        true           // debug
+        this->debug_streamer // debug
     );
 
     this->trace.msg(vp::trace::LEVEL_DEBUG, "STREAMER - vl_x created\n");
@@ -219,7 +219,7 @@ void Rnnacc_v1::setup_streamer_h() {
         0,             // d1_stride
         0,             // d1_length
         0,             // d2_stride
-        true           // debug
+        this->debug_streamer // debug
 
     );
 
