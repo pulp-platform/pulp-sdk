@@ -44,7 +44,12 @@ void Ne16::constant_setup() {
 
 void Ne16::streamin_setup() {
 
-  auto base_addr_streamin = this->outfeat_ptr + (this->i_major*this->FILTER_SIZE*this->w_out*this->k_out + this->j_major*this->FILTER_SIZE*this->k_out + this->k_out_major*this->TP_OUT) * 4;
+  auto tp = this->depthwise ? this->TP_IN : this->TP_OUT;
+
+  auto outfeat_hom_iter = this->FILTER_SIZE * this->outfeat_d2_stride;
+  auto outfeat_wom_iter = this->FILTER_SIZE * this->outfeat_d1_stride;
+
+  auto base_addr_streamin = this->outfeat_ptr + this->i_major*outfeat_hom_iter + this->j_major*outfeat_wom_iter + this->k_out_major*tp*this->quantization_bits/8;
 
   auto k_out_lim = this->depthwise ? 1 :
                    (this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != this->TP_OUT && this->subtile_rem_ko != 0) ? this->subtile_rem_ko : this->TP_OUT;
