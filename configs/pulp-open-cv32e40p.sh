@@ -24,6 +24,8 @@ export PULPOS_TARGET=pulp_cv32e40p
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp_cv32e40p
 
+export CHIP_CORE_ISA=corev
+
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 
 export GVSOC_MODULES="$PULP_SDK_HOME/tools/gvsoc/common $PULP_SDK_HOME/tools/gvsoc/pulp/models"

@@ -1,0 +1,4 @@
+#!/bin/sh -x
+gapy --target=pulp --platform=gvsoc --work-dir=./ --config-opt=cluster/nb_pe=8   --config-opt=**/runner/verbose=true -v run --image --binary=$1
+gapy --target=pulp --platform=gvsoc --work-dir=./ --config-opt=cluster/nb_pe=8   --config-opt=**/runner/verbose=true -v run --flash --binary=$1
+gapy --target=pulp --platform=gvsoc --work-dir=./ --config-opt=cluster/nb_pe=8   --config-opt=**/runner/verbose=true -v run --exec-prepare --exec --binary=$1

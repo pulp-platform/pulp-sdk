@@ -13,6 +13,7 @@ GV_MAKEFLAGS ?= -j 4
 
 INSTALL_FILES += bin/pulp-pc-info
 INSTALL_FILES += bin/pulp-trace-extend
+INSTALL_FILES += bin/gvsoc_sim
 $(foreach file, $(INSTALL_FILES), $(eval $(call declareInstallFile,$(file))))
 
 clean:

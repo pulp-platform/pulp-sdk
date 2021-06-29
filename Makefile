@@ -15,6 +15,6 @@ include rules/dpi-models.mk
 include rules/gvsoc.mk
 include rules/pulpos.mk
 
-build: gvsoc.build.all
+build: gvsoc.build.all pulpos.libs
 
 clean: gvsoc.clean
