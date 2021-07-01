@@ -54,6 +54,13 @@ Compile the SDK with this command:
 make build
 ~~~~~
 
+There exists a bug in GCC 11.1.0 which fails the sdk build with the error `'this' pointer is null [-Werror=nonnull]`.
+If you encounter this bug use the following temporary workaround instead:
+
+~~~~~shell
+VP_WORKAROUND_NONNULL_BUG=yes make build
+~~~~~
+
 ## Test execution
 
 Some examples are availaible at https://github.com/GreenWaves-Technologies/pmsis_tests
