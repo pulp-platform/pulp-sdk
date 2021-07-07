@@ -53,7 +53,8 @@ def get_config(tp):
   has_hwme          = tp.get('soc/peripherals/hwme') is not None
   has_fc_icache     = tp.get('**/peripherals/fc_icache') is not None
   taps_conf         = tp.get('soc/taps')
-
+  has_external_axi_ports           = tp.get('soc/external_axi_ports') is not None
+ 
   comps = {}
 
   if fc_events is not None:
@@ -101,6 +102,10 @@ def get_config(tp):
 
   if has_ddr:
     axi_ico_mappings["ddr"] = get_mapping(tp.get_child_dict('soc/ddr'), True)
+
+  if has_external_axi_ports:
+    axi_ico_mappings["external_axi_ports"] = get_mapping(tp.get_child_dict('soc/external_axi_ports'), True)
+
 
   soc.axi_ico = Component(properties=OrderedDict([
       ('@includes@', ["ips/interco/router.json"]),
@@ -890,6 +895,10 @@ def get_config(tp):
 
   if has_ddr:
     soc.axi_ico.ddr = soc.ddr
+
+  if has_external_axi_ports:
+    soc.axi_ico.ddr = soc.ddr
+    soc.soc_ico.udma_rx_ico.ll_ico     = soc.soc_ico.ll_ico.input
 
   # FC ITC
   if has_fc:

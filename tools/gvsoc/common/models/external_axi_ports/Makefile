@@ -1,10 +1,10 @@
-IMPLEMENTATIONS += memory/memory_impl
-memory/memory_impl_SRCS = memory/memory_impl.cpp
+IMPLEMENTATIONS += external_axi_ports/axi_ports_impl
+external_axi_ports/memory_impl_SRCS = external_axi_ports/memory_impl.cpp
 
-IMPLEMENTATIONS += memory/ddr_impl
+IMPLEMENTATIONS += external_axi_ports/axi_ports_impl
 ifdef VP_USE_SYSTEMC
 
-memory/ddr_impl_SRCS = memory/ddr_sc_impl.cpp
+external_axi_ports/axi_ports_impl = external_axi_ports/axi_ports_impl.cpp
 ifdef VP_USE_SYSTEMC_GEM5
 VP_USE_SYSTEMC_GEM5_HOME ?= $(HOME)/gem5_tnt/gem5
 GEM5_HOME = $(VP_USE_SYSTEMC_GEM5_HOME)
@@ -31,8 +31,8 @@ VP_COMP_LDFLAGS += -L$(GEM5_HOME)/build/ARM -lgem5_opt
 extra_srcs += $(filter-out $(GEM5_HOME)/util/systemc/main.cc, $(wildcard $(GEM5_HOME)/util/systemc/*.cc))
 extra_srcs += $(wildcard $(GEM5_HOME)/util/tlm/examples/common/*.cc)
 extra_srcs += $(wildcard $(GEM5_HOME)/util/tlm/src/*.cc)
-memory/ddr_impl_SRCS += $(extra_srcs)
+external_axi_ports/axi_ports_impl += $(extra_srcs)
 endif # VP_USE_SYSTEMC_GEM5
 else
-memory/ddr_impl_SRCS = memory/ddr_impl.cpp
+external_axi_ports/axi_ports_impl = external_axi_ports/axi_ports_impl.cpp
 endif # VP_USE_SYSTEMC

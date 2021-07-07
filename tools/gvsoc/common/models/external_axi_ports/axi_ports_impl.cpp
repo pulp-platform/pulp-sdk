@@ -17,6 +17,7 @@
 
 /* 
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
+ * Authors: Andrea Bartolini, Università di Bologna (a.bartolini@unibo.it)
  */
 
 #include <vp/vp.hpp>
@@ -24,14 +25,14 @@
 #include <stdio.h>
 #include <string.h>
 
-class ddr : public vp::component
+class axi_port : public vp::component
 {
 
   friend class gvsoc_tlm_br;
 
 public:
 
-  ddr(js::config *config);
+  axi_port(js::config *config);
 
   int build();
   void start();
@@ -74,21 +75,21 @@ private:
  */
 
 
-ddr::ddr(js::config *config)
+axi_port::axi_port(js::config *config)
 : vp::component(config)
 {
 
 }
 
-vp::io_req_status_e ddr::req(void *__this, vp::io_req *req)
+vp::io_req_status_e axi_port::req(void *__this, vp::io_req *req)
 {
-  ddr *_this = (ddr *)__this;
+  axi_port *_this = (ddr *)__this;
 
   uint64_t offset = req->get_addr();
   uint8_t *data = req->get_data();
   uint64_t size = req->get_size();
 
-  _this->trace.msg("ddr access (offset: 0x%x, size: 0x%x, is_write: %d)\n", offset, size, req->get_is_write());
+  _this->trace.msg("axi_port access (offset: 0x%x, size: 0x%x, is_write: %d)\n", offset, size, req->get_is_write());
 
   if (offset + size > _this->size) {
     _this->warning.warning("Received out-of-bound request (reqAddr: 0x%llx, reqSize: 0x%llx, memSize: 0x%llx)\n", offset, size, _this->size);
@@ -116,7 +117,7 @@ vp::io_req_status_e ddr::req(void *__this, vp::io_req *req)
   }
 }
 
-int ddr::build()
+int axi_port::build()
 {
   traces.new_trace("trace", &trace, vp::DEBUG);
 
@@ -128,16 +129,16 @@ int ddr::build()
 
 
 
-void ddr::start()
+void axi_port::start()
 {
   size = get_config_int("size");
 
-  trace.msg("Building ddr (size: 0x%lx)\n", size);
+  trace.msg("Building axi_port (size: 0x%lx)\n", size);
 
 }
 
 extern "C" vp::component *vp_constructor(js::config *config)
 {
-  return new ddr(config);
+  return new axi_port(config);
 }
 
