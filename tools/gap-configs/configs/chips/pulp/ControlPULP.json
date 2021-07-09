@@ -9,10 +9,45 @@
    "external_axi_ports": {
         "base"  : "0x800000000000",
         "size"  : "0x100000000000"
-        },
+        }
   },
 
   "cluster": {
     "core": "ri5ky_v2_6_sfloat_single_regfile_pulpnn"
+  },
+
+  "board": {
+    "devices": {
+      "spiflash": {
+        "@includes@": ["devices/spiflash.json"],
+        "interface": "spim0",
+        "cs": 0
+      },
+      "uart": {
+        "@includes@": ["devices/uart_tb.json"],
+        "interface": "uart0"
+      },
+      "jtag_proxy": {
+        "@includes@": ["devices/jtag_proxy.json"]
+      },
+      "camera": {
+        "@include@": "devices/camera.json",
+        "interface": "cpi0",
+        "ctrl_interface": "i2c1"
+      },
+      "flash": {
+        "includes": ["devices/hyperflash.json"],
+        "interface": "hyper0",
+        "cs": 1
+      },
+      "hyperram": {
+        "includes": ["devices/hyperram.json"],
+        "interface": "hyper0",
+        "cs": 0
+      }
+    }
   }
+
+
+
 }
