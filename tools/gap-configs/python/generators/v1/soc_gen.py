@@ -897,8 +897,7 @@ def get_config(tp):
     soc.axi_ico.ddr = soc.ddr
 
   if has_external_axi_ports:
-    soc.axi_ico.ddr = soc.ddr
-    soc.soc_ico.udma_rx_ico.ll_ico     = soc.soc_ico.ll_ico.input
+    soc.soc_ico.ll_ico.axi_external_master  = soc.soc_ico.axi_external_master
 
   # FC ITC
   if has_fc:

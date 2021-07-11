@@ -6,9 +6,9 @@
       "core"        : "ri5ky_v2_6_sfloat_single_regfile_pulpnn"
     },
     
-   "external_axi_ports": {
-        "base"  : "0x800000000000",
-        "size"  : "0x100000000000"
+   "ddr": {
+        "base"  : "0x20000000",
+        "size"  : "0x10000000"
         }
   },
 
@@ -29,21 +29,6 @@
       },
       "jtag_proxy": {
         "@includes@": ["devices/jtag_proxy.json"]
-      },
-      "camera": {
-        "@include@": "devices/camera.json",
-        "interface": "cpi0",
-        "ctrl_interface": "i2c1"
-      },
-      "flash": {
-        "includes": ["devices/hyperflash.json"],
-        "interface": "hyper0",
-        "cs": 1
-      },
-      "hyperram": {
-        "includes": ["devices/hyperram.json"],
-        "interface": "hyper0",
-        "cs": 0
       }
     }
   }
