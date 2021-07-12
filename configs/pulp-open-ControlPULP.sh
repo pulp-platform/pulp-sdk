@@ -14,7 +14,7 @@ fi
 export TARGET_CHIP_FAMILY="PULP"
 export TARGET_CHIP="PULP"
 export TARGET_NAME="pulp"
-export BOARD_NAME=ControlPULP
+export BOARD_NAME="ControlPULP"
 export PULP_CURRENT_CONFIG=$BOARD_NAME@config_file=config/$BOARD_NAME.json
 
 export PULPOS_BOARD=pulp
@@ -22,7 +22,7 @@ export PULPOS_BOARD_VERSION=pulp
 export PULPOS_BOARD_PROFILE=pulp
 export PULPOS_TARGET=pulp_nn
 export PULPOS_SYSTEM=pulp
-export GAPY_TARGET=pulp_nn
+export GAPY_TARGET=ControlPULP
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 
