@@ -64,16 +64,7 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
         _this->mj_h_tile_nr = 1;
     }
 
-    // if(((_this->n_hidden_external % _this->NR_REGS_ACCUM) != 0) && (_this->mj_h_tile_cnt == _this->mj_h_tile_nr-1)){
-    //     _this->n_output = (_this->n_hidden_external % _this->NR_REGS_ACCUM);
-    // }
-    // else{
-    //     _this->n_output = _this->NR_REGS_ACCUM;
-    // }
-    // printf("results %d \n",(_this->n_hidden_external % _this->NR_REGS_ACCUM));
-    // printf("results %d %d\n", _this->mj_h_tile_cnt, _this->mj_h_tile_nr-1);
     if(((_this->n_hidden_external < _this->NR_REGS_ACCUM)) || (_this->mj_h_tile_cnt == (_this->mj_h_tile_nr-1))){
-        // _this->n_output = (_this->n_hidden_external % _this->NR_REGS_ACCUM);
         if (_this->n_hidden_external % _this->NR_REGS_ACCUM == 0) {
             _this->n_output = _this->NR_REGS_ACCUM;
         } else {
@@ -82,6 +73,16 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
     }
     else{
         _this->n_output = _this->NR_REGS_ACCUM;
+    }
+
+    if(_this->mj_o_tile_cnt == (_this->mj_o_tile_nr-1)) {
+        if (_this->n_hidden_external % _this->NR_REGS_ACCUM == 0) {
+            _this->n_hidden = _this->NR_REGS_H;
+        } else {
+            _this->n_hidden = (_this->n_hidden_external % _this->NR_REGS_H);
+        }
+    } else {
+        _this->n_hidden = _this->NR_REGS_H;
     }
 
     // output
@@ -454,23 +455,18 @@ int Rnnacc_v1::fsm() {
         latency = this->streamout_cycle();
         if(this->streamout_exit_idx()) {
             if((this->mj_h_tile_en == 1) || (this->mj_h_tile_cnt < mj_h_tile_nr-1)){
-                // printf("CHECK\n");
-                // printf("mj_h_tile_cnt %d mj_h_tile_nr %d \n", mj_h_tile_cnt, mj_h_tile_nr);
-                // printf("mj_i_tile_cnt %d mj_i_tile_nr %d \n", mj_i_tile_cnt, mj_i_tile_nr);
-                // if ((this->mj_h_tile_cnt == mj_h_tile_nr-1) && (this->mj_i_tile_cnt == mj_i_tile_nr-1)){
                 if ((this->mj_h_tile_cnt == mj_h_tile_nr-1)){
                     this->mj_h_tile_cnt = 0;
                 } else {
                     this->mj_h_tile_cnt += 1;
                 }
-                
                 this->matmul_state = 0;
                 this->mj_i_tile_cnt = 0;
                 this->mj_o_tile_cnt = 0;
             }
-            // else{
-            //     this->mj_h_tile_cnt = 0;
-            // }
+            else{
+                this->matmul_state = 0;
+            }
             this->clear_buf_accum();
             state_next = END;
         }

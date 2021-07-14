@@ -76,12 +76,15 @@ void Rnnacc_v1::clear_all() {
   // this->clear_buf_x();
   // this->clear_buf_h();
   // this->clear_buf_accum();
+  // printf("clear3\n");
+
 }
 
 void Rnnacc_v1::clear_all_buf() {
   this->clear_buf_x();
   this->clear_buf_h();
-  this->clear_buf_accum();}
+  this->clear_buf_accum();
+  }
 
 void Rnnacc_v1::clear_buf_x() {
   xt::view(this->buf_x, xt::all()) = 0;

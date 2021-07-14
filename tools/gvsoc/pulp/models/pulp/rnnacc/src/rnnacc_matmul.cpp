@@ -195,8 +195,8 @@ void Rnnacc_v1::setup_streamer_matmul_h() {
     int bandwidth_words = 2*this->NR_MASTER_PORTS;
 
     // NO streamer tiles
-    this->n_w_o_rest  = this->n_output % bandwidth_words; 
-    this->n_w_o_tiles = int(this->n_output / bandwidth_words); 
+    this->n_w_o_rest  = this->n_output % bandwidth_words;
+    this->n_w_o_tiles = int(this->n_output / bandwidth_words);
 
     if(this->n_w_o_rest > 0){
         this->n_w_o_tiles += 1;
@@ -205,8 +205,8 @@ void Rnnacc_v1::setup_streamer_matmul_h() {
     int stride_inp = 2*bandwidth_words;
     int stride_out = 2*this->n_output_external;
 
-    this->n_w_h_rest  = this->n_output % (1); 
-    this->n_w_h_tiles = int(this->n_output / (1)); 
+    this->n_w_h_rest  = this->n_output % bandwidth_words;
+    this->n_w_h_tiles = int(this->n_hidden / (1));
 
     // set counter to 0
     this->w_o_idx = 0;
@@ -237,9 +237,9 @@ int Rnnacc_v1::load_wh_cycle() {
     xt::xarray<uint8_t> tcdm_data = xt::zeros<uint8_t>({this->NR_MASTER_PORTS*4});
 
     auto width = 0;
-    if((this->w_o_idx == this->n_w_o_tiles-1) && (this->n_w_o_rest > 0))
+    if((this->w_o_idx == this->n_w_o_tiles-1) && (this->n_w_h_rest > 0))
     {
-        width = 4*this->n_w_o_rest;
+        width = 2*this->n_w_h_rest;
     } else {
         width = 4*this->NR_MASTER_PORTS;
     }
@@ -298,6 +298,7 @@ int Rnnacc_v1::perform_matmul_h() {
 
     for (auto i=this->w_o_idx*2*this->NR_MASTER_PORTS; i<(this->w_o_idx+1)*2*this->NR_MASTER_PORTS; i+=4) {
 
+        // printf("index i: %d", i);
         // Multiply X0 with two new weights W0 W1
         mult0 = xt::view(this->buf_h, this->w_h_idx) * xt::view(this->buf_w, ((i/4)*4+0)%(this->NR_MASTER_PORTS*2), 1);
         mult1 = xt::view(this->buf_h, this->w_h_idx) * xt::view(this->buf_w, ((i/4)*4+1)%(this->NR_MASTER_PORTS*2), 1);
@@ -310,7 +311,7 @@ int Rnnacc_v1::perform_matmul_h() {
 
         // debug print
         if(this->matmul_traces) {
-            std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << std::endl;            
+            std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << " n_output=" << this->n_output << std::endl;
             if(this->debug_hex_format){
                 std::cout << "[MULT] mult0="<< std::hex << std::setw(16) << mult0 << " x=" << xt::view(this->buf_h, this->w_h_idx) << " w=" << xt::view(this->buf_w, ((i/4)*4+0)%(this->NR_MASTER_PORTS*2), 1) << std::dec << std::endl;
                 std::cout << "[MULT] mult1="<< std::hex << std::setw(16) << mult1 << " x=" << xt::view(this->buf_h, this->w_h_idx) << " w=" << xt::view(this->buf_w, ((i/4)*4+1)%(this->NR_MASTER_PORTS*2), 1) << std::dec << std::endl;
@@ -327,16 +328,20 @@ int Rnnacc_v1::perform_matmul_h() {
 
         if(i+0>=this->n_output) break;
         xt::view(this->buf_accum, i+0, 1) = xt::view(this->buf_accum, i+0, 1) + xt::view(mult0, 1);
+        // std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << " n_output=" << this->n_output << std::endl;
 
         if(i+1>=this->n_output) break;
         xt::view(this->buf_accum, i+1, 1) = xt::view(this->buf_accum, i+1, 1) + xt::view(mult1, 1);
+        // std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << " n_output=" << this->n_output << std::endl;
 
         if(this->NR_MASTER_PORTS > 1){
             if(i+2>=this->n_output) break;
             xt::view(this->buf_accum, i+2, 1) = xt::view(this->buf_accum, i+2, 1) + xt::view(mult2, 1);
-            
+            // std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << " n_output=" << this->n_output << std::endl;
+
             if(i+3>=this->n_output) break;
             xt::view(this->buf_accum, i+3, 1) = xt::view(this->buf_accum, i+3, 1) + xt::view(mult3, 1);
+            // std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << " n_output=" << this->n_output << std::endl;
         }
     }
 

@@ -196,8 +196,8 @@ void Rnnacc_v1::setup_streamer_h() {
     int line_length = 0;
 
     // define tile numbers
-    this->n_h_rest  = this->n_output % (2*this->NR_MASTER_PORTS); 
-    this->n_h_tiles = int(this->n_output / (2*this->NR_MASTER_PORTS)); 
+    this->n_h_rest  = this->n_hidden % (2*this->NR_MASTER_PORTS);
+    this->n_h_tiles = int(this->n_hidden / (2*this->NR_MASTER_PORTS));
 
     if(this->n_h_rest > 0){
         this->n_h_tiles += 1;
@@ -207,7 +207,7 @@ void Rnnacc_v1::setup_streamer_h() {
     this->n_h_idx = 0;
 
     // set line length
-    line_length = this->n_output;
+    line_length = this->n_hidden;
 
     // create streamer
     this->vl_h = RnnaccVectorLoad<uint8_t>(
@@ -243,7 +243,7 @@ int Rnnacc_v1::load_h_cycle() {
     tcdm_data = this->vl_h.execute(width, cycles, 4);
 
     for (auto i=this->n_h_idx*this->NR_MASTER_PORTS*2; i<(this->n_h_idx+1)*this->NR_MASTER_PORTS*2; i+=2) {
-        if(i>=this->n_output){
+        if(i>=this->n_hidden){
             break;
         }
         xt::view(this->buf_h, i, 1) = 
