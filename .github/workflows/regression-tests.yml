@@ -1,5 +1,5 @@
 name: PULP-SDK CI
-on: []
+on: [push, pull_request]
 jobs:
   Regression-Tests:
     name: Regression Tests
