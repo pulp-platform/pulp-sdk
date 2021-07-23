@@ -94,10 +94,10 @@ install:
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(basename $@)
-	g++ $(CFLAGS) -o $@ -c $<
+	$(CXX) $(CFLAGS) -o $@ -c $<
 
 $(BUILD_DIR)/libpulpdebugbridge.so: $(OBJS)
-	g++ -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 $(INSTALL_DIR)/lib/libpulpdebugbridge.so: $(BUILD_DIR)/libpulpdebugbridge.so
 	install -D $< $@
