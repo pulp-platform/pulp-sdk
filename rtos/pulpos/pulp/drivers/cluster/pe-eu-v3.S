@@ -251,7 +251,7 @@ pos_set_slave_stack:
     // and thus we need to take the next stack
     addi     t5, s3, 1
 #endif
-    p.mul   t4, t5, a0
+    mul   t4, t5, a0
     add     sp, t4, t0
 
     ret
