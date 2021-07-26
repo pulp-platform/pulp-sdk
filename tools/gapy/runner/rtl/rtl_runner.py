@@ -21,6 +21,7 @@ import os.path
 import errors
 import argparse
 import json_tools as js
+import json
 try:
     import gv.gvsoc
 except:
@@ -152,6 +153,10 @@ class Runner(runner.default_runner.Runner):
             self.__create_symlink(plt_path, 'tcl_files')
             self.__create_symlink(plt_path, 'waves')
             self.__create_symlink(plt_path, 'models')
+            try:
+                self.__create_symlink(plt_path, 'mem.json')
+            except:
+                pass
             self.__create_symlink(plt_path, 'ips_inputs')
 
         else:
@@ -213,8 +218,7 @@ class Runner(runner.default_runner.Runner):
         binary = self.config.get_str('runner/boot-loader')
 
         self.gen_stim_slm_64('vectors/stim.txt', [binary])
-
-
+        self.gen_stim_mem('vectors/stim.txt', [binary], )
 
     def __gen_stim_slm(self, filename, width):
 
@@ -229,6 +233,38 @@ class Runner(runner.default_runner.Runner):
             for key in sorted(self.mem.keys()):
                 file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
 
+
+    def __gen_stim_mem(self, filename, mem_dict):
+
+        for mem_ in mem_dict.keys():
+            self.dump('  Generating to file: ' + mem_ + ".mem")
+
+            try:
+                os.makedirs(os.path.dirname(filename))
+            except:
+                pass
+
+            with open(os.path.dirname(filename) + "/" + mem_ + ".mem", 'w') as file:
+
+                file.write("""// memory data file (do not edit the following line - required for mem load use)
+// instance=%s
+// format=hex addressradix=h dataradix=h version=1.0 wordsperline=1\n""" % (mem_dict[mem_]['instance']))
+
+                base_ = int(mem_dict[mem_]['base'], 16)
+
+                for key in sorted(self.mem.keys()):
+                    if not (int(key) >= base_ and int(key) < base_+int(mem_dict[mem_]['length'])):
+                        continue
+            
+                    addr_ = (int(key) - base_) / 4
+                    if not mem_dict[mem_]['interleaving'] == "None":
+                        bank_ = addr_ % int(mem_dict[mem_]['interleaving'])
+                        if bank_ != int(mem_dict[mem_]['interleaving_bank']):
+                            continue
+                        addr_ = addr_ / int(mem_dict[mem_]['interleaving'])
+
+                    data_ = self.mem.get(key)
+                    file.write('@%x %08x\n' % (addr_, data_))
 
 
     def __add_mem_word(self, base, size, data, width):
@@ -310,6 +346,18 @@ class Runner(runner.default_runner.Runner):
         self.__parse_binaries(8, binaries)
 
         self.__gen_stim_slm(stim_file, 8)
+
+    def gen_stim_mem(self, stim_file, binaries):
+
+        self.__parse_binaries(4, binaries)
+
+        try:
+            with open(self.platform_path + "/mem.json", "r") as fp:
+                mem_dict = json.load(fp)
+        except:
+            mem_dict = None
+        if mem_dict is not None:
+            self.__gen_stim_mem(stim_file, mem_dict)
 
 
     def __process_args(self):

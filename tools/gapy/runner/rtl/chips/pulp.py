@@ -34,6 +34,10 @@ class Runner(runner.rtl.rtl_runner.Runner, runner.chips.pulp.Runner):
         if os.environ.get('QUESTA_CXX') is not None:
             self.set_arg('-dpicpppath ' + os.environ.get('QUESTA_CXX'))
 
+        if os.environ.get('bootmode') is not None:
+            if os.environ.get('bootmode') == "preload":
+                self.set_arg('-gLOAD_L2=PRELOAD')
+
         self.set_arg('-permit_unmatched_virtual_intf')
         self.set_arg('+preload_file=efuse_preload.data')
         self.set_arg('-gBAUDRATE=115200')
