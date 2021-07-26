@@ -294,7 +294,7 @@ static inline unsigned int __attribute__ ((always_inline)) __ExtInsMaskSafe(unsi
 
 #define __COREID()					__builtin_pulp_CoreId()
 #define __CLUSTERID()				__builtin_pulp_ClusterId()
-#define __NCORE()					__builtin_pulp_CoreCount()
+#define __NCORE()					(ARCHI_CLUSTER_NB_PE)
 #define __ISFC()					__builtin_pulp_IsFc()
 
 #define __SPRWRITE(x, y)				__builtin_pulp_spr_write(x, y)

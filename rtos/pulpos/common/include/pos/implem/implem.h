@@ -52,15 +52,15 @@ static inline uint32_t pi_cluster_id()
 static inline int pi_cl_cluster_nb_cores()
 {
 #ifdef ARCHI_HAS_CC
-    return __builtin_pulp_CoreCount() + 1;
+    return ARCHI_CLUSTER_NB_PE + 1;
 #else
-    return __builtin_pulp_CoreCount();
+    return ARCHI_CLUSTER_NB_PE;
 #endif
 }
 
 static inline uint32_t pi_cl_cluster_nb_pe_cores()
 {
-    return __builtin_pulp_CoreCount();
+    return ARCHI_CLUSTER_NB_PE;
 }
 
 static inline uint32_t pi_is_fc()
