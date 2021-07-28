@@ -2,7 +2,7 @@
 #define __ARCHI_RNNACC_V1_H__
 
 /*
- * Copyright (C) 2021 ETH Zurich and University of Bologna
+ * Copyright (C) 2021 ETH Zurich
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,48 +85,6 @@
 #define RNNACC_MASK_TWOMATMUL_JOB      0x00000002
 #define RNNACC_MASK_TWOMATMUL_MULTIJOB 0x00000004
 
-// #define RNNACC_J_HIGHT            	0x40
-// #define RNNACC_J_SRC_ADDR          0x44
-// #define RNNACC_J_DST_ADDR          0x48
-// #define RNNACC_J_SRC_STRID         0x4c
-// #define RNNACC_J_DST_STRID         0x50
-
-// #define RNNACC_ADC_LOW             0x54
-// #define RNNACC_ADC_HIGH            0x58
-
-// #define RNNACC_FETCH_LENGTH        0x5c
-// #define RNNACC_STORE_LENGTH        0x60
-// #define RNNACC_JOB_LINE_LENGTH     0x64
-// #define RNNACC_JOB_FEAT_STRIDE     0x68
-// #define RNNACC_JOB_FEAT_LENGTH     0x6c
-
-// #define RNNACC_NUM_JOBS            0x70
-
-// #define RNNACC_ALPHA_IN_LENGTH     0x74
-// #define RNNACC_ALPHA_IN_STRIDE     0x78
-// #define RNNACC_BETA_IN_LENGTH      0x7c
-// #define RNNACC_BETA_IN_STRIDE      0x80
-
-// #define RNNACC_ALPHA_OUT_LENGTH    0x84
-// #define RNNACC_ALPHA_OUT_STRIDE    0x88
-// #define RNNACC_BETA_OUT_LENGTH     0x8c
-// #define RNNACC_BETA_OUT_STRIDE     0x90
-
-// #define RNNACC_JOB_LL_MEMT         0x94
-// #define RNNACC_JOB_FEAT_ROLL       0x98
-// #define RNNACC_DW_MODE             0x9c
-
-// #define RNNACC_PR_ADDR_X           0xa0
-// #define RNNACC_PR_ADDR_Y           0xa4
-// #define RNNACC_PR_VAL              0xa8
-
-/* time in ns */
-// #define RNNACC_EVAL_TIME       69
-// #define RNNACC_WRITE_TIME      1000
-// #define RNNACC_READ_TIME       10
-
-// #define STOR_DWIDTH 		4
-// #define DAC_PRECISION 		8
-// #define ADC_PRECISION 		8
+#define RNNACC_EVT0           12
 
 #endif 
