@@ -218,7 +218,8 @@ int memory::build()
 
 void memory::start()
 {
-  size = get_config_int("size");
+  // size = get_config_int("size");
+  size = 0x100000;
   check = get_config_bool("check");
   width_bits = get_config_int("width_bits");
 

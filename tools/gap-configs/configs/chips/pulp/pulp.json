@@ -65,7 +65,7 @@
 
     "l1": {
       "base": "0x10000000",
-      "size": "0x00010000",
+      "size": "0x001f0000",
       "banking_factor": 2
     },
 
@@ -212,7 +212,7 @@
 
     "l2": {
       "base": "0x1C000000",
-      "size": "0x00080000",
+      "size": "0x00ff0000",
       "is_partitioned": true,
 
       "priv0": {
@@ -234,7 +234,7 @@
         "nb_banks"     : 4,
         "interleaving_bits" : 2,
         "base"         : "0x1C010000",
-        "size"         : "0x00070000"
+        "size"         : "0x00fe0000"
       }
     },
 
