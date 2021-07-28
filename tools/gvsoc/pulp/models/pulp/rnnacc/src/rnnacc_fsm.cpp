@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  GreenWaves Technologies, SAS
+ * Copyright (C) 2021 ETH Zurich, University of Bologna, GreenWaves Technologies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 /*
  * Authors: Gianna Paulin, ETH Zurich (pauling@iis.ee.ethz.ch)
- *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it) */
+ *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
+ */
 
 #include "../rnnacc_v1_impl.hpp"
 
@@ -28,7 +29,6 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
     // clear state and propagate context
     _this->clear_all();
     _this->regfile_cxt();
-    // _this->cxt_use_ptr_global = _this->cxt_cfg_ptr_global;
 
     // convenience parameters based on regfile
     // input
@@ -98,13 +98,6 @@ void Rnnacc_v1::fsm_start_handler(void *__this, vp::clock_event *event) {
         _this->mj_o_tile_nr = 1;
     }
 
-    // if(((_this->n_output_external % _this->NR_REGS_ACCUM) != 0) & (_this->mj_o_tile_cnt == _this->mj_o_tile_nr-1)){
-    //     _this->n_output = (_this->n_output_external % _this->NR_REGS_ACCUM);
-    // }
-    // else{
-    //     _this->n_output = _this->NR_REGS_ACCUM;
-    // }
-
     // n_output must be <= NR_REGS_ACCUM
     assert(_this->n_output <= _this->NR_REGS_ACCUM);
     assert(_this->n_output > 0);
@@ -126,10 +119,6 @@ void Rnnacc_v1::fsm_handler(void *__this, vp::clock_event *event) {
 void Rnnacc_v1::fsm_end_handler(void *__this, vp::clock_event *event) {
   Rnnacc_v1 *_this = (Rnnacc_v1 *)__this;
   _this->cxt_use_ptr = 1-_this->cxt_use_ptr;
-//   if(_this->cxt_use_ptr_global != _this->cxt_cfg_ptr_global) {
-//     // _this->cxt_use_ptr_global = 1-_this->cxt_use_ptr_global;
-//     _this->cxt_use_ptr_global = _this->cxt_cfg_ptr_global;
-//   }
   _this->job_pending--;
   _this->irq.sync(true);
   if (!_this->fsm_start_event->is_enqueued() && _this->job_pending > 0) {
@@ -144,6 +133,9 @@ void Rnnacc_v1::fsm_loop() {
     latency = this->fsm();
   } while(latency == 0 && state != END);
   if(state == END && !this->fsm_end_event->is_enqueued()) {
+    if(this->multi_job==1){
+        this->multijob_counter += 1;
+    }
     this->event_enqueue(this->fsm_end_event, latency);
   }
   else if (!this->fsm_event->is_enqueued()) {
@@ -193,13 +185,42 @@ int Rnnacc_v1::fsm() {
         }
 
         if( (this->matmul_state==0) || (this->mj_i_tile_en && (this->mj_i_tile_nr>1)) ) {
-            this->setup_streamer_x();
-            latency += CYCLES_STREAMER_LD_CHANGE;
-            state_next = LOAD_X;
+            if(this->skip_load_x && this->multijob_counter>0){
+                if(mj_i_tile_cnt==0) {
+                    // clear buf_accum
+                    this->clear_buf_accum();
+                    if(this->buf_accum_traces) this->debug_buf_accum();
+                    if(this->bias) {
+                        this->setup_streamer_bias();
+                        latency += CYCLES_STREAMER_LD_CHANGE;
+                        state_next = LOAD_BIAS;
+                    } else {
+                        this->setup_streamer_matmul_x();
+                        latency += CYCLES_STREAMER_LD_CHANGE;
+                        state_next = STREAM_MATMUL_X;
+                    }
+                } else {
+                    this->setup_streamer_matmul_x();
+                    latency += CYCLES_STREAMER_LD_CHANGE;
+                    state_next = STREAM_MATMUL_X;
+                }
+            }
+            else {
+                this->setup_streamer_x();
+                latency += CYCLES_STREAMER_LD_CHANGE;
+                state_next = LOAD_X;
+            }
         } else if((this->mj_h_tile_cnt==0 && this->matmul_state==1) || (this->mj_o_tile_en && (this->mj_o_tile_nr>1))) {
-            this->setup_streamer_h();
-            latency += CYCLES_STREAMER_LD_CHANGE;
-            state_next = LOAD_H;
+            if(this->skip_load_h && this->multijob_counter>1){
+                this->matmul_state = 1;
+                this->setup_streamer_matmul_h();
+                latency += CYCLES_STREAMER_LD_CHANGE;
+                state_next = STREAM_MATMUL_H;
+            } else{
+                this->setup_streamer_h();
+                latency += CYCLES_STREAMER_LD_CHANGE;
+                state_next = LOAD_H;
+            }
         } else {
             if(this->mj_o_tile_en || this->matmul_state) {
                 if(this->matmul_state==1) {
@@ -394,6 +415,7 @@ int Rnnacc_v1::fsm() {
             else if(this->twomatmul) {
                 if((this->mj_i_tile_en == 0) || (this->mj_i_tile_cnt == mj_i_tile_nr-1)) {
                     this->matmul_state = 1;
+                    this->mj_i_tile_cnt = 0;
                     state_next = END;
                 } else {
                     this->mj_i_tile_cnt++;
@@ -467,7 +489,6 @@ int Rnnacc_v1::fsm() {
             else{
                 this->matmul_state = 0;
             }
-            this->clear_buf_accum();
             state_next = END;
         }
         else {
@@ -476,19 +497,16 @@ int Rnnacc_v1::fsm() {
         break;
 
     case END:
-      if(this->fsm_traces) {
-        this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM - State END\n");
-      }
-      latency = 1;
-      break;
+        if(this->fsm_traces) {
+            this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM - State END\n");
+        }
+        latency = 1;
+        break;
 
   }
 
-//   printf("FSM state: %d, latency: %d \n", state_next, latency);
-
   if (this->state != state_next)
   {
-    //   printf("STATE CHANGE: old %d new %d \n", this->state, state_next);
       latency += 1;
   } 
 

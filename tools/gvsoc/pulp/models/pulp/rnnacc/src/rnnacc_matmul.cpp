@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Gianna Paulin, ETH Zurich (pauling@iis.ee.ethz.ch)
  *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  */
@@ -344,6 +344,20 @@ int Rnnacc_v1::perform_matmul_h() {
             // std::cout << "[MULT] index i=" << std::dec << std::setw(16) << i << std::dec << " n_output=" << this->n_output << std::endl;
         }
     }
+
+    return 0;
+}
+
+int Rnnacc_v1::load_accum_into_x_reg() {
+
+    if(this->buf_accum_traces) this->debug_buf_accum();
+    if(this->buf_x_traces) this->debug_buf_x();
+    for(int i = 0; i<this->n_input_external; i++){
+        xt::view(this->buf_x, i, 1) = xt::view(this->buf_accum, i, 1);
+    }
+    if(this->buf_accum_traces) this->debug_buf_accum();
+    if(this->buf_x_traces) this->debug_buf_x();
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "ACCUM to REG_X forward\n");
 
     return 0;
 }

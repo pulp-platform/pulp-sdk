@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 ETH Zurich and University of Bologna
+ * Copyright (C) 2021 ETH Zurich, University of Bologna, GreenWaves Technologies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 /* 
  * Authors: Gianna Paulin, ETH Zurich (pauling@iis.ee.ethz.ch)
+ *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  */
 
 #ifndef __RNNACC_HPP__
@@ -50,7 +51,7 @@
 #define RNNACC_N_INPUT              6
 #define RNNACC_N_OUTPUT             7
 
-#define RNNACC_JOB_MODE     8
+#define RNNACC_JOB_MODE 8
 
 #define RNNACC_NB_REG 9
 
@@ -212,35 +213,6 @@ private:
     void clear_buf_h();
     void clear_buf_accum();
 
-    // unsigned int *regs;
-    // int8_t *buffer_in;
-    // int8_t *buffer_out;
-    // int8_t **crossbar;
-
-    // int remaining_jobs;
-    // bool pending_write;
-    // bool pending_read;
-
-    // int pending_req;
-    // int enqueued_req;
-    // int remaining_in_req;
-    // int remaining_out_req;
-    // bool stalled;
-
-    // int extra_latency_in;
-
-    // int step_count;
-    // int feat_count;
-    // int roll_count;
-
-    // int line_fetch_lfover;
-    // int line_store_lfover;
-
-    // int alpha_in_count;
-    // int alpha_out_count;
-    // int beta_in_count;
-    // int beta_out_count;
-
     static vp::io_req_status_e hwpe_slave(void *__this, vp::io_req *req);
     static void data_access_test_handler(void *__this, vp::clock_event *event);
 
@@ -296,6 +268,12 @@ private:
     int n_hidden_external;
   
     // CONFIG BASED ON HWPE SLAVE REGS
+    bool skip_load_x;
+    bool skip_load_h;
+    bool load_x_from_accum;
+
+    int load_accum_into_x_reg();
+
     int n_input;
     int n_hidden;
     int n_output;
@@ -311,10 +289,6 @@ private:
     int mj_i_tile_cnt;
     int mj_h_tile_cnt;
     int mj_o_tile_cnt;
-
-    // bool mj_i_tile_cnt;
-    // int mj_i_tile_nr;
-    // int mj_i_tile_cnt;
 
 
     // CONSTANTS depending on HWPE Regs
@@ -408,7 +382,7 @@ private:
     xt::xarray<int16_t> buf_h;     // hidden state registers
     // xt::xarray<int16_t> buf_accum;  // activation registers
     xt::xarray<int32_t> buf_accum;  // activation registers
-    xt::xarray<int16_t> buf_w;      // weight fifo?
+    xt::xarray<int16_t> buf_w;      // weight fifo
 
     // DEBUG settings
     bool debug_streamer;

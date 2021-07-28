@@ -40,28 +40,21 @@ int Rnnacc_v1::regfile_rd(int addr) {
 }
 
 void Rnnacc_v1::regfile_wr(int addr, int value) {
-  // printf("addr %d\n",addr);
   if(addr < RNNACC_NB_REG) {
     if((addr== RNNACC_N_INPUT) || (addr ==RNNACC_N_OUTPUT) || (addr== RNNACC_JOB_MODE)) {
-    // if(addr=> RNNACC_N_INPUT) {
       this->cxt0[addr] = value;
       if (this->cxt_use_ptr_global == 0) {
-        // printf("ctx0 global write\n");
         this->cxt0[addr] = value;
       }
       else if(this->cxt_use_ptr_global == 1) {
-        // printf("ctx1 global write\n");
         this->cxt1[addr] = value;
       }
     }
     else {
-      // this->regfile_wr_cxt(addr, value);
       if (this->cxt_cfg_ptr == 0) {
-        // printf("ctx0 write\n");
         this->cxt0[addr] = value;
       }
       else if(this->cxt_cfg_ptr == 1) {
-        // printf("ctx1 write\n");
         this->cxt1[addr] = value;
       }
     }
@@ -69,13 +62,11 @@ void Rnnacc_v1::regfile_wr(int addr, int value) {
   else if (addr < 2*RNNACC_NB_REG) {
     this->cxt0[addr - RNNACC_NB_REG] = value;
     if (this->cxt_cfg_ptr == 0) {
-    //   this->regfile_wr_cxt(addr - RNNACC_NB_REG, value);
     }
   }
   else {
     this->cxt1[addr - 2*RNNACC_NB_REG] = value;
     if (this->cxt_cfg_ptr == 1) {
-    //   this->regfile_wr_cxt(addr - 2*RNNACC_NB_REG, value);
     }
   }
 }
@@ -84,16 +75,8 @@ void Rnnacc_v1::regfile_cxt() {
 
   for(auto addr=0; addr<RNNACC_NB_REG; addr++) {
 
-    // if(addr == RNNACC_JOB_MODE) {
-    //   // this->cxt_cfg_ptr_global = 1-this->cxt_cfg_ptr_global;
-    //   printf("write RNNACC_JOB_MODE %x\n", addr);
-    //   this->cxt_use_ptr_global = 1-this->cxt_use_ptr_global;
-    // }
-
     auto value = this->cxt_use_ptr == 0 ? this->cxt0[addr] : this->cxt1[addr];
-    // printf("value: %d this->cxt_use_ptr %d\n", value, this->cxt_use_ptr);
     auto value_global = this->cxt_use_ptr_global == 0 ? this->cxt0[addr] : this->cxt1[addr];
-    // printf("value_global: %d this->cxt_use_ptr_global %d\n", value_global, this->cxt_use_ptr_global);
 
     switch(addr) {
 
@@ -122,15 +105,22 @@ void Rnnacc_v1::regfile_cxt() {
         break;
 
       case RNNACC_N_INPUT:
-        // this->n_input_external = this->cxt0[addr];
         this->n_input_external = value_global;
+        if(this->NR_REGS_X >= this->n_input_external){
+          this->skip_load_x = true;
+        } else {
+          this->skip_load_x = false;
+        }
         break;
 
       case RNNACC_N_OUTPUT:
-        // this->n_output_external = this->cxt0[addr];
-        // this->n_hidden_external = this->cxt0[addr];
         this->n_output_external = value_global;
         this->n_hidden_external = value_global;
+        if(this->NR_REGS_H >= this->n_hidden_external){
+          this->skip_load_h = true;
+        } else {
+          this->skip_load_h = false;
+        }
         break;
 
       case RNNACC_JOB_MODE:
@@ -138,7 +128,6 @@ void Rnnacc_v1::regfile_cxt() {
         uint32_t masked_value = 0;
         
         mask         = 1;
-        // masked_value = (this->cxt0[addr] & mask);
         masked_value = (value_global & mask);
         this->bias   = masked_value;
 
@@ -150,10 +139,21 @@ void Rnnacc_v1::regfile_cxt() {
         } else {
           this->matmul    = true;
           this->twomatmul = false;
+          this->multi_job = 0;
+          this->multijob_counter = 0;
         }
         mask            = 4;
         masked_value    = (value & mask) >> 2;
         this->multi_job = masked_value;
+
+        mask            = 8;
+        masked_value    = (value & mask) >> 3;
+        if((this->n_output_external <= this->NR_REGS_H) && \
+        (this->n_output_external <= this->NR_REGS_X) && \
+        (this->n_output_external>=0))
+        {
+          this->load_x_from_accum = masked_value;
+        }
         break;
 
     }
@@ -179,6 +179,9 @@ void Rnnacc_v1::printout() {
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) multi_job=%d\n", this->multi_job);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) multijob_counter=%d\n", this->multijob_counter);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) matmul_state=%d\n", this->matmul_state);
+  // this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) skip_load_x=%d\n", this->skip_load_x);
+  // this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) skip_load_h=%d\n", this->skip_load_h);
+  // this->trace.msg(vp::trace::LEVEL_DEBUG, "    (cfg) load_x_from_accum=%d\n", this->load_x_from_accum);
   // CONVENIENCE configuration
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) addr_b=%x\n", this->addr_b);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "    (model) addr_x=%x\n", this->addr_x);

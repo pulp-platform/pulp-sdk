@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Gianna Paulin, ETH Zurich (pauling@iis.ee.ethz.ch)
  *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  */
@@ -176,8 +176,6 @@ xt::xarray<T> RnnaccVectorLoad<T>::execute(int width, int64_t& cycles, int strid
   uint8_t load_data[this->rnnacc->STREAM_MAX_WIDTH_BYTES];
   auto width_padded = width + 4;
   auto addr_padded = addr & ~0x3;
-  // auto width_words = width_padded*sizeof(T)/4;
-  // auto width_rem   = width_padded*sizeof(T)%4;
 
   int64_t max_latency = 0;
   // iterate over all output ports
@@ -202,26 +200,6 @@ xt::xarray<T> RnnaccVectorLoad<T>::execute(int width, int64_t& cycles, int strid
     }
     this->rnnacc->trace.msg(vp::trace::LEVEL_DEBUG, "[VectorLoad] tcdm_reqs[%d] LD @%08x ==> %08x\n", i, addr_padded+i*4 & 0x0fffffff, *(uint32_t *)(load_data+i*4));
   }
-  // if(width_rem) {
-  //   this->rnnacc->tcdm_reqs[i].init();
-  //   this->rnnacc->tcdm_reqs[i].set_addr(addr_padded+width_words*4 & 0x0fffffff);
-  //   this->rnnacc->tcdm_reqs[i].set_size(width_rem);
-  //   this->rnnacc->tcdm_reqs[i].set_data(load_data+width_words*4);
-  //   this->rnnacc->tcdm_reqs[i].set_is_write(false);
-
-  //   int err = this->rnnacc->tcdm_ports[i].req(&this->rnnacc->tcdm_reqs[i]);
-
-  //   if (err == vp::IO_REQ_OK) {
-  //     int64_t latency = this->rnnacc->tcdm_reqs[i].get_latency();
-  //     if (latency > max_latency) {
-  //       max_latency = latency;
-  //     }
-  //   }
-  //   else {
-  //     this->rnnacc->trace.fatal("Unsupported asynchronous reply\n");
-  //   }
-  //   this->rnnacc->trace.msg(vp::trace::LEVEL_DEBUG, " LD @%08x ==> %08x\n", addr_padded+width_words*4 & 0x0fffffff, *(uint8_t *)(load_data+width_words*4));
-  // }
 
   std::ostringstream stringStream;
   this->rnnacc->trace.msg(vp::trace::LEVEL_DEBUG, "[VectorLoad] Issuing read request (addr=0x%08x, size=%dB, latency=%d)\n", addr & 0x0fffffff, width*sizeof(T), cycles+1);
