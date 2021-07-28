@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  GreenWaves Technologies, SAS
+ * Copyright (C) 2021 ETH Zurich, University of Bologna, GreenWaves Technologies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-/* 
- * Authors: Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
+/*
+ * Authors: Gianna Paulin, ETH Zurich (pauling@iis.ee.ethz.ch)
+ *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  *          Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 

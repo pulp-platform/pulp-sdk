@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Gianna Paulin, ETH Zurich (pauling@iis.ee.ethz.ch)
  *          Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  */
