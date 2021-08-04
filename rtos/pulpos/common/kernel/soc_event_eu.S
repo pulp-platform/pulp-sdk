@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# 
+#
 # Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
 #
 
@@ -59,7 +59,7 @@ pos_soc_event_handler_asm:
     sw  x9, 0(x10)
 
     # Extract ID part
-    #ifdef ARCHI_HAS_COREV
+    #if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))
     cv.extractur x10, x8, EU_SOC_EVENTS_EVENT_MASK_BITS-1, EU_SOC_EVENTS_EVENT_MASK_OFFSET
     #else
     p.extractu x10, x8, EU_SOC_EVENTS_EVENT_MASK_BITS-1, EU_SOC_EVENTS_EVENT_MASK_OFFSET
@@ -139,8 +139,7 @@ pos_soc_event_store_asm:
     lw      x12, %tiny(pos_soc_event_status)(x11)
     andi    x10, x10, 0x1f
 
-    #ifdef ARCHI_HAS_COREV
-    cv.bsetr x12, x12, x10
+    #if defined(ARCHI_HAS_COREV) && (!defined(__PULP_TOOLCHAIN__) && defined(__COREV_TOOLCHAIN__))    cv.bsetr x12, x12, x10
     #else
     p.bsetr x12, x12, x10
     #endif

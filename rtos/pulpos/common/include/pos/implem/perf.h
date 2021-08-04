@@ -37,7 +37,11 @@ static inline void pi_perf_cl_reset()
 {
 #ifdef ARCHI_HAS_CLUSTER
   timer_reset(timer_base_cl(0, 0, 0));
+  #ifndef ARCHI_HAS_COREV
   cpu_perf_setall(0);
+  #else
+  cpu_perf_setall(MCOUNTINHIBIT_RESET); // 0xFFFF_FFFD resets performance counters in cv32e40p (mcountinhibit, processor specs pag. 43)
+  #endif
 #endif
 }
 
@@ -45,7 +49,11 @@ static inline void pi_perf_fc_reset()
 {
 #ifdef ARCHI_HAS_FC
   timer_reset(timer_base_fc(0, 0));
+  #ifndef ARCHI_HAS_COREV
   cpu_perf_setall(0);
+  #else
+  cpu_perf_setall(MCOUNTINHIBIT_RESET); // 0xFFFF_FFFD resets performance counters in cv32e40p (mcountinhibit, processor specs pag. 43)
+  #endif
 #endif
 }
 
@@ -61,7 +69,11 @@ static inline void pi_perf_cl_start()
 {
 #ifdef ARCHI_HAS_CLUSTER
   timer_start(timer_base_cl(0, 0, 0));
+  #ifndef ARCHI_HAS_COREV
   cpu_perf_conf(PCMR_ACTIVE | PCMR_SATURATE);
+  #else
+  cpu_perf_conf(MCOUNTINHIBIT_ACTIVE);
+  #endif
 #endif
 }
 
@@ -69,7 +81,11 @@ static inline void pi_perf_fc_start()
 {
 #ifdef ARCHI_HAS_FC
   timer_start(timer_base_fc(0, 0));
+  #ifndef ARCHI_HAS_COREV
   cpu_perf_conf(PCMR_ACTIVE | PCMR_SATURATE);
+  #else
+  cpu_perf_conf(MCOUNTINHIBIT_ACTIVE);
+  #endif
 #endif
 }
 
@@ -85,7 +101,11 @@ static inline void pi_perf_cl_stop()
 {
 #ifdef ARCHI_HAS_CLUSTER
   timer_conf_set(timer_base_cl(0, 0, 0), TIMER_CFG_LO_ENABLE(0));
+  #ifndef ARCHI_HAS_COREV
   cpu_perf_conf(0);
+  #else
+  cpu_perf_conf(MCOUNTINHIBIT_RESET);
+  #endif
 #endif
 }
 
@@ -105,6 +125,7 @@ static inline void pi_perf_stop()
     pi_perf_cl_stop();
 }
 
+// get mhpmcounter{4, 31} events count with NUM_MHPMCOUNTERS = 16
 static inline unsigned int pi_perf_cl_read(int event)
 {
 #ifdef ARCHI_HAS_CLUSTER
@@ -114,7 +135,11 @@ static inline unsigned int pi_perf_cl_read(int event)
   }
   else
   {
-    return cpu_perf_get(event);
+#if __PLATFORM__ != ARCHI_PLATFORM_BOARD
+    return cpu_perf_get(1 + event);
+#else
+    return cpu_perf_get(0);
+#endif
   }
 #else
   return 0;
@@ -130,7 +155,11 @@ static inline unsigned int pi_perf_fc_read(int event)
   }
   else
   {
-    return cpu_perf_get(event);
+#if __PLATFORM__ != ARCHI_PLATFORM_BOARD
+    return cpu_perf_get(1 + event);
+#else
+    return cpu_perf_get(0);
+#endif
   }
 #else
   return 0;
@@ -144,6 +173,67 @@ static inline unsigned int pi_perf_read(int event)
   else
     return pi_perf_cl_read(event);
 }
+
+
+#ifdef ARCHI_HAS_COREV
+
+// CV32E40P-specific API functions for handling Performance Counters reads
+
+// Get clock cycle count from mcycle counter
+static inline unsigned int pi_perf_cl_read_mcycle()
+{
+#ifdef ARCHI_HAS_CLUSTER
+  return cpu_perf_get_mcycle();
+#else
+  return 0;
+#endif
+}
+
+static inline unsigned int pi_perf_fc_read_mcycle()
+{
+#ifdef ARCHI_HAS_FC
+  return cpu_perf_get_mcycle();
+#else
+  return 0;
+#endif
+}
+
+static inline unsigned int pi_perf_read_mcycle()
+{
+  if (hal_is_fc())
+    return pi_perf_fc_read_mcycle();
+  else
+    return pi_perf_cl_read_mcycle();
+}
+
+
+// Get instructions count from minstret counter
+static inline unsigned int pi_perf_cl_read_minstret()
+{
+#ifdef ARCHI_HAS_CLUSTER
+  return cpu_perf_get_minstret();
+#else
+  return 0;
+#endif
+}
+
+static inline unsigned int pi_perf_fc_read_minstret()
+{
+#ifdef ARCHI_HAS_FC
+  return cpu_perf_get_minstret();
+#else
+  return 0;
+#endif
+}
+
+static inline unsigned int pi_perf_read_minstret()
+{
+  if (hal_is_fc())
+    return pi_perf_fc_read_minstret();
+  else
+    return pi_perf_cl_read_minstret();
+}
+#endif
 
 #endif
 

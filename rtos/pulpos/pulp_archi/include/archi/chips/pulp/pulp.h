@@ -23,11 +23,15 @@
 
 #include "archi/gpio/gpio_v3.h"
 #ifdef ARCHI_HAS_COREV
-#include "archi/riscv/priv_corev_1_1.h"
+#include "archi/riscv/priv_corev_1_2.h"
 #else
 #include "archi/riscv/priv_1_10.h"
 #endif
+#ifdef ARCHI_HAS_COREV
+#include "archi/riscv/pcer_corev_1_1.h"
+#else
 #include "archi/riscv/pcer_v2.h"
+#endif
 #include "archi/itc/itc_v1.h"
 
 #include "archi/chips/pulp/memory_map.h"
