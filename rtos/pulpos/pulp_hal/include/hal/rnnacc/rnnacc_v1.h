@@ -71,37 +71,9 @@ static inline int rnnacc_get_state() {
 #define RNNACC_BARRIER_NOSTATUS()      eu_evt_maskWaitAndClr (1 << RNNACC_EVT0)
 #define RNNACC_BARRIER()               do { eu_evt_maskWaitAndClr (1 << RNNACC_EVT0); } while((*(int volatile *)(RNNACC_STATUS)) != 0)
 #define RNNACC_BUSYWAIT()              do { } while((*(int volatile *)(RNNACC_STATUS)) != 0)
-// #define RNNACC_BARRIER_ACQUIRE(job_id) job_id = RNNACC_READ(job_id, RNNACC_ACQUIRE);
 #define RNNACC_BARRIER_ACQUIRE(job_id) job_id = RNNACC_READ(RNNACC_ACQUIRE); \
                                 while(job_id < 0) { eu_evt_maskWaitAndClr (1 << RNNACC_EVT0);job_id = RNNACC_READ(RNNACC_ACQUIRE); };
-                        
-// // set addresses for matmul computation without bias
-// static inline void rnnacc_update_x_addr( unsigned int start_x, 
-//                                          unsigned int start_wx) {
-//   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
-//   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
-//   // RNNACC_WRITE(0x0000, RNNACC_JOB_MODE);
 
-//   RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
-//   RNNACC_WRITE(n_input, RNNACC_N_INPUT);
-//   RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
-
-
-// }
-
-// // set addresses for matmul computation without bias
-// static inline void rnnacc_setup_matmul( unsigned int start_dst,
-//                                         unsigned int start_x, unsigned int start_wx,
-//                                         unsigned int n_input, unsigned int n_output ) {
-//   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
-//   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
-//   RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
-//   RNNACC_WRITE(n_input, RNNACC_N_INPUT);
-//   RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
-
-//   RNNACC_WRITE(0x0000, RNNACC_JOB_MODE);
-
-// }
 
 // set addresses for matmul computation without bias
 static inline void rnnacc_set_matmul( unsigned int start_dst,
@@ -128,18 +100,6 @@ static inline void rnnacc_set_biased_matmul( unsigned int start_dst, unsigned in
   // RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
   // RNNACC_WRITE(0x0001, RNNACC_JOB_MODE);
 }
-
-// static inline void rnnacc_set_biased_matmul( unsigned int start_dst, unsigned int start_bias, 
-//                                              unsigned int start_x, unsigned int start_wx,
-//                                              unsigned int n_input, unsigned int n_output ) {
-//   RNNACC_WRITE(start_x, RNNACC_ADDR_X);
-//   RNNACC_WRITE(start_wx, RNNACC_ADDR_WX);
-//   RNNACC_WRITE(start_bias, RNNACC_ADDR_B);
-//   RNNACC_WRITE(start_dst, RNNACC_ADDR_DST);
-//   RNNACC_WRITE(n_input, RNNACC_N_INPUT);
-//   RNNACC_WRITE(n_output, RNNACC_N_OUTPUT);
-//   RNNACC_WRITE(0x0001, RNNACC_JOB_MODE);
-// }
 
 // set parameters for matmul computation with bias
 static inline void rnnacc_set_biased_matmul_i_tile( unsigned int start_dst, unsigned int start_bias, 
@@ -223,66 +183,6 @@ static inline void rnnacc_set_lstm_gate( unsigned int start_dst, unsigned int st
   RNNACC_WRITE(0x0007, RNNACC_JOB_MODE);
 
 }
-
-// static inline void rnnacc_submit_plot(unsigned int plot_val) {
-//   RNNACC_WRITE(plot_val,RNNACC_SUBMIT_PLOT);  
-// }
-
-// static inline void rnnacc_set_job_params(unsigned int start_x,
-//                                       unsigned int start_y,
-//                                       unsigned int width,
-//                                       unsigned int height,
-//                                       unsigned int fetch_size,
-//                                       unsigned int store_size,
-//                                       unsigned int job_line_length,
-//                                       unsigned int job_feat_stride,
-//                                       unsigned int job_feat_length,
-//                                       unsigned int num_of_jobs){
-
-  // RNNACC_WRITE(start_x,RNNACC_J_START_X);
-  // RNNACC_WRITE(start_y,RNNACC_J_START_Y);
-  // RNNACC_WRITE(width,RNNACC_J_WIDTH);
-  // RNNACC_WRITE(height,RNNACC_J_HIGHT);
-  // RNNACC_WRITE(fetch_size,RNNACC_FETCH_LENGTH);
-  // RNNACC_WRITE(store_size,RNNACC_STORE_LENGTH);
-  // RNNACC_WRITE(job_line_length,RNNACC_JOB_LINE_LENGTH);
-  // RNNACC_WRITE(job_feat_stride,RNNACC_JOB_FEAT_STRIDE);
-  // RNNACC_WRITE(job_feat_length,RNNACC_JOB_FEAT_LENGTH);
-  // RNNACC_WRITE(num_of_jobs, RNNACC_NUM_JOBS);
-// }
-
-// static inline void rnnacc_set_multi_jobs_param(unsigned int alpha_in_length,
-//                                             unsigned int alpha_in_stride,
-//                                             unsigned int beta_in_length,
-//                                             unsigned int beta_in_stride,
-//                                             unsigned int alpha_out_length,
-//                                             unsigned int alpha_out_stride,
-//                                             unsigned int beta_out_length,
-//                                             unsigned int beta_out_stride){
-//   RNNACC_WRITE(alpha_in_length, RNNACC_ALPHA_IN_LENGTH);
-//   RNNACC_WRITE(alpha_in_stride, RNNACC_ALPHA_IN_STRIDE);
-//   RNNACC_WRITE(beta_in_length,  RNNACC_BETA_IN_LENGTH);
-//   RNNACC_WRITE(beta_in_stride,  RNNACC_BETA_IN_STRIDE);
-
-//   RNNACC_WRITE(alpha_out_length, RNNACC_ALPHA_OUT_LENGTH);
-//   RNNACC_WRITE(alpha_out_stride, RNNACC_ALPHA_OUT_STRIDE);
-//   RNNACC_WRITE(beta_out_length,  RNNACC_BETA_OUT_LENGTH);
-//   RNNACC_WRITE(beta_out_stride,  RNNACC_BETA_OUT_STRIDE);
-// }
-
-// static inline void rnnacc_set_streamer_params(unsigned int src_addr,unsigned int dest_addr,unsigned int src_strd,unsigned int dst_strd) {
-//   RNNACC_WRITE(src_addr,RNNACC_J_SRC_ADDR);
-//   RNNACC_WRITE(dest_addr,RNNACC_J_DST_ADDR);
-//   RNNACC_WRITE(src_strd,RNNACC_J_SRC_STRID);
-//   RNNACC_WRITE(dst_strd,RNNACC_J_DST_STRID);
-// }
-
-// static inline unsigned int rnnacc_read_val(unsigned int addr_x,unsigned int addr_y) {
-//   RNNACC_WRITE(addr_x,RNNACC_PR_ADDR_X);
-//   RNNACC_WRITE(addr_y,RNNACC_PR_ADDR_Y);
-//   return RNNACC_READ(RNNACC_PR_VAL);
-// }
-
 
 static inline void plp_hwme_enable() {
   *(volatile int*) (ARCHI_SOC_EU_ADDR + (3 << 3)) |=  0xc00;

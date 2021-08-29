@@ -380,7 +380,6 @@ private:
     // STATEFUL BUFFERS
     xt::xarray<int16_t> buf_x;     // activation registers
     xt::xarray<int16_t> buf_h;     // hidden state registers
-    // xt::xarray<int16_t> buf_accum;  // activation registers
     xt::xarray<int32_t> buf_accum;  // activation registers
     xt::xarray<int16_t> buf_w;      // weight fifo
 
