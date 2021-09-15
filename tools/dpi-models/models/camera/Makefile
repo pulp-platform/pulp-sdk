@@ -7,7 +7,7 @@ ifdef MAGICK_ROOT
 # MAGICK_ROOT can be set to specify the root directory (containing e.g. /lib/,
 # /include/ etc) where GraphicsMagick was installed from source
 MAGICK_PKG_CFG_PATH := $(MAGICK_ROOT)/lib/pkgconfig:$(PKG_CONFIG_PATH)
-camera_CFLAGS += -Wl,-rpath=$(MAGICK_ROOT)/lib
+camera_CFLAGS += -Wl,-rpath=$(MAGICK_ROOT)/lib -I$(MAGICK_ROOT)/include/GraphicsMagick
 MAGICK_PKG_CFG_CMD := PKG_CONFIG_PATH=$(MAGICK_PKG_CFG_PATH) pkg-config
 endif
 
