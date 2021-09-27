@@ -51,17 +51,17 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    int proxy_socket;
+    int proxy_socket = -1;
     void *instance = gv_open(config_path, open_proxy, &proxy_socket, -1, -1);
 
-    if (open_proxy)
+    if (proxy_socket != -1)
     {
         printf("Opened proxy on socket %d\n", proxy_socket);
     }
 
     int retval = gv_run(instance);
 
-    gv_stop(instance);
+    gv_stop(instance, retval);
 
     return retval;
 }

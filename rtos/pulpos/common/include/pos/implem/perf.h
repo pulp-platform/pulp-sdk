@@ -36,7 +36,14 @@ static inline void pi_perf_conf(unsigned events)
 static inline void pi_perf_cl_reset()
 {
 #ifdef ARCHI_HAS_CLUSTER
-  timer_reset(timer_base_cl(0, 0, 0));
+#ifdef ARCHI_HAS_CC
+  if (pi_core_id() == ARCHI_CC_CORE_ID)
+#else
+  if (pi_core_id() == 0)
+#endif
+  {
+    timer_reset(timer_base_cl(pi_cluster_id(), 0, 0));
+  }
   cpu_perf_setall(0);
 #endif
 }
@@ -60,7 +67,14 @@ static inline void pi_perf_reset()
 static inline void pi_perf_cl_start()
 {
 #ifdef ARCHI_HAS_CLUSTER
-  timer_start(timer_base_cl(0, 0, 0));
+#ifdef ARCHI_HAS_CC
+  if (pi_core_id() == ARCHI_CC_CORE_ID)
+#else
+  if (pi_core_id() == 0)
+#endif
+  {
+    timer_start(timer_base_cl(pi_cluster_id(), 0, 0));
+  }
   cpu_perf_conf(PCMR_ACTIVE | PCMR_SATURATE);
 #endif
 }
@@ -84,7 +98,7 @@ static inline void pi_perf_start()
 static inline void pi_perf_cl_stop()
 {
 #ifdef ARCHI_HAS_CLUSTER
-  timer_conf_set(timer_base_cl(0, 0, 0), TIMER_CFG_LO_ENABLE(0));
+  timer_conf_set(timer_base_cl(pi_cluster_id(), 0, 0), TIMER_CFG_LO_ENABLE(0));
   cpu_perf_conf(0);
 #endif
 }
@@ -110,7 +124,7 @@ static inline unsigned int pi_perf_cl_read(int event)
 #ifdef ARCHI_HAS_CLUSTER
   if (event == PI_PERF_CYCLES)
   {
-    return timer_count_get(timer_base_cl(0, 0, 0));
+    return timer_count_get(timer_base_cl(pi_cluster_id(), 0, 0));
   }
   else
   {

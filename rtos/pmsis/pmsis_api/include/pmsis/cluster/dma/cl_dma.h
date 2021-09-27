@@ -19,6 +19,10 @@
 
 #include "pmsis/cluster/cl_pmsis_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @addtogroup clusterDriver
  * @{
@@ -206,4 +210,7 @@ struct pi_cl_dma_copy_s
 
 /// @endcond
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __CL_DMA_H__ */

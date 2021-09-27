@@ -18,6 +18,7 @@
 #define __BSP__GAPUINO_H__
 
 #define CONFIG_HIMAX
+#define CONFIG_HM0360
 #define CONFIG_OV7670
 #define CONFIG_GC0308
 #define CONFIG_OV5640
@@ -31,6 +32,9 @@
 
 #define CONFIG_HIMAX_CPI_ITF 0
 #define CONFIG_HIMAX_I2C_ITF 1
+
+#define CONFIG_HM0360_CPI_ITF 0
+#define CONFIG_HM0360_I2C_ITF 1
 
 #define CONFIG_OV7670_CPI_ITF 0
 #define CONFIG_OV7670_I2C_ITF 1
@@ -67,12 +71,12 @@
 #define CONFIG_SPIRAM_SPI_ITF   0
 #define CONFIG_SPIRAM_SPI_CS    1
 #define CONFIG_SPIRAM_START     0
-#define CONFIG_SPIRAM_SIZE     (1<<20)
+#define CONFIG_SPIRAM_SIZE     (8<<20)
 
 #define CONFIG_SPIFLASH_SPI_ITF     0
 #define CONFIG_SPIFLASH_SPI_CS      0
 #define CONFIG_SPIFLASH_START       0
-#define CONFIG_SPIFLASH_SIZE        (1<<24)
+#define CONFIG_SPIFLASH_SIZE        (16<<20)
 #define CONFIG_SPIFLASH_SECTOR_SIZE (1<<12)
 
 #define CONFIG_PIXART_CPI_ITF          ( 0 )

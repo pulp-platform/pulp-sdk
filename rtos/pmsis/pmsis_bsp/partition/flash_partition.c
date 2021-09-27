@@ -156,10 +156,11 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
     pi_l2_free(table_offset_l2, sizeof(*table_offset_l2));
     table_offset_l2 = NULL;
 
+
     // Load table header
     pi_flash_read(flash, _table_offset, &table->header, sizeof(flash_partition_table_header_t));
 
-    //print_partition_header(&table->header);
+//print_partition_header(&table->header);
 
     if(table->header.magic_bytes != PI_PARTITION_TABLE_HEADER_MAGIC)
     {

@@ -14,8 +14,8 @@ fi
 export TARGET_CHIP_FAMILY="PULP"
 export TARGET_CHIP="PULP"
 export TARGET_NAME="pulp"
-export BOARD_NAME=pulp
-export PULP_CURRENT_CONFIG=$BOARD_NAME@config_file=config/pulp_rnnext.json
+export BOARD_NAME=pulp_rnnext
+export PULP_CURRENT_CONFIG=$BOARD_NAME@config_file=config/$BOARD_NAME.json
 
 export PULPOS_BOARD=pulp
 export PULPOS_BOARD_VERSION=pulp
@@ -23,5 +23,11 @@ export PULPOS_BOARD_PROFILE=pulp
 export PULPOS_TARGET=pulp
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp_rnnext
+
+export CHIP_CORE_ISA=pulpv2
+
+export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
+
+export GVSOC_MODULES="$PULP_SDK_HOME/tools/gvsoc/common $PULP_SDK_HOME/tools/gvsoc/pulp/models"
 
 source $PULP_SDK_HOME/configs/common.sh

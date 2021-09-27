@@ -52,6 +52,10 @@ typedef struct __pi_flash_api_t pi_flash_api_t;
 struct pi_flash_conf {
   pi_flash_api_t *api;    /*!< Pointer to specific flash methods. Reserved for 
     internal runtime usage. */
+#if defined(__GAP9__)
+    pi_aes_utils_conf_t aes_conf; /*!< AES configuration for on-the-fly
+                                       encryption/decryption */
+#endif
 };
 
 /** \enum pi_flash_ioctl_e
@@ -62,7 +66,8 @@ typedef enum {
   PI_FLASH_IOCTL_INFO,   /*!< Command for getting flash information. The argument
     must be a pointer to a variable of type struct pi_flash_info so that the
     call is returning information there. */
-  PI_FLASH_IOCTL_ID
+  PI_FLASH_IOCTL_ID,
+  PI_FLASH_IOCTL_AES_ENABLE   /*!< Command for setting aes enable state*/
 } pi_flash_ioctl_e;
 
 /** \struct pi_flash_info
@@ -393,6 +398,7 @@ typedef struct __pi_flash_api_t {
   int (*status_regs)(struct pi_device *device, uint32_t cmd, void *arg);
 } pi_flash_api_t;
 
+
 static inline void pi_flash_close(struct pi_device *device)
 {
   pi_flash_api_t *api = (pi_flash_api_t *)device->api;
@@ -517,13 +523,13 @@ static inline int pi_flash_copy_2d(struct pi_device *device, uint32_t pi_flash_a
 static inline void pi_flash_bwrite(struct pi_device *device, uint32_t pi_flash_addr, void *buffer, int nb_word)
 {
   pi_flash_api_t *api = (pi_flash_api_t *)device->api;
-  api->bwrite(device, pi_flash_addr, buffer, nb_word);  
+  api->bwrite(device, pi_flash_addr, buffer, nb_word);
 }
 
 static inline int pi_flash_id_alloc(struct pi_device *device)
 {
   pi_flash_api_t *api = (pi_flash_api_t *)device->api;
-  return api->id_alloc(device);  
+  return api->id_alloc(device);
 }
 
 static inline int pi_flash_ctl_status_regs(struct pi_device *device, uint32_t cmd, void *arg)

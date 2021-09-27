@@ -29,6 +29,10 @@ void pos_sched_init();
 void pos_task_handle_blocking(void *arg);
 void pos_task_handle();
 void pos_task_remote_enqueue();
+void pos_task_cancel(pi_task_t *task);
+
+
+void pos_time_task_cancel(pi_task_t *task);
 
 
 static inline void pi_task_destroy(pi_task_t *task)
@@ -40,7 +44,7 @@ static inline void pi_task_wait_on(struct pi_task *task)
 {
     int irq = hal_irq_disable();
 
-    while(likely(task->done == 0))
+    while(likely(task->arg[0]))
     {
         pos_task_handle();
     }
@@ -48,26 +52,76 @@ static inline void pi_task_wait_on(struct pi_task *task)
     hal_irq_restore(irq);
 }
 
+
+POS_TEXT_L2 static inline void pi_task_wait_on_xip(struct pi_task *task)
+{
+    int irq = hal_irq_disable();
+
+    while(likely(task->arg[0]))
+    {
+        hal_itc_wait_for_interrupt();
+        hal_irq_enable();
+        hal_irq_disable();
+    }
+
+    hal_irq_restore(irq);
+}
+
+
+__attribute__((always_inline)) static inline int pos_task_is_block(struct pi_task *task)
+{
+    return task->arg[0] == (uint32_t)pos_task_handle_blocking;
+}
+
+
+__attribute__((always_inline)) static inline void pos_task_handle_blocking_inlined(void *arg)
+{
+    pi_task_t *task = arg;
+    task->arg[0] = 0;
+}
+
+__attribute__((always_inline)) static inline void pos_task_block_done(struct pi_task *task)
+{
+    pos_task_handle_blocking(task);
+}
+
+
 static inline struct pi_task *pi_task_block(struct pi_task *task)
 {
-	task->arg[0] = (uint32_t)pos_task_handle_blocking;
-	task->arg[1] = (uint32_t)task;
-  	task->done = 0;
-  	return task;
+    task->arg[0] = (uint32_t)pos_task_handle_blocking;
+    task->arg[1] = (uint32_t)task;
+    return task;
 }
+
+
+static inline void __attribute__((always_inline)) pos_task_push_locked_no_irq(pi_task_t *task)
+{
+    task->next = NULL;
+    if (pos_sched_first)
+    {
+        pos_sched_last->next = task;
+    }
+    else
+    {
+        pos_sched_first = task;
+    }
+    pos_sched_last = task;
+}
+
 
 static inline void __attribute__((always_inline)) pos_task_push_locked(pi_task_t *task)
 {
-  	task->next = NULL;
-  	if (pos_sched_first)
-  	{
-    	pos_sched_last->next = task;
-  	}
-  	else
-  	{
-    	pos_sched_first = task;
-  	}
-  	pos_sched_last = task;
+    uint32_t callback = task->arg[0];
+
+    if (callback & 1)
+    {
+        void (*irq_callback)(void *) = (void (*)(void *))callback;
+        irq_callback((void *)task->arg[1]);
+    }
+    else
+    {
+        pos_task_push_locked_no_irq(task);
+    }
 }
 
 
@@ -82,6 +136,14 @@ static inline void __attribute__((always_inline)) pi_task_push(pi_task_t *task)
 static inline struct pi_task *pi_task_callback(struct pi_task *task, void (*callback)(void*), void *arg)
 {
     task->arg[0] = (uint32_t)callback;
+    task->arg[1] = (uint32_t)arg;
+    return task;
+}
+
+
+static inline struct pi_task *pi_task_irq_callback(struct pi_task *task, void (*callback)(void*), void *arg)
+{
+    task->arg[0] = (uint32_t)callback | 1;
     task->arg[1] = (uint32_t)arg;
     return task;
 }

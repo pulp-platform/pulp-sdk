@@ -25,7 +25,9 @@
 
 
 PI_FC_TINY int pos_freq_domains[ARCHI_NB_FLL];
-
+#ifdef __GAP9__
+PI_FC_TINY int pos_max_freq_domains[ARCHI_NB_FLL];
+#endif
 
 
 int pos_freq_set_and_get(pi_freq_domain_e domain, unsigned int freq, unsigned int *out_freq)
@@ -35,7 +37,12 @@ int pos_freq_set_and_get(pi_freq_domain_e domain, unsigned int freq, unsigned in
     FREQ_TRACE(POS_LOG_INFO, "Setting domain frequency (domain: %d, freq: %d)\n", domain, freq);
 
     pos_cbsys_exec(POS_CBSYS_PERIPH_SETFREQ_BEFORE);
-
+#ifdef __GAP9__
+    if (pos_max_freq_domains[domain] != 0 && freq > pos_max_freq_domains[domain])
+    {
+        freq = pos_max_freq_domains[domain];
+    }
+#endif
     int fll_freq = pos_fll_set_freq(pos_freq_get_fll(domain), freq);
     if (out_freq)
       *out_freq = fll_freq;

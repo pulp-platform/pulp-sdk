@@ -19,6 +19,11 @@
 
 #include "pmsis/pmsis_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
 * @ingroup groupRTOS
 */
@@ -87,6 +92,33 @@ static inline pi_task_t *pi_task_callback(pi_task_t *task,
                                           pi_callback_func_t function, void *arg);
 
 /**
+ * \brief Prepare an IRQ notification callback.
+ *
+ * This initializes an IRQ notification callback so that it is ready to be
+ * triggered.
+ * An IRQ notification callback can be used to trigger a function execution when
+ * a certain action occurs, e.g. an end of transfer.
+ * Compared to a normal callback, an IRQ callback will be called directly from
+ * the interrupt handler and will not go through the scheduler.
+ *
+ * \param task           Pointer to notification event.
+ * \param function       Callback function to execute when the notification is
+ *                       triggered.
+ * \param arg            Callback function argument.
+ *
+ * \return task          The notification event initialized.
+ *
+ * \note This structure is allocated by the caller and must be kept alive until
+ *       the pi_task_wait_on returns.
+ * \note If the same notification is re-used several times, it must be
+ *       reinitialized everytime by calling this function or another variant.
+ * \note A notification callback can not be used to block the caller execution
+ *       with pi_task_wait_on.
+ */
+static inline pi_task_t *pi_task_irq_callback(pi_task_t *task,
+    pi_callback_func_t function, void *arg);
+
+/**
  * \brief Wait until a notification event is triggered.
  *
  * This can be called to block the caller until the specified notification
@@ -136,6 +168,27 @@ void pi_task_push_delayed_us(pi_task_t *task, uint32_t delay);
 static inline pi_callback_t *pi_callback_init(pi_callback_t *callback,
                                               pi_callback_func_t function,
                                               void *arg);
+
+/**
+ * \brief Init timeout feature for transfers.
+ *
+ * Initialize timeout value of the event task before starting transfers.
+ *
+ * \param task           Pointer to event task.
+ * \param timeout_us     Timeout value in us.
+ *
+ * \note This event task will hold transfer result.
+ */
+static inline void pi_task_timeout_set(pi_task_t *task, uint32_t timeout_us);
+
+/**
+ * \brief Query result end of transfer.
+ *
+ * This function can be used to check the end result of a transfer.
+ *
+ * \return ERRNO         Value corresponding to end of transfer.
+ */
+static inline int32_t pi_task_transfer_end_result_get(pi_task_t *task);
 
 /**
  * @}
@@ -193,6 +246,21 @@ static inline pi_callback_t *pi_callback_init(pi_callback_t *callback,
     return callback;
 }
 
+
+/**
+ * \brief Remove a task.
+ *
+ * This function can be used to remove/abort an event task pushed to event kernel.
+ * If the given event task has not been executed, it will be removed from the
+ * waiting list.
+ *
+ * \param task           Task to abort.
+ */
+void pi_task_abort(pi_task_t *task);
+
 /// @endcond
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_TASK_H__ */

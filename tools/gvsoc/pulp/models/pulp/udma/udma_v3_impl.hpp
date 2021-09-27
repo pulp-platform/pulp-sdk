@@ -352,7 +352,7 @@ protected:
 private:
   vp::io_req_status_e status_req(vp::io_req *req);
   vp::io_req_status_e setup_req(vp::io_req *req);
-  static void rx_sync(void *, int data);
+  static void rx_sync(void *, int scl, int data);
 
   vp::trace     trace;
 };
@@ -787,7 +787,6 @@ private:
 typedef enum
 {
   HYPER_STATE_IDLE,
-  HYPER_STATE_DELAY,
   HYPER_STATE_CS,
   HYPER_STATE_CA,
   HYPER_STATE_DATA,
@@ -854,7 +853,7 @@ public:
 protected:
   vp::hyper_master hyper_itf;
   unsigned int **regs;
-  unsigned int *common_regs; 
+  unsigned int *common_regs;
   int clkdiv;
   Hyper_v3_tx_channel *tx_channel;
   Hyper_v3_rx_channel *rx_channel;

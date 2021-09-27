@@ -33,6 +33,8 @@
 # define O_BINARY 0
 #endif
 
+#if 0
+// Old pulp debug unit, no more supported
 #define HALT_CAUSE_EBREAK    0
 #define HALT_CAUSE_ECALL     1
 #define HALT_CAUSE_ILLEGAL   2
@@ -40,6 +42,16 @@
 #define HALT_CAUSE_INTERRUPT 4 
 #define HALT_CAUSE_HALT      15
 #define HALT_CAUSE_STEP      15
+
+#else
+
+#define HALT_CAUSE_EBREAK      1
+#define HALT_CAUSE_TRIGGER     2
+#define HALT_CAUSE_HALT        3
+#define HALT_CAUSE_STEP        4
+#define HALT_CAUSE_RESET_HALT  5
+
+#endif
 
 #ifdef USE_TRDB
 
@@ -91,13 +103,13 @@ do { \
   { \
     _this->ipc_stat_nb_insn++; \
   } \
-  if (_this->power_trace.get_active()) \
-  { \
-  _this->insn_power.account_event(); \
- } \
  \
   iss_insn_t *insn = _this->cpu.current_insn; \
   int cycles = func(_this); \
+  if (_this->power_trace.get_active()) \
+  { \
+  _this->insn_groups_power[_this->cpu.prev_insn->decoder_item->u.insn.power_group].account_event(); \
+ } \
   trdb_record_instruction(_this, insn); \
   if (cycles >= 0) \
   { \
@@ -149,12 +161,22 @@ void iss_wrapper::exec_instr_check_all(void *__this, vp::clock_event *event)
     _this->current_event = _this->instr_event;
   }
 
+  int debug_mode = _this->cpu.state.debug_mode;
+
   EXEC_INSTR_COMMON(_this, event, iss_exec_step_nofetch_perf);
-  if (_this->step_mode.get())
+  if (_this->step_mode.get() && !debug_mode)
   {
     _this->do_step.set(false);
     _this->hit_reg |= 1;
-    _this->set_halt_mode(true, HALT_CAUSE_HALT);
+    if (_this->gdbserver)
+    {
+      _this->halted.set(true);
+      _this->gdbserver->signal(_this);
+    }
+    else
+    {
+      _this->set_halt_mode(true, HALT_CAUSE_STEP);
+    }
     _this->check_state();
   }
 }
@@ -202,7 +224,7 @@ void iss_wrapper::fetch_grant(void *_this, vp::io_req *req)
 
 void iss_wrapper::fetch_response(void *_this, vp::io_req *req)
 {
-
+    printf("FETCH RESPONSE\n");
 }
 
 void iss_wrapper::bootaddr_sync(void *__this, uint32_t value)
@@ -309,6 +331,14 @@ void iss_wrapper::flush_cache_sync(void *__this, bool active)
   }
 }
 
+void iss_wrapper::flush_cache_ack_sync(void *__this, bool active)
+{
+    iss_t *_this = (iss_t *)__this;
+    iss_exec_insn_resume(_this);
+    iss_exec_insn_terminate(_this);
+    _this->check_state();
+}
+
 
 void iss_wrapper::set_halt_mode(bool halted, int cause)
 {
@@ -316,6 +346,7 @@ void iss_wrapper::set_halt_mode(bool halted, int cause)
   {
     if (!this->cpu.state.debug_mode)
     {
+      this->cpu.csr.dcsr = (this->cpu.csr.dcsr & ~(0x7 << 6)) | (cause << 6);
       this->debug_req();
     }
   }
@@ -357,6 +388,7 @@ void iss_wrapper::halt_core()
 void iss_wrapper::halt_sync(void *__this, bool halted)
 {
   iss_t *_this = (iss_t *)__this;
+
   _this->trace.msg("Received halt signal sync (halted: 0x%d)\n", halted);
   _this->set_halt_mode(halted, HALT_CAUSE_HALT);
 
@@ -381,8 +413,10 @@ void iss_wrapper::check_state()
       if (this->ipc_stat_event.get_event_active())
         this->trigger_ipc_stat();
 
-      if (step_mode.get())
+      if (step_mode.get() && !this->cpu.state.debug_mode)
+      {
         do_step.set(true);
+      }
       enqueue_next_instr(1 + this->wakeup_latency);
 
       if (this->cpu.csr.pcmr & CSR_PCMR_ACTIVE && this->cpu.csr.pcer & (1<<CSR_PCER_CYCLES))
@@ -395,11 +429,10 @@ void iss_wrapper::check_state()
   }
   else
   {
-    uint8_t zero = 0;
     if (halted.get() && !do_step.get())
     {
       is_active_reg.set(false);
-      this->state_event.event(&zero);
+      this->state_event.event(NULL);
       if (this->ipc_stat_event.get_event_active())
         this->stop_ipc_stat();
       this->halt_core();
@@ -409,7 +442,7 @@ void iss_wrapper::check_state()
       if (irq_req == -1)
       {
         is_active_reg.set(false);
-        this->state_event.event(&zero);
+        this->state_event.event(NULL);
         if (this->ipc_stat_event.get_event_active())
           this->stop_ipc_stat();
       }
@@ -435,8 +468,7 @@ int iss_wrapper::data_misaligned_req(iss_addr_t addr, uint8_t *data_ptr, int siz
 
   decode_trace.msg("Misaligned data request (addr: 0x%lx, size: 0x%x, is_write: %d)\n", addr, size, is_write);
 
-  static uint8_t one = 1, zero = 0;
-  this->misaligned_req_event.event_pulse(this->get_period(), &one, &zero);
+  iss_pccr_account_event(this, CSR_PCER_MISALIGNED, 1);
 
   // The access is a misaligned access
   // Change the event so that we can do the first access now and the next access
@@ -482,14 +514,27 @@ void iss_wrapper::wait_for_interrupt()
 }
 
 
+void iss_wrapper::irq_req_sync_handler(void *__this, vp::clock_event *event)
+{
+  iss_t *_this = (iss_t *)__this;
+  _this->irq_req = _this->irq_req_value;
+  _this->irq_check();
+  iss_irq_req(_this, _this->irq_req);
+  _this->wfi.set(false);
+  _this->check_state();
+}
+
+
 void iss_wrapper::irq_req_sync(void *__this, int irq)
 {
   iss_t *_this = (iss_t *)__this;
-  _this->irq_req = irq;
-  _this->irq_check();
-  iss_irq_req(_this, irq);
-  _this->wfi.set(false);
-  _this->check_state();
+  _this->irq_req_value = irq;
+  // Handle the sync in an event with 0 delay to always take into account interrupts after the
+  // instruction has been executed
+  if (!_this->irq_sync_event->is_enqueued())
+  {
+    _this->event_enqueue(_this->irq_sync_event, 0);
+  }
 }
 
 void iss_wrapper::debug_req()
@@ -503,22 +548,31 @@ void iss_wrapper::debug_req()
 bool iss_wrapper::user_access(iss_addr_t addr, uint8_t *buffer, iss_addr_t size, bool is_write)
 {
   vp::io_req *req = &io_req;
-  req->init();
-  req->set_debug(true);
-  req->set_addr(addr);
-  req->set_size(size);
-  req->set_is_write(is_write);
-  req->set_data(buffer);
-  int err = data.req(req);
-  if (err != vp::IO_REQ_OK) 
+  std::string str = "";
+  while(size != 0)
   {
-    if (err == vp::IO_REQ_INVALID)
-      this->warning.fatal("Invalid IO response during debug request\n");
-    else
-      this->warning.fatal("Pending IO response during debug request\n");
+    req->init();
+    req->set_debug(true);
+    req->set_addr(addr);
+    req->set_size(1);
+    req->set_is_write(is_write);
+    req->set_data(buffer);
+    int err = data.req(req);
+    if (err != vp::IO_REQ_OK) 
+    {
+      if (err == vp::IO_REQ_INVALID)
+        this->warning.fatal("Invalid IO response during debug request\n");
+      else
+        this->warning.fatal("Pending IO response during debug request\n");
 
-    return true;
+      return true;
+    }
+
+    addr++;
+    size--;
+    buffer++;
   }
+    
   return false;
 }
 
@@ -576,141 +630,448 @@ void iss_wrapper::handle_riscv_ebreak()
 {
   int id = this->cpu.regfile.regs[10];
 
-  if (id == 0x4)
+  switch (id)
   {
-    std::string path = this->read_user_string(this->cpu.regfile.regs[11]);
-    printf("%s", path.c_str());
-  }
-  else if (id == 0x1)
-  {
-    iss_reg_t args[3];
-    if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+    case 0x4:
     {
-      this->cpu.regfile.regs[10] = -1;
-      return;
-    }
-    std::string path = this->read_user_string(args[0], args[2]);
-
-
-    unsigned int mode = args[1];
-
-    this->cpu.regfile.regs[10] = open(path.c_str(), open_modeflags[mode], 0644);
-
-    if (this->cpu.regfile.regs[10] == -1)
-      this->warning.force_warning("Caught error during semi-hosted call (name: open, path: %s, mode: 0x%x, error: %s)\n", path.c_str(), mode, strerror(errno));
-
-
-  }
-  else if (id == 0x2)
-  {
-    this->cpu.regfile.regs[10] = close(this->cpu.regfile.regs[11]);
-  }
-  else if (id == 0x5)
-  {
-    iss_reg_t args[3];
-    if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
-    {
-      this->cpu.regfile.regs[10] = -1;
-      return;
+      std::string path = this->read_user_string(this->cpu.regfile.regs[11]);
+      printf("%s", path.c_str());
+      break;
     }
 
-    uint8_t buffer[1024];
-    int size = args[2];
-    iss_reg_t addr = args[1];
-    while(size)
+    case 0x1:
     {
-      int iter_size = 1024;
-      if (size < 1024)
-        iter_size = size;
+      iss_reg_t args[3];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+      std::string path = this->read_user_string(args[0], args[2]);
 
-      if (this->user_access(addr, buffer, iter_size, false))
+
+      unsigned int mode = args[1];
+
+      this->cpu.regfile.regs[10] = open(path.c_str(), open_modeflags[mode], 0644);
+
+      if (this->cpu.regfile.regs[10] == -1)
+        this->warning.force_warning("Caught error during semi-hosted call (name: open, path: %s, mode: 0x%x, error: %s)\n", path.c_str(), mode, strerror(errno));
+
+      break;
+    }
+
+    case 0x2:
+    {
+      this->cpu.regfile.regs[10] = close(this->cpu.regfile.regs[11]);
+      break;
+    }
+
+    case 0x5:
+    {
+      iss_reg_t args[3];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
       {
         this->cpu.regfile.regs[10] = -1;
         return;
       }
 
-      if (write(args[0], (void *)(long)buffer, iter_size) != iter_size)
-        break;
-
-      size -= iter_size;
-      addr += iter_size;
-    }
-
-    this->cpu.regfile.regs[10] = size;
-  }
-  else if (id == 0x6)
-  {
-    iss_reg_t args[3];
-    if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
-    {
-      this->cpu.regfile.regs[10] = -1;
-      return;
-    }
-
-    uint8_t buffer[1024];
-    int size = args[2];
-    iss_reg_t addr = args[1];
-    while(size)
-    {
-      int iter_size = 1024;
-      if (size < 1024)
-        iter_size = size;
-
-      int read_size = read(args[0], (void *)(long)buffer, iter_size);
-
-      if (read_size <= 0)
+      uint8_t buffer[1024];
+      int size = args[2];
+      iss_reg_t addr = args[1];
+      while(size)
       {
-        if (read_size < 0)
+        int iter_size = 1024;
+        if (size < 1024)
+          iter_size = size;
+
+        if (this->user_access(addr, buffer, iter_size, false))
         {
           this->cpu.regfile.regs[10] = -1;
           return;
         }
-        else
-        {
+
+        if (write(args[0], (void *)(long)buffer, iter_size) != iter_size)
           break;
-        }
+
+        size -= iter_size;
+        addr += iter_size;
       }
 
-      if (this->user_access(addr, buffer, read_size, true))
+      this->cpu.regfile.regs[10] = size;
+      break;
+    }
+
+    case 0x6:
+    {
+      iss_reg_t args[3];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
       {
         this->cpu.regfile.regs[10] = -1;
         return;
       }
 
-      size -= read_size;
-      addr += read_size;
+      uint8_t buffer[1024];
+      int size = args[2];
+      iss_reg_t addr = args[1];
+      while(size)
+      {
+        int iter_size = 1024;
+        if (size < 1024)
+          iter_size = size;
+
+        int read_size = read(args[0], (void *)(long)buffer, iter_size);
+
+        if (read_size <= 0)
+        {
+          if (read_size < 0)
+          {
+            this->cpu.regfile.regs[10] = -1;
+            return;
+          }
+          else
+          {
+            break;
+          }
+        }
+
+        if (this->user_access(addr, buffer, read_size, true))
+        {
+          this->cpu.regfile.regs[10] = -1;
+          return;
+        }
+
+        size -= read_size;
+        addr += read_size;
+      }
+
+      this->cpu.regfile.regs[10] = size;
+
+      break;
     }
 
-    this->cpu.regfile.regs[10] = size;
-  }
-  else if (id == 0xA)
-  {
-    iss_reg_t args[2];
-    if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+    case 0xA:
     {
-      this->cpu.regfile.regs[10] = -1;
-      return;
+      iss_reg_t args[2];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+
+      int pos = lseek(args[0], args[1], SEEK_SET);
+      this->cpu.regfile.regs[10] = pos != args[1];
+      break;
     }
 
-    int pos = lseek(args[0], args[1], SEEK_SET);
-    this->cpu.regfile.regs[10] = pos != args[1];
-  }
-  else if (id == 0x18)
-  {
-    if (this->cpu.regfile.regs[11] == 0x20026)
-      exit(0);
-    else
-      exit(1);
-  }
-  else if (id == 0x0C)
-  {
-    struct stat buf;
-    fstat(this->cpu.regfile.regs[11], &buf);
-    this->cpu.regfile.regs[10] = buf.st_size;
-  }
-  else
-  {
-    this->warning.force_warning("Unknown ebreak call (id: %d)\n", id);
+    case 0x18:
+    {
+      if (this->cpu.regfile.regs[11] == 0x20026)
+        exit(0);
+      else
+        exit(1);
+
+      break;
+    }
+
+    case 0x0C:
+    {
+      struct stat buf;
+      fstat(this->cpu.regfile.regs[11], &buf);
+      this->cpu.regfile.regs[10] = buf.st_size;
+      break;
+    }
+
+    case 0x100:
+    {
+      iss_reg_t args[2];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+      std::string path = this->read_user_string(args[0]);
+      if (path == "")
+      {
+        this->warning.force_warning("Invalid user string while opening trace (addr: 0x%x)\n", args[0]);
+      }
+      else
+      {
+        if (args[1])
+        {
+          this->traces.get_trace_manager()->add_trace_path(0, path);
+        }
+        else
+        {
+          this->traces.get_trace_manager()->add_exclude_trace_path(0, path);
+        }
+        this->traces.get_trace_manager()->check_traces();
+      }
+      break;
+    }
+
+    case 0x101:
+    {
+      iss_reg_t args[1];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+
+      iss_csr_write(this, CSR_PCER, args[0]);
+
+      break;
+    }
+
+    case 0x102:
+    {
+      iss_csr_write(this, CSR_PCCR(31), 0);
+      this->cycle_count = 0;
+      iss_reg_t value;
+      iss_csr_read(this, CSR_PCMR, &value);
+      if ((value & 1) == 1)
+      {
+        this->cycle_count_start = this->get_cycles();
+      }
+      break;
+    }
+
+    case 0x103:
+    {
+      iss_reg_t value;
+      iss_csr_read(this, CSR_PCMR, &value);
+      if ((value & 1) == 0)
+      {
+        this->cycle_count_start = this->get_cycles();
+      }
+
+      iss_csr_write(this, CSR_PCMR, 1);
+      break;
+    }
+
+    case 0x104:
+    {
+
+      iss_reg_t value;
+      iss_csr_read(this, CSR_PCMR, &value);
+      if ((value & 1) == 1)
+      {
+        this->cycle_count += this->get_cycles() - this->cycle_count_start;
+      }
+
+      iss_csr_write(this, CSR_PCMR, 0);
+      break;
+    }
+
+    case 0x105:
+    {
+      iss_reg_t args[1];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        return;
+      }
+      iss_csr_read(this, CSR_PCCR(args[0]), &this->cpu.regfile.regs[10]);
+      break;
+    }
+
+    case 0x106:
+    {
+      iss_reg_t args[2];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+      std::string path = this->read_user_string(args[0]);
+      std::string mode = this->read_user_string(args[1]);
+      if (path == "")
+      {
+        this->warning.force_warning("Invalid user string while opening trace (addr: 0x%x)\n", args[0]);
+      }
+      else
+      {
+        if (mode == "")
+        {
+          this->warning.force_warning("Invalid user string while opening trace (addr: 0x%x)\n", args[1]);
+        }
+        else
+        {
+          this->cpu.regfile.regs[10] = 0;
+          FILE *file = fopen(path.c_str(), mode.c_str());
+          if (file == NULL)
+          {
+            this->cpu.regfile.regs[10] = -1;
+            return;
+          }
+
+          iss_reg_t value;
+          iss_csr_read(this, CSR_PCMR, &value);
+          if ((value & 1) == 1)
+          {
+            this->cycle_count += this->get_cycles() - this->cycle_count_start;
+            this->cycle_count_start = this->get_cycles();
+          }
+
+          fprintf(file, "PCER values at timestamp %ld ps, duration %ld cycles\n", this->get_time(), this->cycle_count);
+          fprintf(file, "Index; Name; Description; Value\n");
+          for (int i=0; i<31; i++)
+          {
+            if (this->pcer_info[i].name != "")
+            {
+              iss_reg_t value;
+              iss_csr_read(this, CSR_PCCR(i), &value);
+              fprintf(file, "%d; %s; %s; %d\n", i, this->pcer_info[i].name.c_str(), this->pcer_info[i].help.c_str(), value);
+            }
+          }
+
+
+          fclose(file);
+        }
+      }
+        break;
+    }
+
+    case 0x107: {
+      iss_reg_t args[1];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+      this->traces.get_trace_manager()->set_global_enable(args[0]);
+      break;
+    }
+
+    case 0x108: {
+      iss_reg_t args[1];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+
+      int result = -1;
+      std::string path = this->read_user_string(args[0]);
+      if (path == "")
+      {
+        this->warning.force_warning("Invalid user string while opening VCD trace (addr: 0x%x)\n", args[0]);
+      }
+      else
+      {
+        vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_path(path);
+        if (trace == NULL)
+        {
+          this->warning.force_warning("Invalid VCD trace (path: %s)\n", path.c_str());
+        }
+        else
+        {
+          this->trace.msg("Opened VCD trace (path: %s, id: %d)\n", path.c_str(), trace->id);
+          result = trace->id;
+        }
+      }
+
+      this->cpu.regfile.regs[10] = result;
+
+      break;
+    }
+    
+    case 0x109:
+    break;
+    
+    case 0x10A: {
+      iss_reg_t args[2];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+
+      int id = args[0];
+      vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
+      if (trace == NULL)
+      {
+        this->warning.force_warning("Unknown trace ID while dumping VCD trace (id: %d)\n", id);
+      }
+      else
+      {
+        if (trace->width > 32)
+        {
+          this->warning.force_warning("Trying to write to VCD trace whose width is bigger than 32 (id: %d)\n", id);
+        }
+        else
+        {
+          if (0)
+            trace->event(NULL);
+          else
+            trace->event((uint8_t *)&args[1]);
+        }
+      }
+
+      break; 
+    }
+    
+    case 0x10C: {
+      iss_reg_t args[1];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+
+      int id = args[0];
+      vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
+      if (trace == NULL)
+      {
+        this->warning.force_warning("Unknown trace ID while dumping VCD trace (id: %d)\n", id);
+      }
+      else
+      {
+        if (trace->width > 32)
+        {
+          this->warning.force_warning("Trying to write to VCD trace whose width is bigger than 32 (id: %d)\n", id);
+        }
+        else
+        {
+          trace->event(NULL);
+        }
+      }
+
+      break; 
+    }
+    
+    case 0x10B: {
+      iss_reg_t args[2];
+      if (this->user_access(this->cpu.regfile.regs[11], (uint8_t *)args, sizeof(args), false))
+      {
+        this->cpu.regfile.regs[10] = -1;
+        return;
+      }
+
+      int id = args[0];
+      vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
+      if (trace == NULL)
+      {
+        this->warning.force_warning("Unknown trace ID while dumping VCD trace (id: %d)\n", id);
+      }
+      else
+      {
+        if (!trace->is_string)
+        {
+          this->warning.force_warning("Trying to write string to VCD trace which is not a string (id: %d)\n", id);
+        }
+        else
+        {
+          std::string path = this->read_user_string(args[1]);
+
+          trace->event_string(path);
+        }
+      }
+      break;
+    }
+
+    default:
+      this->warning.force_warning("Unknown ebreak call (id: %d)\n", id);
+      break;
   }
 }
 
@@ -762,90 +1123,7 @@ void iss_wrapper::handle_ebreak()
 
       break; 
     }
-    
-    case GV_SEMIHOSTING_VCD_CONFIGURE: {
-      int enabled = this->cpu.regfile.regs[11];
-      this->traces.get_trace_manager()->set_global_enable(enabled);
-    }
-    break;
-
-    case GV_SEMIHOSTING_VCD_OPEN_TRACE: {
-      int result = -1;
-      std::string path = this->read_user_string(this->cpu.regfile.regs[11]);
-      if (path == "")
-      {
-        this->warning.force_warning("Invalid user string while opening VCD trace (addr: 0x%x)\n", this->cpu.regfile.regs[11]);
-      }
-      else
-      {
-        vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_path(path);
-        if (trace == NULL)
-        {
-          this->warning.force_warning("Invalid VCD trace (path: %s)\n", path.c_str());
-        }
-        else
-        {
-          this->trace.msg("Opened VCD trace (path: %s, id: %d)\n", path.c_str(), trace->id);
-          result = trace->id;
-        }
-      }
-
-      this->cpu.regfile.regs[10] = result;
-
-      break;
-    }
-    
-    case GV_SEMIHOSTING_VCD_CONF_TRACE:
-    break;
-    
-    case GV_SEMIHOSTING_VCD_DUMP_TRACE: {
-      int id = this->cpu.regfile.regs[11];
-      vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
-      if (trace == NULL)
-      {
-        this->warning.force_warning("Unknown trace ID while dumping VCD trace (id: %d)\n", id);
-      }
-      else
-      {
-        if (trace->width > 32)
-        {
-          this->warning.force_warning("Trying to write to VCD trace whose width is bigger than 32 (id: %d)\n", id);
-        }
-        else
-        {
-          if (this->cpu.regfile.regs[12] == 1)
-            trace->event(NULL);
-          else
-            trace->event((uint8_t *)&this->cpu.regfile.regs[14]);
-        }
-      }
-
-      break; 
-    }
-    
-    case GV_SEMIHOSTING_VCD_DUMP_TRACE_STRING: {
-      int id = this->cpu.regfile.regs[11];
-      vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
-      if (trace == NULL)
-      {
-        this->warning.force_warning("Unknown trace ID while dumping VCD trace (id: %d)\n", id);
-      }
-      else
-      {
-        if (!trace->is_string)
-        {
-          this->warning.force_warning("Trying to write string to VCD trace which is not a string (id: %d)\n", id);
-        }
-        else
-        {
-          std::string path = this->read_user_string(this->cpu.regfile.regs[12]);
-
-          trace->event_string(path);
-        }
-      }
-      break;
-    }
-    
+  
     default:
       this->warning.force_warning("Unknown ebreak call (id: %d)\n", id);
       break;
@@ -999,6 +1277,7 @@ void iss_wrapper::insn_trace_callback()
 int iss_wrapper::build()
 {
   traces.new_trace("trace", &trace, vp::DEBUG);
+  traces.new_trace("gdbserver_trace", &gdbserver_trace, vp::DEBUG);
   traces.new_trace("decode_trace", &decode_trace, vp::DEBUG);
   traces.new_trace("insn", &insn_trace, vp::DEBUG);
   this->insn_trace.register_callback(std::bind(&iss_wrapper::insn_trace_callback, this));
@@ -1014,26 +1293,6 @@ int iss_wrapper::build()
   traces.new_trace_event_string("inline_func", &inline_trace_event);
   traces.new_trace_event_string("file", &file_trace_event);
   traces.new_trace_event("line", &line_trace_event, 32);
-  traces.new_trace_event("misaligned", &misaligned_req_event, 1);
-
-  // TODO this should come from the config file as different chips may not have
-  // same counters
-  traces.new_trace_event("pcer_cycles", &pcer_trace_event[0], 1);
-  traces.new_trace_event("pcer_instr", &pcer_trace_event[1], 1);
-  traces.new_trace_event("pcer_ld_stall", &pcer_trace_event[2], 1);
-  traces.new_trace_event("pcer_jmp_stall", &pcer_trace_event[3], 1);
-  traces.new_trace_event("pcer_imiss", &pcer_trace_event[4], 1);
-  traces.new_trace_event("pcer_ld", &pcer_trace_event[5], 1);
-  traces.new_trace_event("pcer_st", &pcer_trace_event[6], 1);
-  traces.new_trace_event("pcer_jump", &pcer_trace_event[7], 1);
-  traces.new_trace_event("pcer_branch", &pcer_trace_event[8], 1);
-  traces.new_trace_event("pcer_taken_branch", &pcer_trace_event[9], 1);
-  traces.new_trace_event("pcer_rvc", &pcer_trace_event[10], 1);
-  traces.new_trace_event("pcer_ld_ext", &pcer_trace_event[11], 1);
-  traces.new_trace_event("pcer_st_ext", &pcer_trace_event[12], 1);
-  traces.new_trace_event("pcer_ld_ext_cycles", &pcer_trace_event[13], 1);
-  traces.new_trace_event("pcer_st_ext_cycles", &pcer_trace_event[14], 1);
-  traces.new_trace_event("pcer_tcdm_cont", &pcer_trace_event[15], 1);
 
   traces.new_trace_event_real("ipc_stat", &ipc_stat_event);
 
@@ -1050,7 +1309,20 @@ int iss_wrapper::build()
   this->new_reg("step_mode", &this->step_mode, false);
   this->new_reg("do_step", &this->do_step, false);
 
-  power.new_event("power_insn", &insn_power, this->get_js_config()->get("**/insn"), &power_trace);
+  if (this->get_js_config()->get("**/insn_groups"))
+  {
+    js::config *config = this->get_js_config()->get("**/insn_groups");
+    this->insn_groups_power.resize(config->get_size());
+    for (int i=0; i<config->get_size(); i++)
+    {
+      power.new_event("power_insn_" + std::to_string(i), &this->insn_groups_power[i], config->get_elem(i), &power_trace);
+    }
+  }
+  else
+  {
+    this->insn_groups_power.resize(1);
+    power.new_event("power_insn", &this->insn_groups_power[0], this->get_js_config()->get("**/insn"), &power_trace);
+  }
   power.new_event("power_clock_gated", &clock_gated_power, this->get_js_config()->get("**/clock_gated"), &power_trace);
   power.new_leakage_event("leakage", &leakage_power, this->get_js_config()->get("**/leakage"), &power_trace);
 
@@ -1081,6 +1353,10 @@ int iss_wrapper::build()
   flush_cache_itf.set_sync_meth(&iss_wrapper::flush_cache_sync);
   new_slave_port("flush_cache", &flush_cache_itf);
 
+  flush_cache_ack_itf.set_sync_meth(&iss_wrapper::flush_cache_ack_sync);
+  new_slave_port("flush_cache_ack", &flush_cache_ack_itf);
+  new_master_port("flush_cache_req", &flush_cache_req_itf);
+
   halt_itf.set_sync_meth(&iss_wrapper::halt_sync);
   new_slave_port("halt", &halt_itf);
 
@@ -1089,16 +1365,21 @@ int iss_wrapper::build()
   for (int i=0; i<32; i++)
   {
     new_master_port("ext_counter[" + std::to_string(i) + "]", &ext_counter[i]);
+    this->pcer_info[i].name  = "";
   }
 
   current_event = event_new(iss_wrapper::exec_first_instr);
   instr_event = event_new(iss_wrapper::exec_instr);
   check_all_event = event_new(iss_wrapper::exec_instr_check_all);
   misaligned_event = event_new(iss_wrapper::exec_misaligned);
+  irq_sync_event = event_new(iss_wrapper::irq_req_sync_handler);
 
   this->riscv_dbg_unit = this->get_js_config()->get_child_bool("riscv_dbg_unit");
   this->bootaddr_offset = get_config_int("bootaddr_offset");
+
   this->cpu.config.mhartid = (get_config_int("cluster_id") << 5) | get_config_int("core_id");
+  this->cpu.config.misa = this->get_js_config()->get_int("misa");
+
   string isa = get_config_str("isa");
   //transform(isa.begin(), isa.end(), isa.begin(),(int (*)(int))tolower);
   this->cpu.config.isa = strdup(isa.c_str());
@@ -1127,6 +1408,8 @@ void iss_wrapper::start()
 
   if (iss_open(this)) throw logic_error("Error while instantiating the ISS");
 
+  this->target_open();
+
   this->iss_opened = true;
 
   for (auto x:this->get_js_config()->get("**/debug_binaries")->get_elems())
@@ -1143,6 +1426,15 @@ void iss_wrapper::start()
 #endif
 
   this->leakage_power.power_on();
+
+  this->gdbserver = (vp::Gdbserver_engine *)this->get_service("gdbserver");
+
+  if (this->gdbserver)
+  {
+    this->gdbserver->register_core(this);
+    this->halted.set(true);
+    this->check_state();
+  }
 }
 
 void iss_wrapper::pre_reset()
@@ -1160,14 +1452,14 @@ void iss_wrapper::reset(bool active)
     this->irq_req = -1;
     this->wakeup_latency = 0;
 
-    for (int i=0; i<CSR_PCER_NB_EVENTS; i++)
+    for (int i=0; i<32; i++)
     {
       this->pcer_trace_event[i].event(NULL);
     }
-    this->misaligned_req_event.event(NULL);
 
     this->ipc_stat_nb_insn = 0;
     this->ipc_stat_delay = 10;
+    this->clock_active = false;
 
     iss_reset(this, 1);
   }
@@ -1176,14 +1468,18 @@ void iss_wrapper::reset(bool active)
     iss_reset(this, 0);
 
     uint64_t zero = 0;
-    for (int i=0; i<CSR_PCER_NB_EVENTS; i++)
+    for (int i=0; i<32; i++)
     {
       this->pcer_trace_event[i].event((uint8_t *)&zero);
     }
-    this->misaligned_req_event.event((uint8_t *)&zero);
 
     iss_pc_set(this, this->bootaddr_reg.get() + this->bootaddr_offset);
     iss_irq_set_vector_table(this, this->bootaddr_reg.get() & ~((1<<8) - 1));
+
+    if (this->gdbserver)
+    {
+      this->halted.set(true);
+    }
 
     check_state();
   }
@@ -1196,7 +1492,160 @@ iss_wrapper::iss_wrapper(js::config *config)
 }
 
 
+int iss_wrapper::gdbserver_get_id()
+{
+  return this->cpu.config.mhartid;
+}
+
+
+std::string iss_wrapper::gdbserver_get_name()
+{
+  return this->get_name();
+}
+
+
+int iss_wrapper::gdbserver_reg_set(int reg, uint8_t *value)
+{
+    this->gdbserver_trace.msg(vp::trace::LEVEL_DEBUG, "Setting register from gdbserver (reg: %d, value: 0x%x)\n", reg, *(uint32_t *)value);
+
+    if (reg == 32)
+    {
+        iss_pc_set(this, *(uint32_t *)value);
+    }
+    else
+    {
+        this->gdbserver_trace.msg(vp::trace::LEVEL_ERROR, "Setting invalid register (reg: %d, value: 0x%x)\n", reg, *(uint32_t *)value);
+    }
+
+    return 0;
+}
+
+
+int iss_wrapper::gdbserver_reg_get(int reg, uint8_t *value)
+{
+  fprintf(stderr, "UNIMPLEMENTED AT %s %d\n", __FILE__, __LINE__);
+  return 0;
+}
+
+
+int iss_wrapper::gdbserver_regs_get(int *nb_regs, int *reg_size, uint8_t *value)
+{
+    if (nb_regs)
+    {
+        *nb_regs = 33;
+    }
+
+    if (reg_size)
+    {
+        *reg_size = 4;
+    }
+
+    if (value)
+    {
+        uint32_t *regs = (uint32_t *)value;
+        for (int i=0; i<32; i++)
+        {
+            regs[i] = iss_get_reg(this, i);
+        }
+
+        if (this->cpu.current_insn)
+        {
+            regs[32] = this->cpu.current_insn->addr;
+        }
+        else
+        {
+            regs[32] = 0;
+        }
+    }
+
+    return 0;
+}
+
+
+int iss_wrapper::gdbserver_stop()
+{
+    this->halted.set(true);
+    this->gdbserver->signal(this);
+    this->check_state();
+    return 0;
+}
+
+
+int iss_wrapper::gdbserver_cont()
+{
+    this->halted.set(false);
+    this->check_state();
+
+    return 0;
+}
+
+
+int iss_wrapper::gdbserver_stepi()
+{
+    fprintf(stderr, "STEP\n");
+    this->step_mode.set(true);
+    this->halted.set(false);
+    this->check_state();
+    return 0;
+}
+
+
+int iss_wrapper::gdbserver_state()
+{
+    return vp::Gdbserver_core::state::running;
+}
+
+
+void iss_wrapper::declare_pcer(int index, std::string name, std::string help)
+{
+    this->pcer_info[index].name = name;
+    this->pcer_info[index].help = help;
+}
+
+
+void iss_wrapper::target_open()
+{
+    this->declare_pcer(CSR_PCER_CYCLES, "Cycles", "Count the number of cycles the core was running");
+    this->declare_pcer(CSR_PCER_INSTR, "instr", "Count the number of instructions executed");
+    this->declare_pcer(CSR_PCER_LD_STALL, "ld_stall", "Number of load use hazards");
+    this->declare_pcer(CSR_PCER_JMP_STALL, "jmp_stall", "Number of jump register hazards");
+    this->declare_pcer(CSR_PCER_IMISS, "imiss", "Cycles waiting for instruction fetches. i.e. the number of instructions wasted due to non-ideal caches");
+    this->declare_pcer(CSR_PCER_LD, "ld", "Number of memory loads executed. Misaligned accesses are counted twice");
+    this->declare_pcer(CSR_PCER_ST, "st", "Number of memory stores executed. Misaligned accesses are counted twice");
+    this->declare_pcer(CSR_PCER_JUMP, "jump", "Number of jump instructions seen, i.e. j, jr, jal, jalr");
+    this->declare_pcer(CSR_PCER_BRANCH, "branch", "Number of branch instructions seen, i.e. bf, bnf");
+    this->declare_pcer(CSR_PCER_TAKEN_BRANCH, "taken_branch", "Number of taken branch instructions seen, i.e. bf, bnf");
+    this->declare_pcer(CSR_PCER_RVC, "rvc", "Number of compressed instructions");
+    this->declare_pcer(CSR_PCER_LD_EXT, "ld_ext", "Number of memory loads to EXT executed. Misaligned accesses are counted twice. Every non-TCDM access is considered external");
+    this->declare_pcer(CSR_PCER_ST_EXT, "st_ext", "Number of memory stores to EXT executed. Misaligned accesses are counted twice. Every non-TCDM access is considered external");
+    this->declare_pcer(CSR_PCER_LD_EXT_CYC, "ld_ext_cycles", "Cycles used for memory loads to EXT. Every non-TCDM access is considered external");
+    this->declare_pcer(CSR_PCER_ST_EXT_CYC, "st_ext_cycles", "Cycles used for memory stores to EXT. Every non-TCDM access is considered external");
+    this->declare_pcer(CSR_PCER_TCDM_CONT, "tcdm_cont", "Cycles wasted due to TCDM/log-interconnect contention");
+    
+    traces.new_trace_event("pcer_cycles", &pcer_trace_event[0], 1);
+    traces.new_trace_event("pcer_instr", &pcer_trace_event[1], 1);
+    traces.new_trace_event("pcer_ld_stall", &pcer_trace_event[2], 1);
+    traces.new_trace_event("pcer_jmp_stall", &pcer_trace_event[3], 1);
+    traces.new_trace_event("pcer_imiss", &pcer_trace_event[4], 1);
+    traces.new_trace_event("pcer_ld", &pcer_trace_event[5], 1);
+    traces.new_trace_event("pcer_st", &pcer_trace_event[6], 1);
+    traces.new_trace_event("pcer_jump", &pcer_trace_event[7], 1);
+    traces.new_trace_event("pcer_branch", &pcer_trace_event[8], 1);
+    traces.new_trace_event("pcer_taken_branch", &pcer_trace_event[9], 1);
+    traces.new_trace_event("pcer_rvc", &pcer_trace_event[10], 1);
+    traces.new_trace_event("pcer_ld_ext", &pcer_trace_event[11], 1);
+    traces.new_trace_event("pcer_st_ext", &pcer_trace_event[12], 1);
+    traces.new_trace_event("pcer_ld_ext_cycles", &pcer_trace_event[13], 1);
+    traces.new_trace_event("pcer_st_ext_cycles", &pcer_trace_event[14], 1);
+    traces.new_trace_event("pcer_tcdm_cont", &pcer_trace_event[15], 1);
+}
+
+
+#ifndef EXTERNAL_ISS_WRAPPER
+
 extern "C" vp::component *vp_constructor(js::config *config)
 {
   return new iss_wrapper(config);
 }
+
+#endif

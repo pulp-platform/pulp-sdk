@@ -25,8 +25,13 @@
 #include <stdlib.h>
 
 
+void pos_irq_c_handler_stub();
 
-static unsigned int pos_irq_get_itvec(unsigned int ItBaseAddr, unsigned int ItIndex, unsigned int ItHandler)
+
+uint32_t pos_irq_c_handlers[32];
+
+
+unsigned int pos_irq_get_itvec(unsigned int ItBaseAddr, unsigned int ItIndex, unsigned int ItHandler)
 {
   /* Prepare 32bit container to be stored at
    *(ItBaseAddr+ItIndex) containing a relative jump from
@@ -63,6 +68,9 @@ void pos_irq_set_handler(int irq, void (*handler)())
 
   *(volatile unsigned int *)jmpAddr = pos_irq_get_itvec(base, irq, (unsigned int)handler);
 
+#ifdef ARCHI_FC_HAS_ICACHE
+  fc_icache_ctrl_flush_set(ARCHI_FC_ICACHE_ADDR, -1);
+#endif
   //selective_flush_icache_addr(jmpAddr & ~(ICACHE_LINE_SIZE-1));
 
   //if (!rt_is_fc() || plp_pmu_cluster_isOn(0)) flush_all_icache_banks_common(plp_icache_cluster_remote_base(0));
@@ -75,13 +83,18 @@ void pos_irq_set_handler(int irq, void (*handler)())
 
 
 
-void pos_irq_illegal_instr()
+void __attribute__((weak)) pos_irq_illegal_instr()
 {
-  //unsigned int mepc = hal_mepc_read();
-  //rt_warning("Reached illegal instruction (PC: 0x%x, opcode: 0x%x\n", mepc, *(int *)mepc);
+  unsigned int mepc = hal_mepc_read();
+  INIT_WNG("Reached illegal instruction (PC: 0x%x, opcode: 0x%x)\n", mepc, *(int *)mepc);
 }
 
 
+void pos_irq_set_c_handler(int irq, void (*handler)())
+{
+    pos_irq_c_handlers[irq] = (uint32_t)handler;
+    pos_irq_set_handler(irq, pos_irq_c_handler_stub);
+}
 
 
 void pos_irq_init()

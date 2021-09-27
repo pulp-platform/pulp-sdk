@@ -70,6 +70,12 @@ void bsp_himax_conf_init(struct pi_himax_conf *conf);
 int bsp_himax_open(struct pi_himax_conf *conf);
 #endif
 
+#if defined(CONFIG_HM0360)
+#include "bsp/camera/hm0360.h"
+void bsp_hm0360_conf_init(struct pi_hm0360_conf *conf);
+int bsp_hm0360_open(struct pi_hm0360_conf *conf);
+#endif
+
 #if defined(CONFIG_OV7670)
 #include "bsp/camera/ov7670.h"
 void bsp_ov7670_conf_init(struct pi_ov7670_conf *conf);
@@ -111,6 +117,12 @@ int bsp_ili9341_open(struct pi_ili9341_conf *conf);
 #include "bsp/eeprom/24xx1025.h"
 void bsp_24xx1025_conf_init(struct pi_24xx1025_conf *conf);
 int bsp_24xx1025_open(struct pi_24xx1025_conf *conf);
+#endif
+
+#if defined(CONFIG_M24C02)
+#include "bsp/eeprom/m24c02.h"
+void bsp_m24c02_conf_init(struct pi_m24c02_conf *conf);
+int bsp_m24c02_open(struct pi_m24c02_conf *conf);
 #endif
 
 #if defined(CONFIG_VIRTUAL_EEPROM)
@@ -171,7 +183,7 @@ int bsp_nina_w10_open(struct pi_nina_w10_conf *conf);
 int bsp_nina_b112_open_old();
 #include "bsp/ble/nina_b112.h"
 void bsp_nina_b112_conf_init(struct pi_nina_b112_conf *conf);
-int bsp_nina_b112_open(struct pi_nina_b112_conf *conf);
+int bsp_nina_b112_open();
 #endif
 
 #if defined(CONFIG_THERMEYE)

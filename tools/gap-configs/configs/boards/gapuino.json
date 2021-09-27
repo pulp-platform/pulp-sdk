@@ -10,7 +10,7 @@
       },
       "ram": {
         "@include@" : "devices/hyperram.json",
-        "cs": 0
+        "cs": 0,
       },
       "camera": {
         "@include@": "devices/camera.json",

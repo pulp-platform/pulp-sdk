@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -31,16 +31,17 @@
 
 
 #define PI_INLINE_CL_TEAM_0 static inline
+#ifndef CONFIG_PULP
 #define PI_INLINE_HYPER_LVL_0 static inline
 #define PI_INLINE_OCTOSPI_LVL_0 static inline
+#endif
 
-#if defined(__GAP8__)
+#if defined(__GAP9__)
 #include "pmsis/chips/gap8/perf.h"
-#elif defined(__GAP9__)
 #include "pmsis/chips/gap9/pad.h"
 #include "pmsis/chips/gap9/gpio.h"
 #else
-#include "pmsis/chips/default.h"
+#include "pmsis/chips/pulp/pulp.h"
 #endif
 
 #include <pmsis/rtos/pi_log.h>
@@ -51,6 +52,7 @@
 #include "pmsis/cluster/cl_malloc.h"
 #include "pmsis/rtos/os_frontend_api/pmsis_time.h"
 #include "pmsis/rtos/os_frontend_api/freq.h"
+#include "pmsis/rtos/os_frontend_api/os.h"
 #include "pmsis/rtos/malloc/cl_l1_malloc.h"
 #include "pmsis/rtos/malloc/l2_malloc.h"
 #include "pmsis/rtos/malloc/fc_l1_malloc.h"
@@ -67,13 +69,23 @@
 #include "pmsis/drivers/pwm.h"
 #include "pmsis/drivers/pad.h"
 #include "pmsis/drivers/aes.h"
+#include "pmsis/drivers/rtc.h"
+#include "pmsis/drivers/udma_fifo.h"
+#include "pmsis/drivers/udma_timestamp.h"
 #include "pmsis/cluster/dma/cl_dma.h"
+#if defined(__GAP9__)
+#include "pmsis/chips/gap9/gap9.h"
+#endif
 
 
 #include "hal/utils.h"
 #include "pmsis/cluster/cluster_sync/cl_synchronisation.h"
 
 #include <pos/implem/implem.h>
+
+#ifdef __PLATFORM_GVSOC__
+#include <pmsis/platforms/gvsoc.h>
+#endif
 
 #endif
 

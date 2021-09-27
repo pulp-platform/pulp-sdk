@@ -21,12 +21,16 @@ import gen_lfs
 import traces
 import os
 import shutil
+import importlib
+import tools.runner.runner
+
 
 class Runner(object):
 
-    def __init__(self, args, config):
+    def __init__(self, args, config, system):
         self.config = config
         self.args = args
+        self.system = system
         self.verbose = config.get_bool('gapy/verbose')
 
     def run(self):
@@ -48,12 +52,25 @@ class Runner(object):
             if self.exec() != 0:
                 return -1
 
+        if self.args.gtkw:
+            if self.gtkw() != 0:
+                return -1
+
         return 0
 
 
     def conf(self):
 
-        boot_mode = self.config.get_str("runner/boot/mode")
+        if  self.config.get('runner/targets') is None:
+            self.__handle_target('runner')
+        else:
+            for target in self.config.get('runner/targets').get_dict():
+                self.__handle_target(target + '/runner', flash_device_prefix=target + '/')
+
+
+    def __handle_target(self, target, flash_device_prefix=None):
+
+        boot_mode = self.config.get_str(target + "/boot/mode")
         if boot_mode is None: 
             raise errors.InputError('The boot mode has to be specified')
 
@@ -61,14 +78,17 @@ class Runner(object):
 
         # If we boot from flash, store the boot binary information in the specified flash
         if boot_mode == 'flash':
-            flash_config = self.get_boot_flash()
+            flash_config = self.get_boot_flash(target, flash_device_prefix)
             flash_config.set('content/boot-loader', binary)
 
         work_dir = self.config.get_str('gapy/work_dir')
 
 
         # Go through all the specified flashes to generate image and stimuli if needed
-        for flash_path in self.config.get_py('runner/flash_devices'):
+        for flash_path in self.config.get_py(target + '/flash_devices'):
+
+            if flash_device_prefix is not None:
+                flash_path = flash_device_prefix + flash_path
 
             traces.info('Building stimuli for flash ' + flash_path)
 
@@ -118,13 +138,40 @@ class Runner(object):
                 flash_config.set("content/stimuli/format", stim_format)
                 flash_config.set("content/stimuli/file", file_path)
 
+            if flash_config.get('fs/encrypt') is not None:
+                flash_config.set('fs/encrypt', self.args.encrypt)
+                flash_config.set('fs/aes_key', self.args.aes_key)
+                flash_config.set('fs/aes_iv', self.args.aes_iv)
 
 
     def image(self):
+
+        # TODO
+        # At long term, all the image build, stimuli and so on should be handled by the
+        # system scripts. For now we just do it for efuse and keep the reset with the old
+        # mechanism
+        if self.args.py_target is not None:
+            if False:
+                spec = importlib.util.spec_from_file_location("target", self.args.py_target)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                module.get_config(options=self.args.config_items).gen_stimuli(self.config.get_str('gapy/work_dir'))
+            else:
+                class_name, module_name = self.args.py_target.split('@')
+                module = importlib.import_module(module_name)
+
+                if not callable(getattr(module, class_name, None)):
+                    raise RuntimeError('Unable to find target class (method: %s, filepath: %s)' % (class_name, module_name))
+
+                tools.runner.runner.Runner(None, 'top', options=self.args.config_items, target_class=getattr(module, class_name, None)).gen_stimuli(self.config.get_str('gapy/work_dir'))
+
         self.gen_stimuli()
         return 0
 
     def flash(self):
+        return 0
+
+    def gtkw(self):
         return 0
 
     def exec(self):
@@ -133,13 +180,16 @@ class Runner(object):
     def exec_prepare(self):
         return 0
 
-    def get_boot_mode(self):
-        return self.config.get_str('runner/boot/mode')
+    def get_boot_mode(self, target='runner'):
+        return self.config.get_str('%s/boot/mode' % target)
 
-    def get_boot_flash(self):
-        flash_path = self.config.get_str("runner/boot/device")
+    def get_boot_flash(self, target='runner', flash_device_prefix=None):
+        flash_path = self.config.get_str("%s/boot/device" % target)
         if flash_path is None:
             raise errors.InputError('The path to the flash device must be specified when booting from flash')
+
+        if flash_device_prefix is not None:
+            flash_path = flash_device_prefix + flash_path
 
         flash_config = self.config.get(flash_path)
         if flash_config is None:
@@ -161,10 +211,23 @@ class Runner(object):
 
 
     def gen_flash_images(self):
+
+        if  self.config.get('runner/targets') is None:
+            self.__gen_flash_images_for_target('runner')
+        else:
+            for target in self.config.get('runner/targets').get_dict():
+                self.__gen_flash_images_for_target(target + '/runner', flash_device_prefix=target + '/')
+
+        
+    def __gen_flash_images_for_target(self, target, flash_device_prefix=None):
+
         work_dir = self.config.get_str('gapy/work_dir')
 
         # Go through all the specified flashes to generate image and stimuli if needed
-        for flash_path in self.config.get_py('runner/flash_devices'):
+        for flash_path in self.config.get_py(target+ '/flash_devices'):
+
+            if flash_device_prefix is not None:
+                flash_path = flash_device_prefix + flash_path
 
             traces.info('Building stimuli for flash ' + flash_path)
 

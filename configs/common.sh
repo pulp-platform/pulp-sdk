@@ -30,8 +30,10 @@ export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_
 # GVSOC
 export PULP_SDK_INSTALL=$INSTALL_DIR
 export GVSOC_PATH=$INSTALL_DIR/python
-export XTENSOR_INCLUDE_DIR=$PULP_SDK_HOME/ext/xtensor/include
+export GVSOC_ISS_PATH=$PULP_SDK_HOME/tools/gvsoc/common/models/cpu/iss
 export GVSOC_INC_PATHS="$PULP_SDK_HOME/rtos/pulpos/gap_archi/include/archi/chips/$TARGET_NAME $PULP_SDK_HOME/rtos/pulpos/gap_archi/include $PULP_SDK_HOME/rtos/pulpos/pulp_archi/include"
+export GVSOC_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/common
+export PYTHONPATH=$GAP_SDK_HOME/tools/gvsoc/pulp/models:$PYTHONPATH
 
 # FPGA
 #export PULP_
@@ -46,4 +48,3 @@ export PULPOS_ARCHI=$PULP_SDK_HOME/rtos/pulpos/pulp_archi
 export PULPOS_HAL=$PULP_SDK_HOME/rtos/pulpos/pulp_hal
 export PMSIS_API=$PULP_SDK_HOME/rtos/pmsis/pmsis_api
 export PULP_EXT_LIBS=$PULP_SDK_HOME/ext_libs
-export PULPOS_OPENMP_DIR=$PULPOS_HOME/lib/omp

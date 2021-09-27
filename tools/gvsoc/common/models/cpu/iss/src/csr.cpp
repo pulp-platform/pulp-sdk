@@ -477,7 +477,7 @@ static bool hbadaddr_write(iss_t *iss, unsigned int value) {
  */
 
 static bool misa_read(iss_t *iss, iss_reg_t *value) {
-  //*value = 0;
+  *value = iss->cpu.config.misa;
   return false;
 }
 
@@ -506,14 +506,21 @@ static bool mhartid_read(iss_t *iss, iss_reg_t *value) {
 }
 
 
-
 static bool mstatus_read(iss_t *iss, iss_reg_t *value) {
-  *value = (iss->cpu.csr.status & ~(1<<3)) | (iss->cpu.irq.irq_enable << 3) | (iss->cpu.irq.saved_irq_enable << 7) | (0x3 << 11);
+  *value = (iss->cpu.csr.status & ~(1<<3)) | (iss->cpu.irq.irq_enable << 3) | (iss->cpu.irq.saved_irq_enable << 7);
   return false;
 }
 
-static bool mstatus_write(iss_t *iss, unsigned int value) {
-  iss->cpu.csr.status = value & 0x88;
+static bool mstatus_write(iss_t *iss, unsigned int value)
+{
+#if defined(SECURE)
+  unsigned int mask = 0x21899;
+  unsigned int or_mask = 0x0;
+#else
+  unsigned int mask = 0x88;
+  unsigned int or_mask = 0x1800;
+#endif
+  iss->cpu.csr.status = (value & mask) | or_mask;
   iss_irq_enable(iss, (value >> 3) & 1);
   iss->cpu.irq.saved_irq_enable = (value >> 7) & 1;
   return false;
@@ -575,15 +582,14 @@ static bool mtvec_write(iss_t *iss, unsigned int value) {
 
 
 static bool mscratch_read(iss_t *iss, iss_reg_t *value) {
-  //*value = iss->scratch[GVSIM_MODE_MACHINE];
+  *value = iss->cpu.csr.mscratch;
   return false;
 }
 
 static bool mscratch_write(iss_t *iss, unsigned int value) {
-  //iss->scratch[GVSIM_MODE_MACHINE] = value;
+  iss->cpu.csr.mscratch = value;
   return false;
 }
-
 
 
 static bool mepc_read(iss_t *iss, iss_reg_t *value) {
@@ -593,7 +599,7 @@ static bool mepc_read(iss_t *iss, iss_reg_t *value) {
 
 static bool mepc_write(iss_t *iss, unsigned int value) {
   iss_msg(iss, "Setting MEPC (value: 0x%x)\n", value);
-  iss->cpu.csr.epc = value;
+  iss->cpu.csr.epc = value & ~1;
   return false;
 }
 
@@ -872,6 +878,17 @@ static bool umode_read(iss_t *iss, iss_reg_t *value) {
   return false;
 }
 
+static bool dcsr_read(iss_t *iss, iss_reg_t *value) {
+  *value = iss->cpu.csr.dcsr;
+  return false;
+}
+
+static bool dcsr_write(iss_t *iss, iss_reg_t value) {
+  iss->cpu.csr.dcsr = value;
+  iss->step_mode.set((value >> 2) & 1);
+  return false;
+}
+
 static bool depc_read(iss_t *iss, iss_reg_t *value) {
   *value = iss->cpu.csr.depc;
   return false;
@@ -904,7 +921,7 @@ static bool scratch1_write(iss_t *iss, iss_reg_t value) {
 
 
 static bool pcer_write(iss_t *iss, unsigned int prev_val, unsigned int value) {
-  iss->cpu.csr.pcer = value;
+  iss->cpu.csr.pcer = value & 0x7fffffff;
   check_perf_config_change(iss, prev_val, iss->cpu.csr.pcmr);
   return false;
 }
@@ -1025,10 +1042,10 @@ static bool perfCounters_write(iss_t *iss, int reg, unsigned int value)
     iss_perf_counter_msg(iss, "Setting value to all PCCR (value: 0x%x)\n", value);
 
     int i;
-    for (i=0; i<CSR_PCER_NB_EVENTS; i++)
+    for (i=0; i<31; i++)
     {
       iss->cpu.csr.pccr[i] = value;
-      if (i >= CSR_PCER_NB_INTERNAL_EVENTS)
+      if (i >= CSR_PCER_NB_INTERNAL_EVENTS  && i < CSR_PCER_NB_EVENTS)
       {
         update_external_pccr(iss, i, 0, 0);
       }
@@ -1191,9 +1208,12 @@ bool iss_csr_read(iss_t *iss, iss_reg_t reg, iss_reg_t *value)
     case 0xC10: status = umode_read(iss, value); break;
     case 0x014: status = mhartid_read(iss, value); break;
 
+#if CSR_HWLOOP0_START != 0x7b0
+    case 0x7b0: status = dcsr_read    (iss, value); break;
     case 0x7b1: status = depc_read    (iss, value); break;
     case 0x7b2: status = scratch0_read(iss, value); break;
     case 0x7b3: status = scratch1_read(iss, value); break;
+#endif
 
 #ifdef CSR_STACK_CONF
     case CSR_STACK_CONF:  status = stack_conf_read(iss, value); break;
@@ -1346,9 +1366,12 @@ bool iss_csr_write(iss_t *iss, iss_reg_t reg, iss_reg_t value)
     case 0x311: return mscounteren_write(iss, value);
     case 0x312: return mhcounteren_write(iss, value);
 
+#if CSR_HWLOOP0_START != 0x7b0
+    case 0x7b0: return dcsr_write    (iss, value);
     case 0x7b1: return depc_write    (iss, value);
     case 0x7b2: return scratch0_write(iss, value);
     case 0x7b3: return scratch1_write(iss, value);
+#endif
 
 #ifdef CSR_STACK_CONF
     case CSR_STACK_CONF:  return stack_conf_write(iss, value); break;
@@ -1376,11 +1399,12 @@ bool iss_csr_write(iss_t *iss, iss_reg_t reg, iss_reg_t value)
 
 void iss_csr_init(iss_t *iss, int reset)
 {
-  iss->cpu.csr.status = 0;
+  iss->cpu.csr.status = 0x3 << 11;
   iss->cpu.csr.mcause = 0;
 #if defined(ISS_HAS_PERF_COUNTERS)
   iss->cpu.csr.pcmr = 3;
   iss->cpu.csr.pcer = 3;
 #endif
   iss->cpu.csr.stack_conf = 0;
+  iss->cpu.csr.dcsr = 4 << 28;
 }

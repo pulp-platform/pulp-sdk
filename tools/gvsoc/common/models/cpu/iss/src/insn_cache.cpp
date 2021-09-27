@@ -73,6 +73,14 @@ static void insn_block_init(iss_insn_block_t *b, iss_addr_t pc)
 void iss_cache_flush(iss_t *iss)
 {
   flush_cache(iss, &iss->cpu.insn_cache);
+  if (iss->cpu.current_insn)
+    iss->cpu.current_insn = insn_cache_get_decoded(iss, iss->cpu.current_insn->addr);
+  if (iss->cpu.prev_insn)
+    iss->cpu.prev_insn = insn_cache_get_decoded(iss, iss->cpu.prev_insn->addr);
+  if (iss->cpu.stall_insn)
+    iss->cpu.stall_insn = insn_cache_get_decoded(iss, iss->cpu.stall_insn->addr);
+
+  iss_irq_flush(iss);
 }
 
 
@@ -88,11 +96,14 @@ iss_insn_t *insn_cache_get(iss_t *iss, iss_addr_t pc)
 
   while (block)
   {
-    if (block->pc == pc_base)
+    if (block->is_init)
     {
-      return &block->insns[insn_id];
+      if (block->pc == pc_base)
+      {
+        return &block->insns[insn_id];
+      }
     }
-    if (!block->is_init)
+    else
     {
       first_free = block;
     }

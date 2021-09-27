@@ -19,6 +19,12 @@
 
 #include "pmsis/rtos/malloc/malloc_internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 /**
  * @addtogroup MemAlloc
  * @{
@@ -71,6 +77,14 @@ void pi_l2_free(void *chunk, int size);
 void *pi_l2_malloc_align(int size, int align);
 
 /**
+ * \brief Display free blocks.
+ *
+ * This function can be used to display free blocks available from the L2 allocator.
+ */
+void pi_l2_malloc_dump(void);
+
+
+/**
  * @cond IMPLEM
  */
 
@@ -88,8 +102,6 @@ void *pi_l2_malloc_align(int size, int align);
  */
 void pi_l2_malloc_init(void *heapstart, uint32_t size);
 
-void pi_l2_malloc_dump();
-
 /**
  * @endcond IMPLEM
  */
@@ -104,4 +116,7 @@ void pi_l2_malloc_dump();
 
 #endif  /* __L2_MALLOC_NATIVE__ */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_RTOS_MALLOC_L2_MALLOC_H__ */

@@ -24,6 +24,16 @@
 
 #include <archi/pulp.h>
 
+#define POS_BITFIELD_ALLOC_ID 0
+#define POS_SEM_ALLOC_ID      1
+#define POS_BARRIER_ALLOC_ID  2
+#define POS_MUTEX_ALLOC_ID    3
+
+#define POS_BITFIELD_ALLOC_INIT (((1 << ARCHI_EU_NB_HW_BITFIELD) - 1) & ~0xf)
+#define POS_SEM_ALLOC_INIT      ((1 << ARCHI_EU_NB_HW_SEMAPHORE) - 1)
+#define POS_BARRIER_ALLOC_INIT  ((1 << ARCHI_EU_NB_HW_BARRIER) - 1)
+#define POS_MUTEX_ALLOC_INIT    ((1 << ARCHI_EU_NB_HW_MUTEX) - 1)
+
 // This event is used by FC to notify few events to the cluster:
 //  - A remote cluster to FC event was handled and the cluster can then try to
 //    post again another event in case it was working
@@ -38,13 +48,15 @@
 #ifndef LANGUAGE_ASSEMBLY
 
 // We cannot use tiny attribute if we use a generic riscv toolchain or LLVM or we there is fc specific memeory (TCDM or L2)
-#if (defined(ARCHI_HAS_FC_TCDM) || defined(ARCHI_HAS_L2_ALIAS)) && !defined(__LLVM__) && !defined(__RISCV_GENERIC__) && defined(CONFIG_NO_STD_RELOC)
+#if (defined(ARCHI_HAS_FC_TCDM) || defined(ARCHI_HAS_L2_ALIAS)) && !defined(__LLVM__) && !defined(__RISCV_GENERIC__) && !defined(__PULP_TOOLCHAIN__)
 #define POS_FC_TINY_ATTRIBUTE __attribute__ ((tiny))
 #else
 #define POS_FC_TINY_ATTRIBUTE
 #endif
 
 #define POS_HANDLER __attribute__((section(".text_l2")))
+#define POS_TEXT_L2 __attribute__((section(".text_l2")))
+#define PI_LOCAL_CODE POS_TEXT_L2
 
 #define PI_FC_L1       __attribute__((section(".data_fc")))
 #define PI_FC_L1_TINY  __attribute__((section(".data_tiny_fc"))) POS_FC_TINY_ATTRIBUTE
@@ -53,7 +65,7 @@
 
 #define PI_L2 __attribute__((section(".l2_data")))
 
-#if defined(ARCHI_HAS_L1_ALIAS) && defined(CONFIG_NO_STD_RELOC)
+#if defined(ARCHI_HAS_L1_ALIAS) && !defined(__PULP_TOOLCHAIN__)
 #define PI_CL_L1_TINY __attribute__ ((tiny)) __attribute__((section(".data_tiny_l1")))
 #else
 #define PI_CL_L1_TINY __attribute__((section(".data_tiny_l1")))
@@ -99,9 +111,7 @@ struct pi_cluster_task {
 typedef struct pi_task{
     // Warning, might be accessed inline in asm, and thus can not be moved
     struct pi_task *next;
-    uintptr_t arg[4];
-    int8_t done;
-    int id;
+    uintptr_t arg[2];
     uint32_t data[PI_TASK_IMPLEM_NB_DATA];
 
     PI_TASK_IMPLEM;
@@ -153,18 +163,14 @@ typedef struct pi_cluster_pe_task_s
 #define PI_TASK_T_NEXT           (0*4)
 #define PI_TASK_T_ARG_0          (1*4)
 #define PI_TASK_T_ARG_1          (2*4)
-#define PI_TASK_T_ARG_2          (3*4)
-#define PI_TASK_T_ARG_3          (4*4)
-#define PI_TASK_T_DONE           (5*4)
-#define PI_TASK_T_ID             (6*4)
-#define PI_TASK_T_DATA_0         (7*4)
-#define PI_TASK_T_DATA_1         (8*4)
-#define PI_TASK_T_DATA_2         (9*4)
-#define PI_TASK_T_DATA_3         (10*4)
-#define PI_TASK_T_DATA_4         (11*4)
-#define PI_TASK_T_DATA_5         (12*4)
-#define PI_TASK_T_DATA_6         (13*4)
-#define PI_TASK_T_DATA_7         (14*4)
+#define PI_TASK_T_DATA_0         (3*4)
+#define PI_TASK_T_DATA_1         (4*4)
+#define PI_TASK_T_DATA_2         (5*4)
+#define PI_TASK_T_DATA_3         (6*4)
+#define PI_TASK_T_DATA_4         (7*4)
+#define PI_TASK_T_DATA_5         (8*4)
+#define PI_TASK_T_DATA_6         (9*4)
+#define PI_TASK_T_DATA_7         (10*4)
 
 
 #define PI_CLUSTER_TASK_ENTRY                 (0*4)
@@ -182,6 +188,8 @@ typedef struct pi_cluster_pe_task_s
 
 
 
+#include "kernel.h"
+
 #if defined(UDMA_VERSION) && UDMA_VERSION == 2
 #include "pos/data/udma-v2.h"
 #endif
@@ -192,15 +200,21 @@ typedef struct pi_cluster_pe_task_s
 #include "pos/data/udma-v4.h"
 #endif
 #include "sched.h"
+#include "pos/data/irq.h"
 #include "pos/data/spim.h"
 #include "alloc.h"
 #include "pos/data/uart.h"
 #include "soc_event.h"
 #include "cluster.h"
-#include "kernel.h"
 #include "lock.h"
 
+#ifndef __GAP9__
 #include "pos/data/hyperbus.h"
+#endif
+#ifdef CONFIG_CPI
+#include "pos/data/cpi-v1.h"
+#endif
+
 
 
 #endif

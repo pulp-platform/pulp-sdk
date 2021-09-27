@@ -20,6 +20,9 @@
 #include "pmsis/pmsis_types.h"
 #include "pmsis/drivers/pad.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @ingroup groupDrivers
@@ -280,7 +283,7 @@ int pi_gpio_pin_task_add(struct pi_device *device, uint32_t pin, pi_task_t *task
 int pi_gpio_pin_task_remove(struct pi_device *device, uint32_t pin);
 
 /**
- * \struct pi_gpio_callback_t
+ * \struct pi_gpio_callback_s
  *
  * \brief GPIO callback struct.
  *
@@ -381,4 +384,7 @@ static inline void pi_gpio_callback_init(pi_gpio_callback_t *cb,
  */
 
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_DRIVERS_GPIO_H__ */

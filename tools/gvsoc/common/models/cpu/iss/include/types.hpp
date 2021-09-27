@@ -26,6 +26,7 @@
 #include <stdint.h>
 #define __STDC_FORMAT_MACROS    // This is needed for some old gcc versions
 #include <inttypes.h>
+#include <vector>
 
 #if defined(RISCY)
 #define ISS_HAS_PERF_COUNTERS 1
@@ -260,6 +261,10 @@ typedef struct iss_decoder_item_s {
       int nb_args;
       int latency;
       iss_decoder_arg_t args[ISS_MAX_DECODE_ARGS];
+      int resource_id;
+      int resource_latency;          // Time required to get the result when accessing the resource
+      int resource_bandwidth;        // Time required to accept the next access when accessing the resource
+      int power_group;
     } insn;
 
     struct {
@@ -272,6 +277,24 @@ typedef struct iss_decoder_item_s {
 
 } iss_decoder_item_t;
 
+
+// Structure describing an instance of a resource.
+// This is used to account timing on shared resources.
+// Each instance can accept accesses concurently.
+typedef struct
+{
+  int64_t cycles;    // Indicate the time where the next access to this resource is possible
+} iss_resource_instance_t;
+
+
+// Structure describing a resource.
+typedef struct
+{
+  const char *name;     // Name of the resource
+  int nb_instances;     // Number of instances of this resource. Each instance can accept accesses concurently
+  std::vector<iss_resource_instance_t *> instances; // Instances of this resource
+} iss_resource_t;
+
 typedef struct iss_isa_s
 {
   char *name;
@@ -282,6 +305,8 @@ typedef struct iss_isa_set_s
 {
   int nb_isa;
   iss_isa_t *isa_set;
+  int nb_resources;
+  iss_resource_t *resources;   // Resources associated to this ISA
 } iss_isa_set_t;
 
 typedef struct iss_isa_tag_s
@@ -300,6 +325,7 @@ typedef struct iss_insn_s {
   iss_reg_t opcode;
   iss_insn_t *(*fast_handler)(iss_t *, iss_insn_t*);
   iss_insn_t *(*handler)(iss_t *, iss_insn_t*);
+  iss_insn_t *(*resource_handler)(iss_t *, iss_insn_t*);        // Handler called when an instruction with an associated resource is executed. The handler will take care of simulating the timing of the resource.
   iss_insn_t *(*hwloop_handler)(iss_t *, iss_insn_t*);
   iss_insn_t *(*stall_handler)(iss_t *, iss_insn_t*);
   iss_insn_t *(*stall_fast_handler)(iss_t *, iss_insn_t*);
@@ -313,6 +339,9 @@ typedef struct iss_insn_s {
   iss_insn_arg_t args[ISS_MAX_DECODE_ARGS];
   iss_insn_t *next;
   iss_decoder_item_t *decoder_item;
+  int resource_id;   // Identifier of the resource associated to this instruction
+  int resource_latency;          // Time required to get the result when accessing the resource
+  int resource_bandwidth;        // Time required to accept the next access when accessing the resource
 
   iss_insn_t *(*saved_handler)(iss_t *, iss_insn_t*);
   iss_insn_t *branch;
@@ -377,6 +406,8 @@ typedef struct iss_cpu_state_s {
   iss_reg_t vf1;
 
   iss_insn_t *elw_insn;
+  int elw_interrupted;
+  iss_insn_t *hwloop_next_insn;
 
   iss_fcsr_t fcsr;
 
@@ -388,6 +419,7 @@ typedef struct iss_cpu_state_s {
 
 typedef struct iss_config_s {
   iss_reg_t mhartid;
+  iss_reg_t misa;
   const char *isa;
   iss_addr_t debug_handler;
 } iss_config_t;
@@ -408,10 +440,11 @@ typedef struct iss_csr_s
   iss_reg_t status;
   iss_reg_t epc;
   iss_reg_t depc;
+  iss_reg_t dcsr;
   iss_reg_t mtvec;
   iss_reg_t mcause;
 #if defined(ISS_HAS_PERF_COUNTERS)
-  iss_reg_t pccr[CSR_PCER_NB_EVENTS];
+  iss_reg_t pccr[32];
   iss_reg_t pcer;
   iss_reg_t pcmr;
 #endif
@@ -420,6 +453,7 @@ typedef struct iss_csr_s
   iss_reg_t stack_end;
   iss_reg_t scratch0;
   iss_reg_t scratch1;
+  iss_reg_t mscratch;
 } iss_csr_t;
 
 
@@ -463,9 +497,10 @@ typedef struct iss_cpu_s {
   iss_config_t config;
   iss_irq_t irq;
   iss_csr_t csr;
-  iss_pulpv2_t pulpv2;  
+  iss_pulpv2_t pulpv2;
   iss_pulp_nn_t pulp_nn;
   iss_rnnext_t rnnext;
+  std::vector<iss_resource_instance_t *>resources;     // When accesses to the resources are scheduled statically, this gives the instance allocated to this core for each resource
 } iss_cpu_t;
 
 #endif

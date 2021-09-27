@@ -26,10 +26,8 @@
 
 #define PULP_CHIP CHIP_PULP
 #define PULP_CHIP_FAMILY CHIP_PULP
-#define CONFIG_PULP 1
 #define PULP_CHIP_STR pulp
 #define PULP_CHIP_FAMILY_STR pulp
-#define ARCHI_CORE_HAS_PULPV2 1
 
 #define ARCHI_CORE_HAS_1_10 1
 

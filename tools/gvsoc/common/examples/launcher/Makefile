@@ -1,7 +1,5 @@
 BUILD_DIR ?= $(CURDIR)/build
 
-# CC = g++
-
 CFLAGS +=  -MMD -MP -O2 -g -std=c++11 -Werror -Wall -I$(INSTALL_DIR)/include
 LDFLAGS += -O2 -g -Werror -Wall -L$(INSTALL_DIR)/lib -lpulpvp-debug
 

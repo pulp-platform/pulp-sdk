@@ -33,8 +33,8 @@ def appendArgs(parser: argparse.ArgumentParser, runnerConfig: js.config) -> None
 
 class Runner(runner.default_runner.Runner):
 
-    def __init__(self, args, config):
-        super(Runner, self).__init__(args, config)
+    def __init__(self, args, config, system):
+        super(Runner, self).__init__(args, config, system)
 
 
     def flash(self):
@@ -63,16 +63,19 @@ class Runner(runner.default_runner.Runner):
                     else:
                         flasher_script = 'gap_flash_raw_hyper'
 
-                    cmd = '%s -c "gdb_port disabled; telnet_port disabled; tcl_port disabled" -c "script %s; script %s; script tcl/flash_image.tcl; script tcl/jtag_boot.tcl; %s %s %d %s; exit;"' % (openocd, cable, script, flasher_script, image, image_size, gap_tools)
+                    cmd = '%s -d0 -c "gdb_port disabled; telnet_port disabled; tcl_port disabled" -c "script %s; script %s; script tcl/flash_image.tcl; script tcl/jtag_boot.tcl; %s %s %d %s; exit;"' % (openocd, cable, script, flasher_script, image, image_size, gap_tools)
 
                 else:
 
                     if flash.get_str('datasheet/type') == 'spi':
                         flasher_script = 'gap9_flash_raw_spi'
-                    else:
-                        flasher_script = 'gap9_flash_raw_hyper'
+                    else: 
+                        if self.config.get_str('**/chip') == 'vega':
+                            flasher_script = 'vega_flash_raw_hyper'
+                        else:
+                            flasher_script = 'gap9_flash_raw_hyper'
 
-                    cmd = '%s -c "gdb_port disabled; telnet_port disabled; tcl_port disabled" -c "script %s; script %s; script %s/tcl/flash_image.tcl; %s %s %d %s; exit;"' % (openocd, cable, script, gap_tools, flasher_script, image, image_size, gap_tools)
+                    cmd = '%s -d0 -c "gdb_port disabled; telnet_port disabled; tcl_port disabled" -c "script %s; script %s; script %s/tcl/flash_image.tcl; %s %s %d %s; exit;"' % (openocd, cable, script, gap_tools, flasher_script, image, image_size, gap_tools)
 
             print ('Flashing image with command:')
             print (cmd)
@@ -135,9 +138,9 @@ class Runner(runner.default_runner.Runner):
             else:
                 platform = self.config.get_str('runner/platform')
                 if chip_family == 'vega' or chip_family == 'gap9_v2':
-                    cmd = '%s -c "gdb_port disabled; telnet_port disabled; tcl_port disabled" -c "script %s; script %s; load_and_start_binary %s 0x%x"' % (openocd, cable, script, binary, entry)
+                    cmd = '%s -d0 -c "gdb_port disabled; telnet_port disabled; tcl_port disabled" -c "script %s; script %s; load_and_start_binary %s 0x%x"' % (openocd, cable, script, binary, entry)
                 else:
-                    cmd = "%s -c 'gdb_port disabled; telnet_port disabled; tcl_port disabled' -f %s -f %s -f tcl/jtag_boot_entry.tcl -c 'gap8_jtag_load_binary_and_start \"%s\" elf 0x%x'" % (openocd, cable, script, binary, entry)
+                    cmd = "%s -d0 -c 'gdb_port disabled; telnet_port disabled; tcl_port disabled' -f %s -f %s -f tcl/jtag_boot_entry.tcl -c 'gap8_jtag_load_binary_and_start \"%s\" elf 0x%x'" % (openocd, cable, script, binary, entry)
 
             os.chdir(self.config.get_str('gapy/work_dir'))
 

@@ -39,11 +39,17 @@ public:
 
     void run();
 
-    void step(int64_t timestamp);
+    int64_t step(int64_t timestamp);
 
-    void quit();
+    void quit(int status);
 
     void pause();
+
+    void req_stop_exec();
+
+    void register_stop_notifier(vp::Notifier *notifier);
+
+    void stop_exec();
 
     int join();
 
@@ -68,16 +74,16 @@ void power_manager::run()
 
 
 
-void power_manager::step(int64_t timestamp)
+int64_t power_manager::step(int64_t timestamp)
 {
-    this->time_engine->step(timestamp);
+    return this->time_engine->step(timestamp);
 }
 
 
 
-void power_manager::quit()
+void power_manager::quit(int status)
 {
-    this->time_engine->quit();
+    this->time_engine->quit(status);
 }
 
 
@@ -87,6 +93,20 @@ void power_manager::pause()
     this->time_engine->pause();
 }
 
+void power_manager::stop_exec()
+{
+    this->time_engine->stop_exec();
+}
+
+void power_manager::req_stop_exec()
+{
+    this->time_engine->req_stop_exec();
+}
+
+void power_manager::register_stop_notifier(vp::Notifier *notifier)
+{
+    this->time_engine->register_stop_notifier(notifier);
+}
 
 
 int power_manager::join()
@@ -115,13 +135,7 @@ void power_manager::stop_capture()
         return;
     }
 
-    fprintf(file, "Trace path; Dynamic power (W); Leakage power (W); Total (W);");
-
-    for (auto trace : this->traces)
-    {
-        if (!trace->is_dumped())
-            trace->get_top_trace()->dump(file);
-    }
+    this->dump_traces_recursive(file);
 }
 
 

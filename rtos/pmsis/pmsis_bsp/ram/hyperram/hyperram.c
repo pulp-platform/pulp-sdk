@@ -24,16 +24,15 @@
 #include "pmsis/drivers/hyperbus.h"
 #include "../extern_alloc.h"
 
-#if defined(__PULPOS2__)
-#if defined(CONFIG_GAP9_V2)
-PI_L2 uint32_t reg_value;
-#endif
+#if defined(__GAP9__)
+#include "pmsis/drivers/aes_utils.h"
 #endif
 
 typedef struct
 {
   struct pi_device hyper_device;
   extern_alloc_t alloc;
+  uint32_t reg_value;
 } hyperram_t;
 
 
@@ -75,8 +74,10 @@ static int hyperram_open(struct pi_device *device)
   hyper_conf.id = conf->hyper_itf;
   hyper_conf.cs = conf->hyper_cs;
   hyper_conf.type = PI_HYPER_TYPE_RAM;
+#if defined(__GAP9__)
   hyper_conf.xip_en = conf->xip_en;
-  
+  hyper_conf.aes_conf = &(conf->ram.aes_conf);
+#endif
   if (conf->baudrate)
   {
       hyper_conf.baudrate = conf->baudrate;
@@ -90,18 +91,21 @@ static int hyperram_open(struct pi_device *device)
       goto error2;
   }
 
-#if defined(__PULPOS2__)
-#if defined(CONFIG_GAP9_V2)
-  reg_value = 0;
-  pi_hyper_read(&hyperram->hyper_device, 0x80001000, &reg_value, 2);
-  reg_value &= ~(1 << 3);// Activate variable latency to avoid additionnal latency when there is no refresh
-  reg_value &= ~0xf0;  // Use 3 cycles of latency instead of the default 6 cycles
-  reg_value |= 0xe0;
-  pi_hyper_write(&hyperram->hyper_device, 0x80001000, &reg_value, 2);
+#if defined(__GAP9__)
+
+  pi_hyper_ioctl(&hyperram->hyper_device, PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+  /* set hyperram configuration register */
+  hyperram->reg_value = 0;
+  pi_hyper_read(&hyperram->hyper_device, 0x80001000, &hyperram->reg_value, 2);
+
+  hyperram->reg_value &= ~(1 << 3);// Activate variable latency to avoid additionnal latency when there is no refresh
+  hyperram->reg_value &= ~0xf0;  // Use 3 cycles of latency instead of the default 6 cycles
+  hyperram->reg_value |= 0xe0;
+
+  pi_hyper_write(&hyperram->hyper_device, 0x80001000, &hyperram->reg_value, 2);
 
   pi_hyper_ioctl(&hyperram->hyper_device, PI_HYPER_IOCTL_SET_LATENCY, (void *)3);
-
-#endif
+  pi_hyper_ioctl(&hyperram->hyper_device, PI_HYPER_IOCTL_ENABLE_AES, (void*) 1);
 #endif
 
   return 0;
@@ -196,8 +200,8 @@ int hyperram_ioctl(struct pi_device *device, uint32_t cmd, void *arg)
 int hyperram_id_alloc(struct pi_device *device)
 {
   hyperram_t *hyperram = (hyperram_t *)device->data;
-  
-  return pi_hyper_id_alloc(&hyperram->hyper_device);    
+
+  return pi_hyper_id_alloc(&hyperram->hyper_device);
 }
 
 int hyperram_ctl_status_regs(struct pi_device *device, uint32_t cmd, void *arg)
@@ -272,6 +276,10 @@ static pi_ram_api_t hyperram_api = {
 void pi_hyperram_conf_init(struct pi_hyperram_conf *conf)
 {
   conf->ram.api = &hyperram_api;
+#if defined(__GAP9__)
+  conf->ram.aes_conf.enabled = 0;
+  conf->ram.aes_conf.qk_en = 0;
+#endif
   conf->baudrate = 0;
   conf->xip_en = 0;
   conf->reserve_addr_0 = 1;

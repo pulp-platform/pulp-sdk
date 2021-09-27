@@ -20,6 +20,10 @@
 
 #include "pmsis/pmsis_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @ingroup groupDrivers
  */
@@ -59,6 +63,9 @@ struct pi_uart_conf
     uint8_t uart_id;        /*!< Uart interface ID. */
     uint8_t use_ctrl_flow;  /*!< 1 to activate control flow. */
     uint8_t is_usart;       /*!< 1 to activate usart */
+    uint8_t usart_polarity; /*!< If 1, the clock polarity is reversed. */
+    uint8_t usart_phase;    /*!< If 0, the data are sampled on the first clock
+        edge, otherwise on the second clock edge. */
 };
 
 /**
@@ -164,13 +171,44 @@ enum pi_uart_ioctl_cmd
      * This command disables flow control on UART device.
      */
     PI_UART_IOCTL_DISABLE_FLOW_CONTROL = 6,
-
     /**
      * \brief Flush UART TX.
      *
      * This command will wait until all pending buffers are flushed outside
      */
-    PI_UART_IOCTL_FLUSH = 7
+    PI_UART_IOCTL_FLUSH = 7,
+    /**
+     * \brief Attach UDMA timer.
+     *
+     * This command attaches a UDMA timer channel to UDMA reception channel.
+     *
+     * \param timeout_id UDMA timeout channel ID.
+     */
+    PI_UART_IOCTL_ATTACH_TIMEOUT_RX = 8,
+    /**
+     * \brief Detach UDMA timer.
+     *
+     * This command removes a UDMA timer channel attached to UDMA reception channel.
+     *
+     * \param timeout_id UDMA timeout channel ID.
+     */
+    PI_UART_IOCTL_DETACH_TIMEOUT_RX = 9,
+    /**
+     * \brief Attach UDMA timer.
+     *
+     * This command attaches a UDMA timer channel to UDMA transmission channel.
+     *
+     * \param timeout_id UDMA timeout channel ID.
+     */
+    PI_UART_IOCTL_ATTACH_TIMEOUT_TX = 10,
+    /**
+     * \brief Detach UDMA timer.
+     *
+     * This command removes a UDMA timer channel attached to UDMA transmission channel.
+     *
+     * \param timeout_id UDMA timeout channel ID.
+     */
+    PI_UART_IOCTL_DETACH_TIMEOUT_TX = 11
 };
 
 /**
@@ -345,6 +383,64 @@ int pi_uart_read_async(struct pi_device *device, void *buffer, uint32_t size,
                        pi_task_t* callback);
 
 /**
+ * \brief Write data to an UART synchronously, with timeout.
+ *
+ * This function is the same as pi_uart_write(), with timeout feat enabled.
+ * This timeout value is used to abort/cancel a transfer when timeout is reached.
+ *
+ * \param device         Pointer to device descriptor of the UART device.
+ * \param buffer         Pointer to data buffer.
+ * \param size           Size of data to copy in bytes.
+ * \param timeout_us     Timeout value in us.
+ *
+ * \retval 0             If operation is successfull.
+ * \retval ERRNO         An error code otherwise.
+ *
+ * \note To use this feature, a UDMA timeout channel must be allocated before a
+ *       call to this functions :
+ *       * pi_udma_timeout_alloc()
+ *       * pi_uart_ioctl()   //PI_UART_IOCTL_ATTACH_TIMEOUT_TX
+ *       * pi_uart_write_timeout()
+ *
+ * \note To use this feature asynchronously, proceed as follows :
+ *       * pi_udma_timeout_alloc()
+ *       * pi_uart_ioctl()   //PI_UART_IOCTL_ATTACH_TIMEOUT_TX
+ *       * pi_task_timeout_set()
+ *       * pi_uart_write_async()
+ */
+int pi_uart_write_timeout(struct pi_device *device, void *buffer, uint32_t size,
+                          uint32_t timeout_us);
+
+/**
+ * \brief Read data from an UART synchronously, with timeout.
+ *
+ * This function is the same as pi_uart_read(), with timeout feat enabled.
+ * This timeout value is used to abort/cancel a transfer when timeout is reached.
+ *
+ * \param device         Pointer to device descriptor of the UART device.
+ * \param buffer         Pointer to data buffer.
+ * \param size           Size of data to copy in bytes.
+ * \param timeout_us     Timeout value in us.
+ *
+ * \retval 0             If operation is successfull.
+ * \retval ERRNO         An error code otherwise.
+ *
+ * \note To use this feature, a UDMA timeout channel must be allocated before a
+ *       call to this functions :
+ *       * pi_udma_timeout_alloc()
+ *       * pi_uart_ioctl()   //PI_UART_IOCTL_ATTACH_TIMEOUT_RX
+ *       * pi_uart_read_timeout()
+ *
+ * \note To use this feature asynchronously, proceed as follows :
+ *       * pi_udma_timeout_alloc()
+ *       * pi_uart_ioctl()   //PI_UART_IOCTL_ATTACH_TIMEOUT_RX
+ *       * pi_task_timeout_set()
+ *       * pi_uart_read_async()
+ */
+int pi_uart_read_timeout(struct pi_device *device, void *buffer, uint32_t size,
+                         uint32_t timeout_us);
+
+/**
  * \brief Write a byte to an UART asynchronously.
  *
  * This writes a byte to the specified UART asynchronously.
@@ -454,4 +550,7 @@ static inline void pi_cl_uart_read_wait(pi_cl_uart_req_t *req);
  * @}
  */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_DRIVERS_UART_H__ */

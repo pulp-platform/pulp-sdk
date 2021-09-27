@@ -98,6 +98,18 @@ def appendArgs(top_parser: argparse.ArgumentParser, parser: argparse.ArgumentPar
                         action = "store_true",
                         help = "Upload all images on the target (e.g. write flash image to the flash)")
 
+    parser.add_argument("--encrypt", dest = "encrypt",
+                        action = "store_true",
+                        help = "Enable the AES 128 encryption")
+
+    parser.add_argument("--aes_key", dest = "aes_key",
+                        default = None,
+                        help = "16 bytes (128 bits) aes key")
+
+    parser.add_argument("--aes_iv", dest = "aes_iv",
+                        default = None,
+                        help = "8 bytes aes IV")
+
     parser.add_argument("--force", dest = "force",
                         action = "store_true",
                         help = "Force flash operation")
@@ -110,40 +122,67 @@ def appendArgs(top_parser: argparse.ArgumentParser, parser: argparse.ArgumentPar
                         action = "store_true",
                         help = "Launch execution on the target")
 
+    parser.add_argument("--gtkw", dest = "gtkw",
+                        action = "store_true",
+                        help = "Launch gtkwave")
+
     [args, otherArgs] = top_parser.parse_known_args()
 
     if args.platform is not None:
         append_platform(parser, args.platform, common.get_platforms()[args.platform])
     
 
-def operationFunc(args, config = None):
+def operationFunc(args, config = None, system = None):
 
-    #if args.binary is None and args.flash_image is None:
-    #    raise errors.InputError(
-    #        'Either the binary to execute on the target or the flash image containing the binary must be specified')
+    if False: #config.get('runner/targets') is not None:
 
-    #if args.target is None:
-    #    raise InputError('The target must be specified')
+        for target in config.get('runner/targets').get_dict():
+            if args.binary is not None:
+                config.set(target + '/runner/boot-loader', args.binary)
 
-    config.set('runner/platform', args.platform)
+            runner_config = config.get(target + '/runner')
+            module_name = runner_config.get_str('modules/%s' % args.platform)
+            if module_name is None:
+                raise InputError('Invalid platform: ' + args.platform)
 
-    if args.binary is not None:
-        config.set('runner/boot-loader', args.binary)
+            module = importlib.import_module(module_name)
+            if module is None:
+                raise InputError('Invalid runner module:' + module)
 
-    module_name = config.get_str(args.platform + '/runner_module')
-    if module_name is None:
-        raise InputError('Invalid platform: ' + args.platform)
+            runner = module.Runner(args, config)
 
-    module = importlib.import_module(module_name)
-    if module is None:
-        raise InputError('Invalid runner module:' + module)
+            status = runner.run()
 
-    runner = module.Runner(args, config)
+            if status != 0:
+                raise RuntimeError('Runner has failed with value: %d' % status)
 
-    status = runner.run()
 
-    if status != 0:
-        raise RuntimeError('Runner has failed with value: %d' % status)
+    else:
+        #if args.binary is None and args.flash_image is None:
+        #    raise errors.InputError(
+        #        'Either the binary to execute on the target or the flash image containing the binary must be specified')
+
+        #if args.target is None:
+        #    raise InputError('The target must be specified')
+        config.set('runner/platform', args.platform)
+
+        if args.binary is not None:
+            config.set('runner/boot-loader', args.binary)
+
+        module_name = config.get_str(args.platform + '/runner_module')
+        if module_name is None:
+            raise InputError('Invalid platform: ' + args.platform)
+
+        module = importlib.import_module(module_name)
+        if module is None:
+            raise InputError('Invalid runner module:' + module)
+
+        runner = module.Runner(args, config, system)
+
+        status = runner.run()
+
+        if status != 0:
+            raise RuntimeError('Runner has failed with value: %d' % status)
 
 
 
@@ -165,8 +204,9 @@ def main(custom_commandline = None, config = None):
     
     common.appendCommonOptions(parser)
     
+    system = None
     if config is None:
-        config = common.importConfig(parser)
+        (config, system) = common.importConfig(parser)
     
     flashConfig = config.get(config.get_str("runner/boot/device"))
     appendArgs(parser, flashConfig)
@@ -175,7 +215,7 @@ def main(custom_commandline = None, config = None):
     args = parser.parse_args(custom_commandline)
     
     try:
-        operationFunc(args, config, )
+        operationFunc(args, config, system)
     finally:
         try:  # Clean up AddrFilenamePairAction files
             for address, argfile in args.addr_filename:

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -29,9 +29,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "vp/itf/hyper.hpp"
-#include "vp/itf/wire.hpp"
-#include "archi/utils.h"
+#include <vp/itf/hyper.hpp>
+#include <vp/itf/wire.hpp>
 
 #define REGS_AREA_SIZE 1024
 
@@ -102,13 +101,13 @@ void Hyperram::handle_access(int reg_access, int address, int read, uint8_t data
     if (read)
     {
       uint8_t data = this->data[address];
-      this->trace.msg(vp::trace::LEVEL_INFO, "Sending data byte (value: 0x%x)\n", data);
+      this->trace.msg(vp::trace::LEVEL_TRACE, "Sending data byte (value: 0x%x)\n", data);
       this->in_itf.sync_cycle(data);
 
     }
     else
     {
-      this->trace.msg(vp::trace::LEVEL_INFO, "Received data byte (value: 0x%x)\n", data);
+      this->trace.msg(vp::trace::LEVEL_TRACE, "Received data byte (value: 0x%x)\n", data);
       this->data[address] = data;
     }
   }
@@ -129,7 +128,7 @@ void Hyperram::sync_cycle(void *__this, int data)
 
   if (_this->state == HYPERBUS_STATE_CA)
   {
-    _this->trace.msg(vp::trace::LEVEL_INFO, "Received command byte (value: 0x%x)\n", data);
+    _this->trace.msg(vp::trace::LEVEL_TRACE, "Received command byte (value: 0x%x)\n", data);
 
     _this->ca_count--;
     _this->ca.raw[_this->ca_count] = data;
@@ -140,7 +139,7 @@ void Hyperram::sync_cycle(void *__this, int data)
 
       _this->reg_access = _this->ca.address_space == 1;
 
-      _this->trace.msg(vp::trace::LEVEL_INFO, "Received command header (reg_access: %d, addr: 0x%x, read: %d)\n", _this->ca.address_space, _this->current_address, _this->ca.read);
+      _this->trace.msg(vp::trace::LEVEL_TRACE, "Received command header (reg_access: %d, addr: 0x%x, read: %d)\n", _this->ca.address_space, _this->current_address, _this->ca.read);
     }
   }
   else if (_this->state == HYPERBUS_STATE_DATA)
@@ -153,7 +152,7 @@ void Hyperram::sync_cycle(void *__this, int data)
 void Hyperram::cs_sync(void *__this, bool value)
 {
   Hyperram *_this = (Hyperram *)__this;
-  _this->trace.msg(vp::trace::LEVEL_INFO, "Received CS sync (value: %d)\n", value);
+  _this->trace.msg(vp::trace::LEVEL_TRACE, "Received CS sync (value: %d)\n", value);
 
   _this->state = HYPERBUS_STATE_CA;
   _this->ca_count = 6;
@@ -179,7 +178,7 @@ int Hyperram::build()
   this->reg_data = new uint8_t[REGS_AREA_SIZE];
   memset(this->reg_data, 0x57, REGS_AREA_SIZE);
   ((uint16_t *)this->reg_data)[0] = 0x8F1F;
-  
+
   return 0;
 }
 

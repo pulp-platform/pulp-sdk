@@ -102,11 +102,6 @@
         "size": "0x00000800"
       },
 
-      "ne16": {
-        "base": "0x10201000",
-        "size": "0x00000400"
-      },
-
       "icache_ctrl": {
         "base": "0x10201400",
         "size": "0x00000400"
@@ -198,7 +193,7 @@
     "riscv_tap": {
       "riscv_debug": true,
       "config": {
-        "@includes@": ["ips/debug/riscv_dtm.json"]
+        "@includes@": ["ips/debug/riscv_dtm_old.json"]
       }
     },
 

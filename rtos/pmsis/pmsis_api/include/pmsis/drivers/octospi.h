@@ -19,6 +19,10 @@
 
 #include "pmsis/pmsis_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef PI_INLINE_OCTOSPI_LVL_0
 #define PI_INLINE_OCTOSPI_LVL_0
 #endif
@@ -59,6 +63,23 @@ typedef enum
     PI_OCTOSPI_TYPE_RAM     /*!< Device is an Octospiram. */
 } pi_octospi_type_e;
 
+/**
+ * \cond IMPLEM
+ */
+#define PI_OCTOSPI_FLAG_CMD_SIZE_OFFSET        ( 0 )
+#define PI_OCTOSPI_FLAG_ADDR_SIZE_OFFSET       ( 4 )
+#define PI_OCTOSPI_FLAG_LINE_OFFSET            ( 8 )
+#define PI_OCTOSPI_FLAG_CMD_RATE_OFFSET        ( 12 )
+#define PI_OCTOSPI_FLAG_ADDR_RATE_OFFSET       ( 13 )
+#define PI_OCTOSPI_FLAG_DATA_RATE_OFFSET       ( 14 )
+#define PI_OCTOSPI_FLAG_DATA_RATE_MSB_OFFSET   ( 15 )
+
+#define PI_OCTOSPI_CMD_AUTO_RW_BIT_READ_OFFSET ( 16 )
+#define PI_OCTOSPI_CMD_AUTO_RW_BIT_EN_OFFSET   ( 17 )
+#define PI_OCTOSPI_CMD_ADDR_OFFSET             ( 18 )
+/**
+ * \endcond
+ */
 /** \enum pi_octospi_flags_e
  * \brief SPI operation flags.
  *
@@ -67,25 +88,25 @@ typedef enum
  */
 typedef enum
 {
-    PI_OCTOSPI_FLAG_CMD_SIZE_0=0<<0,    /*!< No command. */
-    PI_OCTOSPI_FLAG_CMD_SIZE_1=1<<0,    /*!< Command is 1 byte. */
-    PI_OCTOSPI_FLAG_CMD_SIZE_2=2<<0,    /*!< Command is 2 bytes. */
-    PI_OCTOSPI_FLAG_ADDR_SIZE_0=0<<4,   /*!< No address. */
-    PI_OCTOSPI_FLAG_ADDR_SIZE_1=1<<4,   /*!< Address is 1 byte. */
-    PI_OCTOSPI_FLAG_ADDR_SIZE_2=2<<4,   /*!< Address is 2 bytes. */
-    PI_OCTOSPI_FLAG_ADDR_SIZE_3=3<<4,   /*!< Address is 3 bytes. */
-    PI_OCTOSPI_FLAG_ADDR_SIZE_4=4<<4,   /*!< Address is 4 bytes. */
-    PI_OCTOSPI_FLAG_LINE_SINGLE=2<<8,   /*!< Use 1 SPI line. */
-    PI_OCTOSPI_FLAG_LINE_QUAD=1<<8,     /*!< Use 4 SPI lines. */
-    PI_OCTOSPI_FLAG_LINE_OCTO=0<<8,     /*!< Use 8 SPI lines. */
-    PI_OCTOSPI_FLAG_CMD_DTR=0,          /*!< Use DTR mode for command. */
-    PI_OCTOSPI_FLAG_CMD_STR=1<<12,      /*!< Use STR mode for command. */
-    PI_OCTOSPI_FLAG_ADDR_DTR=0,         /*!< Use DTR mode for address. */
-    PI_OCTOSPI_FLAG_ADDR_STR=1<<13,     /*!< Use STR mode for address. */
-    PI_OCTOSPI_FLAG_DATA_DTR=0,         /*!< Use DTR mode for data. */
-    PI_OCTOSPI_FLAG_DATA_STR=1<<14,     /*!< Use STR mode for data. */
-    PI_OCTOSPI_FLAG_DATA_DTR_LSB=0,     /*!< Use LSB in DTR mode for data. */
-    PI_OCTOSPI_FLAG_DATA_DTR_MSB=1<<15, /*!< Use MSB in DTR mode for data. */
+    PI_OCTOSPI_FLAG_CMD_SIZE_0   = (0 << PI_OCTOSPI_FLAG_CMD_SIZE_OFFSET),      /*!< No command. */
+    PI_OCTOSPI_FLAG_CMD_SIZE_1   = (1 << PI_OCTOSPI_FLAG_CMD_SIZE_OFFSET),      /*!< Command is 1 byte. */
+    PI_OCTOSPI_FLAG_CMD_SIZE_2   = (2 << PI_OCTOSPI_FLAG_CMD_SIZE_OFFSET),      /*!< Command is 2 bytes. */
+    PI_OCTOSPI_FLAG_ADDR_SIZE_0  = (0 << PI_OCTOSPI_FLAG_ADDR_SIZE_OFFSET),     /*!< No address. */
+    PI_OCTOSPI_FLAG_ADDR_SIZE_1  = (1 << PI_OCTOSPI_FLAG_ADDR_SIZE_OFFSET),     /*!< Address is 1 byte. */
+    PI_OCTOSPI_FLAG_ADDR_SIZE_2  = (2 << PI_OCTOSPI_FLAG_ADDR_SIZE_OFFSET),     /*!< Address is 2 bytes. */
+    PI_OCTOSPI_FLAG_ADDR_SIZE_3  = (3 << PI_OCTOSPI_FLAG_ADDR_SIZE_OFFSET),     /*!< Address is 3 bytes. */
+    PI_OCTOSPI_FLAG_ADDR_SIZE_4  = (4 << PI_OCTOSPI_FLAG_ADDR_SIZE_OFFSET),     /*!< Address is 4 bytes. */
+    PI_OCTOSPI_FLAG_LINE_SINGLE  = (2 << PI_OCTOSPI_FLAG_LINE_OFFSET),          /*!< Use 1 SPI line. */
+    PI_OCTOSPI_FLAG_LINE_QUAD    = (1 << PI_OCTOSPI_FLAG_LINE_OFFSET),          /*!< Use 4 SPI lines. */
+    PI_OCTOSPI_FLAG_LINE_OCTO    = (0 << PI_OCTOSPI_FLAG_LINE_OFFSET),          /*!< Use 8 SPI lines. */
+    PI_OCTOSPI_FLAG_CMD_DTR      = (0 << PI_OCTOSPI_FLAG_CMD_RATE_OFFSET),      /*!< Use DTR mode for command. */
+    PI_OCTOSPI_FLAG_CMD_STR      = (1 << PI_OCTOSPI_FLAG_CMD_RATE_OFFSET),      /*!< Use STR mode for command. */
+    PI_OCTOSPI_FLAG_ADDR_DTR     = (0 << PI_OCTOSPI_FLAG_ADDR_RATE_OFFSET),     /*!< Use DTR mode for address. */
+    PI_OCTOSPI_FLAG_ADDR_STR     = (1 << PI_OCTOSPI_FLAG_ADDR_RATE_OFFSET),     /*!< Use STR mode for address. */
+    PI_OCTOSPI_FLAG_DATA_DTR     = (0 << PI_OCTOSPI_FLAG_DATA_RATE_OFFSET),     /*!< Use DTR mode for data. */
+    PI_OCTOSPI_FLAG_DATA_STR     = (1 << PI_OCTOSPI_FLAG_DATA_RATE_OFFSET),     /*!< Use STR mode for data. */
+    PI_OCTOSPI_FLAG_DATA_DTR_LSB = (0 << PI_OCTOSPI_FLAG_DATA_RATE_MSB_OFFSET), /*!< Use LSB in DTR mode for data. */
+    PI_OCTOSPI_FLAG_DATA_DTR_MSB = (1 << PI_OCTOSPI_FLAG_DATA_RATE_MSB_OFFSET)  /*!< Use MSB in DTR mode for data. */
 } pi_octospi_flags_e;
 
 /** \enum pi_octospi_cmd_e
@@ -95,19 +116,19 @@ typedef enum
  */
 typedef enum
 {
-    PI_OCTOSPI_CMD_AUTO_RW_BIT_EN=1<<17,        /*!< Automatically generate
-      additional R/W bit at MSB on top of the specified SPI command. */
-    PI_OCTOSPI_CMD_AUTO_RW_BIT_SET_READ=1<<16,  /*!< When using automatic
-      R/W bit generation, this will generate 1 if the operation is a read. */
-    PI_OCTOSPI_CMD_ADDR_EVEN=1<<18,             /*!< Always send even addresses
-      to the device. */
+    /*!< Automatically generate additional R/W bit at MSB on top of the specified SPI command. */
+    PI_OCTOSPI_CMD_AUTO_RW_BIT_EN       = (1 << PI_OCTOSPI_CMD_AUTO_RW_BIT_EN_OFFSET),
+    /*!< When using automatic R/W bit generation, this will generate 1 if the operation is a read. */
+    PI_OCTOSPI_CMD_AUTO_RW_BIT_SET_READ = (1 << PI_OCTOSPI_CMD_AUTO_RW_BIT_READ_OFFSET),
+    /*!< Always send even addresses to the device. */
+    PI_OCTOSPI_CMD_ADDR_EVEN            = (1 << PI_OCTOSPI_CMD_ADDR_OFFSET)
 } pi_octospi_cmd_e;
 
 /** \struct pi_octospi_op_conf
  * \brief SPI operation configuration structure.
  *
  * This structure is used to specify the desired SPI operation configuration.
- * It can be passed either with a transfer or through IOCTL to set it 
+ * It can be passed either with a transfer or through IOCTL to set it
  * permanently.
  */
 typedef struct pi_octospi_op_conf
@@ -134,6 +155,10 @@ typedef struct pi_octospi_conf
     interface. */
     uint32_t baudrate;   /*!< Baudrate (in bytes/second). */
     int32_t burst_length; /*< Maximum burst length in ns. */
+#if defined(__GAP9__)
+    pi_aes_utils_conf_t* aes_conf; /*!< pointer to the AES configuration for
+                                        on-the-fly encryption/decryption */
+#endif
 }pi_octospi_conf_t;
 
 /** \brief Octospi cluster request structure.
@@ -186,10 +211,26 @@ enum pi_octospi_ioctl_cmd
      *
      * This command can be used when the interface has been opened to configure
      * the SPI operation used for the next transfer (latency, SPI command, etc).
-     * The argument must be a pointer to a variable of type 
+     * The argument must be a pointer to a variable of type
      * pi_octospi_op_conf_t.
      */
-    PI_OCTOSPI_IOCTL_SET_OP
+    PI_OCTOSPI_IOCTL_SET_OP,
+    /** @brief Configure the SPI operation for XIP.
+     *
+     * This command can be used when the interface has been opened to configure
+     * the SPI operation used for all XIP transfers (latency, SPI command, etc).
+     * The argument must be a pointer to a variable of type
+     * pi_octospi_op_conf_t.
+     * NOTE: For flash, only set read command, as XIP flash is RO
+     */
+    PI_OCTOSPI_IOCTL_SET_XIP_OP,
+#if defined(__GAP9__)
+    /** @brief Enable AES
+     *
+     * This command can be used to enable/disable the on-the-fly AES at runtime
+     */
+    PI_OCTOSPI_IOCTL_ENABLE_AES,
+#endif
 };
 
 /**
@@ -585,10 +626,39 @@ static inline void pi_cl_octospi_copy_2d(struct pi_device *device,
   uint32_t length, int ext2loc, pi_octospi_op_conf_t *op, pi_cl_octospi_req_t *req);
 
 
+/** \brief Forbid XIP refills
+ *
+ * This function can be called to prevent the octospi from triggering any
+ * XIP refill transfer. This can be used to do an operation in a device which
+ * would make an XIP refill fail, like an erase operation.
+ * Be careful that locking XIP refills can lead to a deadlock if XIP code is
+ * executed so only local code must be execyted when the XIP refill
+ * is locked.
+ * This will only apply to the new transfer enqueued after calling this
+ * function, not to the pending transfers enqueued before.
+ *
+ * \param device    The device structure of the device to close.
+ */
+void pi_octospi_xip_lock(struct pi_device *device);
+
+
+/** \brief Allow XIP refills
+ *
+ * This function can be called to allow again XIP refills after they have been
+ * forbidden.
+ *
+ * \param device    The device structure of the device to close.
+ */
+void pi_octospi_xip_unlock(struct pi_device *device);
+
+
 //!@}
 
 /**
  * @} end of Octospi
  */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PI_PMSIS_DRIVERS_OCTOSPI_H__ */

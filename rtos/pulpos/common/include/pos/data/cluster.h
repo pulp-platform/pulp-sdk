@@ -58,7 +58,7 @@ extern PI_CL_L1_TINY pos_cluster_call_pool_t pos_cluster_pool;
 #define POS_CLUSTER_CALL_POOL_T_FIRST_PE_TASK           (3*4)
 #define POS_CLUSTER_CALL_POOL_T_LAST_PE_TASK            (4*4)
 
-#define POS_CLUSTER_T_SIZEOF           (11*4)
+#define POS_CLUSTER_T_SIZEOF            32
 #define POS_CLUSTER_T_LAST_CALL_FC      0
 #define POS_CLUSTER_T_POOL              4
 #define POS_CLUSTER_T_STACKS            8

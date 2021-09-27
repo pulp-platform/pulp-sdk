@@ -24,6 +24,7 @@
 
 #include "types.hpp"
 #include "iss_wrapper.hpp"
+#include "insn_cache.hpp"
 #include <string.h>
 
 static inline void iss_handle_ecall(iss_t *iss, iss_insn_t *insn)
@@ -47,8 +48,14 @@ static inline void iss_pccr_incr(iss_t *iss, unsigned int event, int incr)
   static uint64_t one = 1;
   if (iss->pcer_trace_event[event].get_event_active())
   {
+    // TODO this is incompatible with frequency scaling, this should be replaced by an event scheduled with cycles
     iss->pcer_trace_event[event].event_pulse(incr*iss->get_period(), (uint8_t *)&one, (uint8_t *)&zero);
   }
+}
+
+static inline int iss_trace_format(iss_t *iss)
+{
+  return iss->traces.get_trace_manager()->get_format();
 }
 
 static inline int iss_pccr_trace_active(iss_t *iss, unsigned int event)
@@ -155,18 +162,25 @@ static inline int iss_fetch_req_common(iss_t *_this, uint64_t addr, uint8_t *dat
   req->set_size(size);
   req->set_is_write(is_write);
   req->set_data(data);
+  if (!timed)
+  {
+    req->set_debug(true);
+  }
   vp::io_req_status_e err = _this->fetch.req(req);
   if (err != vp::IO_REQ_OK)
   {
     if (err == vp::IO_REQ_INVALID)
-      _this->trace.force_warning("Unimplemented invalid fetch request (addr: 0x%x, size: 0x%x)\n", addr, size);
+      _this->trace.force_warning("Invalid fetch request (addr: 0x%x, size: 0x%x)\n", addr, size);
     else
-      _this->trace.force_warning("Unimplemented pending fetch request (addr: 0x%x, size: 0x%x)\n", addr, size);
+    {
+      iss_exec_insn_stall(_this);
+    }
     return -1;
   }
 
   int64_t latency = req->get_latency();
-  if (latency)
+
+  if (timed && latency)
   {
     _this->cpu.state.fetch_cycles += latency;
     iss_pccr_account_event(_this, CSR_PCER_IMISS, latency);
@@ -175,14 +189,9 @@ static inline int iss_fetch_req_common(iss_t *_this, uint64_t addr, uint8_t *dat
   return 0;
 }
 
-static inline int iss_fetch_req(iss_t *_this, uint64_t addr, uint8_t *data, uint64_t size, bool is_write)
+static inline int iss_fetch_req(iss_t *_this, uint64_t addr, uint8_t *data, uint64_t size, bool is_write, bool timed)
 {
-  return iss_fetch_req_common(_this, addr, data, size, is_write, 0);
-}
-
-static inline int iss_fetch_req_timed(iss_t *_this, uint64_t addr, uint8_t *data, uint64_t size, bool is_write)
-{
-  return iss_fetch_req_common(_this, addr, data, size, is_write, 1);
+  return iss_fetch_req_common(_this, addr, data, size, is_write, timed);
 }
 
 static inline int iss_irq_ack(iss_t *iss, int irq)
@@ -311,5 +320,17 @@ static inline void iss_lsu_store(iss_t *iss, iss_insn_t *insn, iss_addr_t addr, 
     iss_exec_insn_stall(iss);
   }
 }
+
+static inline void iss_fence_i(iss_t *iss)
+{
+    if (iss->flush_cache_req_itf.is_bound())
+    {
+        iss_exec_insn_stall(iss);
+
+        iss->flush_cache_req_itf.sync(true);
+        iss_cache_flush(iss);
+    }
+}
+
 
 #endif

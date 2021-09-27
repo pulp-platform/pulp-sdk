@@ -55,67 +55,67 @@ static void pos_hyper_wait_done(pos_hyper_t *hyper)
 
 void pos_hyper_enqueue(pos_udma_channel_t *channel, pi_task_t *task, uint32_t offset, uint32_t buffer, uint32_t size, uint32_t cfg)
 {
-    // A UDMA channel has 2 slots, enqueue the copy to the UDMA if one of them is available, otherwise
-    // put the transfer on hold.
-    if (channel->pendings[0] == NULL)
-    {
-        channel->pendings[0] = task;
-        plp_hyper_enqueue(offset, buffer, size, UDMA_CHANNEL_CFG_EN | cfg);
-    }
-    else if (channel->pendings[1] == NULL)
-    {
-        channel->pendings[1] = task;
-        plp_hyper_enqueue(offset, buffer, size, UDMA_CHANNEL_CFG_EN | cfg);
-    }
+  // A UDMA channel has 2 slots, enqueue the copy to the UDMA if one of them is available, otherwise
+  // put the transfer on hold.
+  if (channel->pendings[0] == NULL)
+  {
+    channel->pendings[0] = task;
+    plp_hyper_enqueue(offset, buffer, size, UDMA_CHANNEL_CFG_EN | cfg);
+  }
+  else if (channel->pendings[1] == NULL)
+  {
+    channel->pendings[1] = task;
+    plp_hyper_enqueue(offset, buffer, size, UDMA_CHANNEL_CFG_EN | cfg);
+  }
+  else
+  {
+    task->data[0] = buffer;
+    task->data[1] = size;
+    task->data[2] = cfg;
+
+    task->data[3] = offset;
+
+    if (channel->waitings_first == NULL)
+      channel->waitings_first = task;
     else
-    {
-        task->data[0] = buffer;
-        task->data[1] = size;
-        task->data[2] = cfg;
+      channel->waitings_last->next = task;
 
-        task->data[3] = offset;
-
-        if (channel->waitings_first == NULL)
-            channel->waitings_first = task;
-        else
-            channel->waitings_last->next = task;
-
-        channel->waitings_last = task;
-        task->next = NULL;
-    }
+    channel->waitings_last = task;
+    task->next = NULL;
+  }
 }
 
 void pos_hyper_handle_copy(int event, void *arg)
 {
-    pos_udma_channel_t *channel = arg;
+  pos_udma_channel_t *channel = arg;
 
-    pi_task_t *pending_1 = channel->pendings[1];
-    pi_task_t *pending_0 = channel->pendings[0];
-    pi_task_t *pending_first = channel->waitings_first;
-    channel->pendings[0] = pending_1;
+  pi_task_t *pending_1 = channel->pendings[1];
+  pi_task_t *pending_0 = channel->pendings[0];
+  pi_task_t *pending_first = channel->waitings_first;
+  channel->pendings[0] = pending_1;
 
-    if (pending_first)
-    {
-        channel->waitings_first = pending_first->next;
-        channel->pendings[1] = pending_first;
+  if (pending_first)
+  {
+    channel->waitings_first = pending_first->next;
+    channel->pendings[1] = pending_first;
 
-        plp_hyper_enqueue(pending_first->data[3], pending_first->data[0], pending_first->data[1], UDMA_CHANNEL_CFG_EN | pending_first->data[2]);
-    }
-    else
-    {
-        channel->pendings[1] = NULL;
-    }
+    plp_hyper_enqueue(pending_first->data[3], pending_first->data[0], pending_first->data[1], UDMA_CHANNEL_CFG_EN | pending_first->data[2]);
+  }
+  else
+  {
+    channel->pendings[1] = NULL;
+  }
 
-    pos_task_push_locked(pending_0);
+  pos_task_push_locked(pending_0);
 }
 
 void pos_hyper_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event)
 {
-    pos_soc_event_register_callback(soc_event, pos_hyper_handle_copy, (void *)channel);
-    channel->pendings[0] = NULL;
-    channel->pendings[1] = NULL;
-    channel->waitings_first = NULL;
-    channel->base = hal_udma_channel_base(channel_id);
+  pos_soc_event_register_callback(soc_event, pos_hyper_handle_copy, (void *)channel);
+  channel->pendings[0] = NULL;
+  channel->pendings[1] = NULL;
+  channel->waitings_first = NULL;
+  channel->base = hal_udma_channel_base(channel_id);
 }
 
 void pi_hyper_conf_init(struct pi_hyper_conf *conf)
@@ -156,7 +156,7 @@ int32_t pi_hyper_open(struct pi_device *device)
 
   plp_udma_cg_set(plp_udma_cg_get() | (1<<periph_id));
 
-  soc_eu_fcEventMask_setEvent(hyper_channel+ ARCHI_UDMA_HYPER_EOT_RX_EVT);
+  soc_eu_fcEventMask_setEvent(hyper_channel + ARCHI_UDMA_HYPER_EOT_RX_EVT);
   soc_eu_fcEventMask_setEvent(hyper_channel + ARCHI_UDMA_HYPER_EOT_TX_EVT);
 
   hal_irq_restore(irq);

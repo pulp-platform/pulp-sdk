@@ -40,7 +40,7 @@ static inline unsigned int timer_base_fc(int id, int sub_id)
 
 static inline unsigned int timer_base_cl(int cid, int id, int sub_id)
 {
-  return ARCHI_CLUSTER_PERIPHERALS_GLOBAL_ADDR(0) + ARCHI_TIMER_OFFSET + id * ARCHI_TIMER_SIZE + sub_id * 4;
+  return ARCHI_CLUSTER_PERIPHERALS_GLOBAL_ADDR(cid) + ARCHI_TIMER_OFFSET + id * ARCHI_TIMER_SIZE + sub_id * 4;
 }
 
 #endif

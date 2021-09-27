@@ -18,7 +18,7 @@ import traces
 
 class Runner(object):
 
-    def __init__(self, args, config):
+    def __init__(self, args, config, system):
         pass
 
     def gen_efuse_stim(self, filename):

@@ -117,7 +117,7 @@ pos_master_loop_exec_task:
 
     add     sp, sp, t1
 
-#ifdef CONFIG_NO_STD_RELOC
+#ifndef __PULP_TOOLCHAIN__
     sw      t6, %tiny(pos_cluster_nb_active_pe)(x0)
 #else
     sw      t6, pos_cluster_nb_active_pe, t3
@@ -142,7 +142,11 @@ pos_master_no_slave_barrier:
 
     // Set stack on slaves
     // For that we push first the function for setting stack, then the stack size and the base
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    beq     t5, x0, pos_master_loop_no_slave
+#else
     p.beqimm t5, 0, pos_master_loop_no_slave
+#endif
     sw      s10, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s3)
     sw      t2, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s3)
     sw      sp, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s3)
@@ -155,7 +159,11 @@ pos_master_loop_no_slave:
 
 pos_master_sleep:
     sw      s4, EU_CORE_MASK_OR(s3)
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    lw      x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+#else
     p.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+#endif
     sw      s4, EU_CORE_MASK_AND(s3)
     j       pos_master_loop
 
@@ -163,33 +171,13 @@ pos_master_sleep:
 
 pos_push_event_to_fc_wait:
     sw      s4, EU_CORE_MASK_OR(s3)
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    lw      x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+#else
     p.elw   x0, EU_CORE_EVENT_WAIT_CLEAR(s3)
+#endif
     sw      s4, EU_CORE_MASK_AND(s3)
     j       pos_push_event_to_fc_retry
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -210,16 +198,29 @@ pos_fork_return:
 #ifdef ARCHI_HAS_CC
     // When the cluster has a controller barrier 0 is used for normal team barrier
     // and barrier 1 is used for end of offload
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    lw      t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
+#else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR + EU_BARRIER_SIZE(s2)
+#endif
+#else
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    lw      t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
 #else
     p.elw   t0, EU_BARRIER_DEMUX_OFFSET + EU_HW_BARR_TRIGGER_WAIT_CLEAR(s2)
-#endif    
+#endif
+#endif
 
 pos_wait_for_dispatch:
 
     // Wait for PC + arg information from dispatcher
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    lw      t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+    lw      a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+#else
     p.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
     p.elw   a0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+#endif
 
     // Check if this is an entry with a barrier at the end (fork entry)
     andi    t1, t0, 1
@@ -243,15 +244,23 @@ pos_other_entry:
 pos_set_slave_stack:
 
     // Multiply the stack size by the core ID and add the stack base to get our stack
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    lw      t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
+#else
     p.elw   t0, EU_DISPATCH_DEMUX_OFFSET + EU_DISPATCH_FIFO_ACCESS(s2)
-#if defined(CONFIG_PULP)
-    addi     t5, s3, 0
+#endif
+#if !defined(ARCHI_HAS_CC)
+    addi    t5, s3, 0
 #else
     // If the cluster has a cluster controller, the first slave has core ID 0
     // and thus we need to take the next stack
-    addi     t5, s3, 1
+    addi    t5, s3, 1
 #endif
-    mul   t4, t5, a0
+#if !defined(ARCHI_CORE_HAS_PULPV2)
+    mul     t4, t5, a0
+#else
+    p.mul   t4, t5, a0
+#endif
     add     sp, t4, t0
 
     ret

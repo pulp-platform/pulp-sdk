@@ -19,6 +19,11 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * \ingroup groupDrivers
  *
@@ -27,6 +32,11 @@
  * \brief AES Library.
  *
  * The AES API provides support for encryption and decryption.
+ *
+ * To use a UDMA FIFO with the AES, give the FIFO ID as source
+ * and/or destination address. If you use a FIFO as destination,
+ * you will need to manually stop the FIFO mode when you are done
+ * using it with an ioctl command.
  *
  * \addtogroup AES
  * @{
@@ -63,6 +73,24 @@ typedef struct pi_aes_conf
 } pi_aes_conf_t;
 
 /**
+ * \enum pi_aes_ioctl_e
+ *
+ * \brief Commands for pi_aes_ioctl.
+ *
+ * This is used to tell which command to execute through pi_aes_ioctl.
+ * Parameters are passed as pointers.
+ */
+typedef enum {
+    /**
+     * \brief stop FIFO mode/resume normal mode
+     *
+     * When a fifo is used as output of the AES, you need to send this
+     * command to resume normal mode.
+     */
+    PI_AES_STOP_FIFO_MODE,
+} pi_aes_ioctl_e;
+
+/**
  * \brief initialize the configuration with default values
  *
  * \param conf the configuration to initialize
@@ -86,14 +114,23 @@ int pi_aes_open(struct pi_device* device);
 void pi_aes_close(struct pi_device* device);
 
 /**
+ * \brief AES IOCTL function
+ *
+ * \param device A pi device structure pointing to AES device
+ * \param cmd ioctl number
+ * \param arg argument to be passed to ioctl
+ */
+void pi_aes_ioctl(pi_device_t *device, uint32_t cmd, void *arg);
+
+/**
  * \brief encrypt data
  *
  * \param device the AES device
  * \param src data to encrypt
  * \param dest encrypted data
- * \param len length of the data in bytes
+ * \param len length of the data in block (4 bytes)
  *
- * \warning source data length should be a multiple of 16
+ * \warning source data length (in bytes) should be a multiple of 16
  *          user needs to handle padding if needed
  */
 int pi_aes_encrypt(struct pi_device* device, void* src, void* dest, uint16_t len);
@@ -104,10 +141,10 @@ int pi_aes_encrypt(struct pi_device* device, void* src, void* dest, uint16_t len
  * \param device the AES device
  * \param src data to encrypt
  * \param dest encrypted data
- * \param len length of the data in bytes
+ * \param len length of the data in block (4 bytes)
  * \param task the task executed after the encryption
  *
- * \warning source data length should be a multiple of 16
+ * \warning source data length (in bytes) should be a multiple of 16
  *          user needs to handle padding if needed
  */
 int pi_aes_encrypt_async(struct pi_device* device, void* src, void* dest, uint16_t len, struct pi_task* task);
@@ -118,9 +155,10 @@ int pi_aes_encrypt_async(struct pi_device* device, void* src, void* dest, uint16
  * \param device the AES device
  * \param src data to decrypt
  * \param dest decrypted data
- * \param len length of the data in bytes
+ * \param len length of the data in block (4 bytes)
  *
- * \warning source data length should be a multiple of 16
+ * \warning source data length (in bytes) should be a multiple of 16
+ *          user needs to handle padding if needed
  */
 int pi_aes_decrypt(struct pi_device* device, void* src, void* dest, uint16_t len);
 
@@ -130,10 +168,11 @@ int pi_aes_decrypt(struct pi_device* device, void* src, void* dest, uint16_t len
  * \param device the AES device
  * \param src data to decrypt
  * \param dest decrypted data
- * \param len length of the data in bytes
+ * \param len length of the data in block (4 bytes)
  * \param task the task executed after the decryption
  *
- * \warning source data length should be a multiple of 16
+ * \warning source data length (in bytes) should be a multiple of 16
+ *          user needs to handle padding if needed
  */
 int pi_aes_decrypt_async(struct pi_device* device, void* src, void* dest, uint16_t len, struct pi_task* task);
 
@@ -141,4 +180,7 @@ int pi_aes_decrypt_async(struct pi_device* device, void* src, void* dest, uint16
  * @}
  */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_DRIVERS_AES_H__ */

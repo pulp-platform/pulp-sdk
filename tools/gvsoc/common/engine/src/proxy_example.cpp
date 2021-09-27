@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 

@@ -48,6 +48,8 @@ using namespace std;
 #define VP_ERROR_SIZE (1<<16)
 extern char vp_error[];
 
+class Gv_proxy;
+
 namespace vp {
 
   class config;
@@ -82,6 +84,12 @@ namespace vp {
       inline void set_16(uint16_t value) { *(uint16_t *)this->value_bytes = value; }
       inline void set_32(uint32_t value) { *(uint32_t *)this->value_bytes = value; }
       inline void set_64(uint64_t value) { *(uint64_t *)this->value_bytes = value; }
+
+      inline void release() {
+        this->trace.msg("Release register\n");
+        if (this->reg_event.get_event_active())
+          this->reg_event.event(NULL);
+      }
 
       inline void read(int reg_offset, int size, uint8_t *value) { memcpy((void *)value, (void *)(this->value_bytes+reg_offset), size); }
       inline void read(uint8_t *value) { memcpy((void *)value, (void *)this->value_bytes, this->nb_bytes); }
@@ -154,6 +162,7 @@ namespace vp {
     
   protected:
     uint8_t reset_val;
+    uint8_t write_mask = 0xFF;
 
   private:
     uint8_t value;
@@ -207,6 +216,7 @@ namespace vp {
 
   protected:
     uint8_t reset_val;
+    uint8_t write_mask = 0xFF;
     
   private:
     uint8_t value;
@@ -260,6 +270,7 @@ namespace vp {
 
   protected:
     uint16_t reset_val;
+    uint16_t write_mask = 0xFFFF;
     
   private:
     uint16_t value;
@@ -284,16 +295,8 @@ namespace vp {
         this->reg_event.event((uint8_t *)&this->value);
     }
     inline uint32_t get_field(int offset, int width) { return (this->value >> offset) & ((1<<width)-1); }
-    inline void write(uint8_t *value) {
-      memcpy((void *)this->value_bytes, (void *)value, this->nb_bytes);
-      if (this->reg_event.get_event_active())
-        this->reg_event.event((uint8_t *)this->value_bytes);
-    }
-    inline void write(int reg_offset, int size, uint8_t *value) {
-      memcpy((void *)(this->value_bytes+reg_offset), (void *)value, size); this->dump_after_write();
-      if (this->reg_event.get_event_active())
-        this->reg_event.event((uint8_t *)this->value_bytes);
-    }
+    inline void write(uint8_t *value) { this->write(0, 4, value); }
+    void write(int reg_offset, int size, uint8_t *value);
     inline void dump_after_write() { this->trace.msg("Modified register (value: 0x%x)\n", this->value); }
     inline void update(uint64_t reg_offset, int size, uint8_t *value, bool is_write)
     {
@@ -313,6 +316,7 @@ namespace vp {
 
   protected:
     uint32_t reset_val;
+    uint32_t write_mask = 0xFFFFFFFF;
     
   private:
     uint32_t value;
@@ -324,11 +328,13 @@ namespace vp {
     std::vector<reg *> get_registers() { return this->registers; }
     void build(vp::component *comp, vp::trace *trace, std::string name="");
     bool access(uint64_t offset, int size, uint8_t *value, bool is_write);
+    void reset(bool active);
+
+    vp::trace *trace;
 
   protected:
     std::vector<reg *> registers;
     vp::component *comp;
-    vp::trace *trace;
   };
 
   class reg_64: public reg
@@ -379,6 +385,11 @@ namespace vp {
   };
 
 
+  class Notifier {
+  public:
+      virtual void notify() {}
+  };
+
 
 
   class component : public component_clock
@@ -395,15 +406,22 @@ namespace vp {
     virtual void start() {}
     virtual void stop() {}
     virtual void flush() {}
-    virtual void quit() {}
+    virtual void quit(int status) {}
     virtual void pre_reset() {}
     virtual void reset(bool active) {}
     virtual void load() {}
     virtual void elab();
     virtual void run() {}
-    virtual void step(int64_t timestamp) {}
+    virtual int64_t step(int64_t timestamp) {return 0; }
     virtual void pause() {}
+    virtual void register_stop_notifier(Notifier *notifier) {}
+    virtual void req_stop_exec() {}
+    virtual void stop_exec() {}
     virtual int join() { return -1; }
+
+    virtual void dump_traces(FILE *file) {}
+
+    void dump_traces_recursive(FILE *file);
 
 
     inline js::config *get_js_config() { return comp_js_config; }
@@ -428,6 +446,7 @@ namespace vp {
     virtual vp::time_engine *get_time_engine() ;
 
     string get_path() { return path; }
+    string get_name() { return name; }
 
 
     void conf(string name, string path, vp::component *parent);
@@ -458,7 +477,7 @@ namespace vp {
 
     void final_bind();
 
-    virtual void *external_bind(std::string name, int handle);
+    virtual void *external_bind(std::string comp_name, std::string itf_name, void *handle);
 
     void reset_all(bool active, bool from_itf=false);
 
@@ -475,6 +494,7 @@ namespace vp {
     void add_service(std::string name, void *service);
 
     vp::component *new_component(std::string name, js::config *config, std::string module="");
+    void build_instance(std::string name, vp::component *parent);
 
     int get_ports(bool master, int size, const char *names[], void *ports[]);
 
@@ -491,6 +511,7 @@ namespace vp {
 
     std::vector<vp::component *> get_childs() { return childs; }
     std::map<std::string, vp::component *> get_childs_dict() { return childs_dict; }
+    vp::component *get_component(std::vector<std::string> path_list);
 
     virtual vp::port *get_slave_port(std::string name) { return this->slave_ports[name]; }
     virtual vp::port *get_master_port(std::string name) { return this->master_ports[name]; }
@@ -499,6 +520,8 @@ namespace vp {
     virtual void add_master_port(std::string name, vp::master_port *port);
 
     void throw_error(std::string error);
+
+    virtual std::string handle_command(Gv_proxy *proxy, FILE *req_file, FILE *reply_file, std::vector<std::string> args, std::string req) { return ""; }
 
     component_trace traces;
     component_power power;
@@ -528,6 +551,7 @@ namespace vp {
     std::map<std::string, slave_port *> slave_ports;
 
     string path;
+    string name;
 
     component *parent = NULL;
 
@@ -538,6 +562,8 @@ namespace vp {
 
     time_engine *time_engine_ptr = NULL;
   };
+
+  vp::component *__gv_create(std::string config_path, struct gv_conf *gv_conf);
 
 };  
 

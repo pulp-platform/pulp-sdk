@@ -1,3 +1,5 @@
+ROOT_VP_BUILD_DIR ?= build
+
 VP_BUILD_DIR = $(ROOT_VP_BUILD_DIR)/models
 
 VP_INSTALL_PATH ?= $(INSTALL_DIR)/lib
@@ -5,9 +7,8 @@ VP_PY_INSTALL_PATH ?= $(INSTALL_DIR)/python
 
 VP_MAKEFILE_LIST = $(addsuffix /Makefile,$(VP_DIRS))
 
-# CPP=g++
-CPP = $(CXX)
-# CC=gcc
+CPP=$(CXX)
+# CC=$(CC)
 
 ifndef VERBOSE
 V = @
@@ -215,3 +216,5 @@ build: $(VP_INSTALL_HEADERS) $(VP_INSTALL_TARGETS)
 
 vp_clean:
 	rm -rf $(VP_BUILD_DIR)
+
+.PHONY: vp_clean build

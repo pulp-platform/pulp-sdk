@@ -20,9 +20,11 @@ export PULP_CURRENT_CONFIG=$BOARD_NAME@config_file=config/$BOARD_NAME.json
 export PULPOS_BOARD=pulp
 export PULPOS_BOARD_VERSION=pulp
 export PULPOS_BOARD_PROFILE=pulp
-export PULPOS_TARGET=pulp_nn
+export PULPOS_TARGET=pulp
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp_nn
+
+export CHIP_CORE_ISA=pulpnn
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 

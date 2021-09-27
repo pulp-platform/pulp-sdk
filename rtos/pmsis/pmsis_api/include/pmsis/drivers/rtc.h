@@ -20,6 +20,11 @@
 #include "pmsis/pmsis_types.h"
 #include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * @ingroup groupDrivers
  */
@@ -71,6 +76,7 @@ struct pi_rtc_conf
     struct tm time;             /*!< Current time. */
     struct tm alarm;            /*!< Alarm to set. */
     uint32_t counter;           /*!< Counter initial value. */
+    int      clk_div;           /*!< Set the clock divider. */
 };
 
 /**
@@ -79,12 +85,15 @@ struct pi_rtc_conf
  */
 typedef enum
 {
-    PI_RTC_CALENDAR_START = 0,  /*!< Start RTC device. */
-    PI_RTC_CALENDAR_STOP  = 1,  /*!< Stop RTC device. */
-    PI_RTC_ALARM_START    = 2,  /*!< Start alarm function. */
-    PI_RTC_ALARM_STOP     = 3,  /*!< Stop alarm function. */
-    PI_RTC_TIMER_START    = 4,  /*!< Start countdown. */
-    PI_RTC_TIMER_STOP     = 5   /*!< Stop countdown. */
+    PI_RTC_CALENDAR_START    = 0,  /*!< Start RTC device. */
+    PI_RTC_CALENDAR_STOP     = 1,  /*!< Stop RTC device. */
+    PI_RTC_ALARM_START       = 2,  /*!< Start alarm function. */
+    PI_RTC_ALARM_STOP        = 3,  /*!< Stop alarm function. */
+    PI_RTC_TIMER_START       = 4,  /*!< Start countdown. */
+    PI_RTC_TIMER_STOP        = 5,   /*!< Stop countdown. */
+    PI_RTC_ALARM_ATTACH_TASK = 6,   /*!< Attach task to be enqueued when alarm is reached. */
+    PI_RTC_TIMER_ATTACH_TASK = 7,   /*!< Attach task to be enqueued when timer is reached. */
+
 } pi_rtc_ioctl_cmd_e;
 
 /**
@@ -225,4 +234,7 @@ int pi_rtc_ioctl(struct pi_device *device, uint32_t cmd, void *arg);
  * @} end of RTC
  */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PI_DRIVERS_RTC_H__ */

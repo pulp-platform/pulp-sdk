@@ -43,11 +43,11 @@ public:
 
     void run_loop();
 
-    void step(int64_t timestamp);
+    int64_t step(int64_t timestamp);
 
     void run();
 
-    void quit();
+    void quit(int status);
 
     int join();
 
@@ -63,11 +63,17 @@ public:
 
     inline void unlock();
 
-    inline void stop_engine(bool force = false);
+    inline void stop_engine(int status=0, bool force = true, bool no_retain = false);
 
-    inline void stop_engine(int status);
+    inline void stop_retain(int count);
 
     inline void pause();
+
+    void stop_exec();
+
+    void req_stop_exec();
+
+    void register_stop_notifier(Notifier *notifier);
 
     inline vp::time_engine *get_time_engine() { return this; }
 
@@ -102,13 +108,19 @@ private:
 
     int64_t time = 0;
     int stop_status = -1;
+    bool engine_has_been_stopped = false;
     int retain_count = 0;
     bool no_exit;
+    int stop_retain_count = 0;
 
 #ifdef __VP_USE_SYSTEMC
     sc_event sync_event;
     bool started = false;
 #endif
+
+private:
+    vp::component *stop_event;
+    std::vector<Notifier *> stop_notifiers;
 };
 
 class time_engine_client : public component
@@ -127,6 +139,11 @@ public:
     inline bool enqueue_to_engine(int64_t time)
     {
         return engine->enqueue(this, time);
+    }
+
+    inline bool dequeue_from_engine()
+    {
+        return engine->dequeue(this);
     }
 
     inline int64_t get_time() { return engine->get_time(); }
@@ -149,29 +166,41 @@ protected:
 
 // This can be called from anywhere so just propagate the stop request
 // to the main python thread which will take care of stopping the engine.
-inline void vp::time_engine::stop_engine(bool force)
+inline void vp::time_engine::stop_engine(int status, bool force, bool no_retain)
 {
-    if (force || !this->no_exit)
+    if (!this->engine_has_been_stopped)
     {
-        // In case the vp is connected to an external bridge, prevent the platform
-        // from exiting unless a ctrl-c is hit
-        pthread_mutex_lock(&mutex);
-        stop_req = true;
-        run_req = false;
-        pthread_cond_broadcast(&cond);
-        pthread_mutex_unlock(&mutex);
+        this->engine_has_been_stopped = true;
+        stop_status = status;
+    }
+    else
+    {
+        stop_status |= status;
+    }
+
+    if (no_retain || stop_retain_count == 0 || stop_status != 0)
+    {
+    #ifdef __VP_USE_SYSTEMC
+        sync_event.notify();
+    #endif
+        if (force || !this->no_exit)
+        {
+            // In case the vp is connected to an external bridge, prevent the platform
+            // from exiting unless a ctrl-c is hit
+            pthread_mutex_lock(&mutex);
+            stop_req = true;
+            run_req = false;
+            pthread_cond_broadcast(&cond);
+            pthread_mutex_unlock(&mutex);
+        }
     }
 }
 
-inline void vp::time_engine::stop_engine(int status)
-{
-    stop_status = status;
-#ifdef __VP_USE_SYSTEMC
-    sync_event.notify();
-#endif
-    stop_engine();
-}
 
+inline void vp::time_engine::stop_retain(int count)
+{
+    this->stop_retain_count += count;
+}
 
 
 inline void vp::time_engine::pause()
@@ -187,7 +216,6 @@ inline void vp::time_engine::pause()
 
     pthread_mutex_unlock(&mutex);
 }
-
 
 
 inline void vp::time_engine::wait_running()

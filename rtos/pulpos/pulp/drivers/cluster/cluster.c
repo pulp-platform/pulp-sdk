@@ -118,7 +118,7 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 #if __PLATFORM__ != ARCHI_PLATFORM_FPGA
     {
         // Setup FLL
-        int init_freq = pos_fll_init(POS_FLL_CL);
+        int init_freq = pos_fll_init(POS_FLL_CL, 0);
 
         // Check if we have to restore the cluster frequency
         // otherwise just set it to the one returned by the fll
@@ -238,8 +238,7 @@ int pi_cluster_send_task_to_cl_async(struct pi_device *device, struct pi_cluster
     {
         if (unlikely(task->stacks == NULL))
         {
-            int res = pos_cluster_task_set_stack(device, task);
-            if (res)
+            if (pos_cluster_task_set_stack(device, task))
                 return -1;
         }
 

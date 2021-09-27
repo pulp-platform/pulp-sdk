@@ -17,6 +17,10 @@
 #ifndef __PMSIS_DRIVERS_PMU_H__
 #define __PMSIS_DRIVERS_PMU_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \ingroup groupDrivers
  *
@@ -179,4 +183,7 @@ int pi_pmu_sleep_mode_enable(pi_pmu_domain_e domain);
  * \} addtogroup PMU
  */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_DRIVERS_PMU_H__ */

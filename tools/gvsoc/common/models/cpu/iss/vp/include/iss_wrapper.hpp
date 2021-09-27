@@ -25,13 +25,23 @@
 #include <vp/vp.hpp>
 #include <vp/itf/io.hpp>
 #include <vp/itf/wire.hpp>
+#include "vp/gdbserver/gdbserver_engine.hpp"
+
 
 #ifdef USE_TRDB
 #define HAVE_DECL_BASENAME 1
 #include "trace_debugger.h"
 #endif
 
-class iss_wrapper : public vp::component
+
+typedef struct
+{
+    std::string name;
+    std::string help;
+} iss_wrapper_pcer_info_t;
+
+
+class iss_wrapper : public vp::component, vp::Gdbserver_core
 {
 
 public:
@@ -42,6 +52,8 @@ public:
   void start();
   void pre_reset();
   void reset(bool active);
+
+  virtual void target_open();
 
   static void data_grant(void *_this, vp::io_req *req);
   static void data_response(void *_this, vp::io_req *req);
@@ -54,6 +66,7 @@ public:
   void exec_first_instr(vp::clock_event *event);
   static void exec_instr_check_all(void *__this, vp::clock_event *event);
   static inline void exec_misaligned(void *__this, vp::clock_event *event);
+  static inline void irq_req_sync_handler(void *__this, vp::clock_event *event);
 
   static void irq_req_sync(void *__this, int irq);
   void debug_req();
@@ -82,12 +95,27 @@ public:
 
   void insn_trace_callback();
 
+  int gdbserver_get_id();
+  std::string gdbserver_get_name();
+  int gdbserver_reg_set(int reg, uint8_t *value);
+  int gdbserver_reg_get(int reg, uint8_t *value);
+  int gdbserver_regs_get(int *nb_regs, int *reg_size, uint8_t *value);
+  int gdbserver_stop();
+  int gdbserver_cont();
+  int gdbserver_stepi();
+  int gdbserver_state();
+
+  void declare_pcer(int index, std::string name, std::string help);
+
   vp::io_master data;
   vp::io_master fetch;
   vp::io_slave  dbg_unit;
 
   vp::wire_slave<int>      irq_req_itf;
   vp::wire_master<int>     irq_ack_itf;
+
+  vp::wire_master<bool>    flush_cache_req_itf;
+  vp::wire_slave<bool>     flush_cache_ack_itf;
 
   vp::wire_master<uint32_t> ext_counter[32];
 
@@ -97,6 +125,7 @@ public:
   iss_cpu_t cpu;
 
   vp::trace     trace;
+  vp::trace     gdbserver_trace;
   vp::trace     decode_trace;
   vp::trace     insn_trace;
   vp::trace     csr_trace;
@@ -114,7 +143,7 @@ public:
 
   vp::power_trace power_trace;
 
-  vp::power_source insn_power;
+  std::vector<vp::power_source> insn_groups_power;
   vp::power_source clock_gated_power;
   vp::power_source leakage_power;
 
@@ -126,7 +155,10 @@ public:
   vp::trace     file_trace_event;
   vp::trace     pcer_trace_event[32];
   vp::trace     insn_trace_event;
-  vp::trace     misaligned_req_event;
+
+  iss_wrapper_pcer_info_t pcer_info[32];
+  int64_t cycle_count_start;
+  int64_t cycle_count;
 
   static void ipc_stat_handler(void *__this, vp::clock_event *event);
   void gen_ipc_stat(bool pulse=false);
@@ -149,8 +181,10 @@ private:
   vp::clock_event *instr_event;
   vp::clock_event *check_all_event;
   vp::clock_event *misaligned_event;
+  vp::clock_event *irq_sync_event;
 
   int irq_req;
+  int irq_req_value;
 
   bool iss_opened;
   int halt_cause;
@@ -173,7 +207,9 @@ private:
   vp::wire_slave<bool>     fetchen_itf;
   vp::wire_slave<bool>     flush_cache_itf;
   vp::wire_slave<bool>     halt_itf;
-  vp::wire_master<bool>     halt_status_itf;
+  vp::wire_master<bool>    halt_status_itf;
+
+  vp::Gdbserver_engine *gdbserver;
 
   bool clock_active;
 
@@ -181,6 +217,7 @@ private:
   static void bootaddr_sync(void *_this, uint32_t value);
   static void fetchen_sync(void *_this, bool active);
   static void flush_cache_sync(void *_this, bool active);
+  static void flush_cache_ack_sync(void *_this, bool active);
   static void halt_sync(void *_this, bool active);
   inline void enqueue_next_instr(int64_t cycles);
   void halt_core();

@@ -41,12 +41,27 @@
  *
  */
 typedef enum {
-  PI_CAMERA_CMD_ON,    /*!< Power-up the camera. */
-  PI_CAMERA_CMD_OFF,   /*!< Power-down the camera. */
-  PI_CAMERA_CMD_START, /*!< Start the camera, i.e. it will start sending data on the interface. */
-  PI_CAMERA_CMD_STOP   /*!< Stop the camera, i.e. it will stop sending data on the interface. */
+  PI_CAMERA_CMD_PWM_CLK,            /*!< Clock into the camera. */
+  PI_CAMERA_CMD_ON,             /*!< Power-up the camera. */
+  PI_CAMERA_CMD_OFF,            /*!< Power-off the camera. */
+  PI_CAMERA_CMD_START,          /*!< Start the camera, i.e. it will start sending data on the interface. */
+  PI_CAMERA_CMD_STOP,           /*!< Stop the camera, i.e. it will stop sending data on the interface. */
+  PI_CAMERA_CMD_CONTINUE_MODE,  /*!< Switch to continue mode in  the camera. */
+  PI_CAMERA_CMD_TRIGGER_MODE,   /*!< Switch to trigger mode in  the camera. */
+  PI_CAMERA_CMD_POWERDOWN_MODE, /*!< Power-down the camera. */
+  PI_CAMERA_CMD_AEG_INIT,       /*!< Enable and init the camera's AEG (Automatic Exposure and Gain). */
+  PI_CAMERA_CMD_SNAPSHOT        /*!< sanpshot mode. */
 } pi_camera_cmd_e;     /*!< */
 
+/** \enum pi_camera_opts_e
+ * \brief Camera comand options.
+ *
+ * This is the comand ID option passed as third argument to pi_camera_control.
+ */
+typedef enum {
+  PI_CAMERA_NO_OPT,              /*!< No option (for back compatibility). */
+  PI_CAMERA_OPT_NO_REG_INIT,     /*!< Do not initialize camera register, nor reset it. */
+} pi_camera_opts_e;
 
 /** \enum pi_camera_format_e
  * \brief Camera format.
@@ -70,6 +85,22 @@ typedef enum {
   PI_CAMERA_RGB888,     /*!< 24 bit RGB . */
   PI_CAMERA_YUV         /*!< 24 bit YUV . */
 } pi_camera_color_mode_e;
+
+
+/** \struct pi_camera_slicing_conf
+ * \brief Camera slice mode configuration.
+ *
+ * This structure is used to pass the desired ROI (region of interest) configuration
+ * to the runtime.
+ */
+typedef struct
+{
+    uint16_t x;         /*!< X coordinate of the ROI start */
+    uint16_t y;         /*!< Y coordinate of the ROI start */
+    uint16_t w;         /*!< Width of the ROI start */
+    uint16_t h;         /*!< Height of the ROI start */
+    uint8_t slice_en;   /*!< Slice mode enable */
+} pi_camera_slicing_conf_t;
 
 
 /** \brief Open an image sensor device.

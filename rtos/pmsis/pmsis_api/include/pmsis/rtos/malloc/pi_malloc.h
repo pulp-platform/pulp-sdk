@@ -17,6 +17,11 @@
 #ifndef __PMSIS_RTOS_MALLOC_MALLOC_H__
 #define __PMSIS_RTOS_MALLOC_MALLOC_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * \brief Initialize the memory allocators.
  *
@@ -71,16 +76,20 @@ void *pi_malloc_align(size_t size, uint32_t align);
 void pi_free(void *_chunk);
 
 /**
- * \brief Display allocated blocs.
+ * \brief Display free blocks.
  *
- * This function displays allocated blocs in either FC or L2 memory.
+ * This function displays free blocks available in either FC or L2 memory.
  */
-void pi_malloc_display(void);
+void pi_malloc_dump(void);
 
 #define pmsis_malloc_init    pi_malloc_init
 #define pmsis_malloc         pi_malloc
 #define pmsis_malloc_align   pi_malloc_align
 #define pmsis_malloc_free    pi_free
-#define pmsis_malloc_display pi_malloc_display
+#define pmsis_malloc_display pi_malloc_dump
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_RTOS_MALLOC_MALLOC_H__ */

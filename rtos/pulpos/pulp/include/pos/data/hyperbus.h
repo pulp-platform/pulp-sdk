@@ -29,8 +29,6 @@
 typedef struct pos_hyper_s
 {
     /* Common setup */
-    int *open_count;
-    int *channel;
     pos_udma_channel_t *tx_channel;
     pos_udma_channel_t *rx_channel;
     /* Private setup */

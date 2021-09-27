@@ -17,7 +17,7 @@ if(WithConfigGenerators)
 
     if (WithConfigGenerators)
         # cmake's python find module seems very buggy. This is quick and easy.
-        execute_process(COMMAND python3.6 "--version"
+        execute_process(COMMAND python3 "--version"
             RESULT_VARIABLE _RETVAL
             OUTPUT_VARIABLE _VERSION
             OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -38,7 +38,7 @@ if(WithConfigGenerators)
     # macros to build generators
     macro(build_something TARGET SCRIPT OUTPUT EXTRA_DEPENDS)
         add_custom_command(OUTPUT ${OUTPUT}
-            COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${PYTHON_PATH}" "PATH=${CMAKE_CURRENT_SOURCE_DIR}/bin:$ENV{PATH}" "PULP_CONFIGS_PATH=${CONFIGS_SRC_DIR}" python3.6 "${CMAKE_CURRENT_SOURCE_DIR}/bin/${SCRIPT}" --configs=${CONFIGS_SRC_DIR} --output=${CONFIGS_DST_DIR}/${OUTPUT} ${ARGN}
+            COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${PYTHON_PATH}" "PATH=${CMAKE_CURRENT_SOURCE_DIR}/bin:$ENV{PATH}" "PULP_CONFIGS_PATH=${CONFIGS_SRC_DIR}" python3 "${CMAKE_CURRENT_SOURCE_DIR}/bin/${SCRIPT}" --configs=${CONFIGS_SRC_DIR} --output=${CONFIGS_DST_DIR}/${OUTPUT} ${ARGN}
             DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${SCRIPT} ${EXTRA_DEPENDS}
             VERBATIM
         )

@@ -150,6 +150,7 @@ static void __pi_fs_mount_step(void *arg)
     switch (fs->mount_step)
     {
         case 1:
+            
             // Try to open readfs partition
             rc = pi_partition_table_load(fs->flash, &partition_table);
             if(rc != PI_OK) goto error;
@@ -261,7 +262,8 @@ static int32_t __pi_read_fs_mount(struct pi_device *device)
     fs->pi_fs_l2 = NULL;
     fs->pi_fs_info = NULL;
     fs->flash = conf->flash;
-    fs->fs_data.cluster_reqs_first = NULL;    
+    fs->fs_data.cluster_reqs_first = NULL;
+    
     fs->pi_fs_l2 = pmsis_l2_malloc(sizeof(pi_fs_l2_t));
     if(fs->pi_fs_l2 == NULL) goto error;
     
@@ -283,7 +285,7 @@ static int32_t __pi_read_fs_mount(struct pi_device *device)
     
     return 0;
     
-    error:  
+    error:
     //__pi_fs_error(FS_MOUNT_MEM_ERROR);
     __pi_fs_free(fs);
     return -1;

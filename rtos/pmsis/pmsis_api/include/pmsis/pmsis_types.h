@@ -20,6 +20,10 @@
 #include "inttypes.h"
 #include "sys/types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup groupDrivers Drivers
  */
@@ -156,7 +160,8 @@ typedef struct pi_callback_s
     void *arg;
 } pi_callback_t;
 
-
-
+#ifdef __cplusplus
+}
+#endif
 /// @endcond
 #endif

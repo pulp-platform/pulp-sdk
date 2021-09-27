@@ -17,10 +17,18 @@
 #ifndef __PMSIS_FREQ_H__
 #define __PMSIS_FREQ_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef enum {
   PI_FREQ_DOMAIN_FC     = 0,
   PI_FREQ_DOMAIN_CL     = 1,
-  PI_FREQ_DOMAIN_PERIPH = 2
+  PI_FREQ_DOMAIN_PERIPH = 2,
+#ifdef __GAP9__
+  PI_FREQ_DOMAIN_SFU    = 3,
+#endif
 } pi_freq_domain_e;
 
 /**
@@ -45,4 +53,7 @@ static inline uint32_t pi_freq_get(pi_freq_domain_e domain);
  */
 static inline int32_t pi_freq_set(pi_freq_domain_e domain, uint32_t freq);
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_FREQ_H__ */

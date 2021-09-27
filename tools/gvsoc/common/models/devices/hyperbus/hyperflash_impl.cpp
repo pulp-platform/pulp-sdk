@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -29,9 +29,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "vp/itf/hyper.hpp"
-#include "vp/itf/wire.hpp"
-#include "archi/utils.h"
+#include <vp/itf/hyper.hpp>
+#include <vp/itf/wire.hpp>
 
 #define REGS_AREA_SIZE 1024
 
@@ -179,7 +178,7 @@ void Hyperflash::handle_access(int reg_access, int address, int read, uint8_t da
       {
         data = this->data[address];
       }
-      this->trace.msg(vp::trace::LEVEL_INFO, "Sending data byte (value: 0x%x)\n", data);
+      this->trace.msg(vp::trace::LEVEL_TRACE, "Sending data byte (value: 0x%x)\n", data);
       this->in_itf.sync_cycle(data);
     }
     else
@@ -195,38 +194,45 @@ void Hyperflash::handle_access(int reg_access, int address, int read, uint8_t da
           }
           else
           {
-            this->trace.msg("[Write Buffer Programming] Writing to flash (address: 0x%x, value: 0x%x)\n", address, data);
-            this->data[address] = data;
+            this->trace.msg(vp::trace::LEVEL_TRACE, "[Write Buffer Programming] Writing to flash (address: 0x%x, value: 0x%x)\n", address, data);
+
+            uint8_t new_value = this->data[address] & data;
+
+            if (new_value != data)
+            {
+              this->warning.force_warning("Failed to program specified location (addr: 0x%x, flash_val: 0x%2.2x, program_val: 0x%2.2x)\n", address, this->data[address], data);
+            }
+
+            this->data[address] &= new_value;
+
             if(pending_bytes)
             {
               this->nb_word--;
-              this->pending_bytes = 0; 
+              this->pending_bytes = 0;
             }
             else
             {
-              this->pending_bytes = 1; 
-            }       
+              this->pending_bytes = 1;
+            }
           }
         }
         else
         {
-          this->trace.msg("[Word Programming] Writing to flash (address: 0x%x, value: 0x%x)\n", address, data);
-          this->data[address] = data;
+          this->trace.msg(vp::trace::LEVEL_TRACE, "[Word Programming] Writing to flash (address: 0x%x, value: 0x%x)\n", address, data);
+
+          uint8_t new_value = this->data[address] & data;
+
+          if (new_value != data)
+          {
+            this->warning.force_warning("Failed to program specified location (addr: 0x%x, flash_val: 0x%2.2x, program_val: 0x%2.2x)\n", address, this->data[address], data);
+          }
+
+          this->data[address] &= data;
         }
-        // this->trace.msg(vp::trace::LEVEL_INFO, "Writing to flash (address: 0x%x, value: 0x%x)\n", address, data);
-
-        // uint8_t new_value = this->data[address] & data;
-
-        // if (new_value != data)
-        // {
-        //   this->warning.force_warning("Failed to program specified location (addr: 0x%x, flash_val: 0x%2.2x, program_val: 0x%2.2x)\n", address, this->data[address], data);
-        // }
-
-        // this->data[address] &= new_value;
       }
       else
       {
-        this->trace.msg(vp::trace::LEVEL_INFO, "Received data byte (address: 0x%x, value: 0x%x)\n", address, data);
+        this->trace.msg(vp::trace::LEVEL_TRACE, "Received data byte (address: 0x%x, value: 0x%x)\n", address, data);
 
         if (this->pending_bytes == 0)
         {
@@ -324,14 +330,46 @@ void Hyperflash::handle_access(int reg_access, int address, int read, uint8_t da
 int Hyperflash::preload_file(char *path)
 {
   this->get_trace()->msg(vp::trace::LEVEL_INFO, "Preloading memory with stimuli file (path: %s)\n", path);
-  FILE *file = fopen(path, "r");
-  if (file == NULL) {
-    printf("Unable to open stimulus file (path: %s, error: %s)\n", path, strerror(errno));
-    return -1;
-  }
 
-  if (fread(this->data, 1, this->size, file) == 0)
-    return -1;
+  if (this->get_js_config()->get_child_bool("writeback"))
+  {
+    int fd = open(path, O_RDWR | O_CREAT, 0600);
+    if (fd < 0) {
+      printf("Unable to open writeback file (path: %s, error: %s)\n", path, strerror(errno));
+      return 0;
+    }
+
+    if (ftruncate(fd, this->size) < 0) {
+      printf("Unable to truncate writeback file (path: %s, error: %s)\n", path, strerror(errno));
+      close(fd);
+      return -1;
+    }
+    this->data = (uint8_t *) mmap(NULL, this->size, PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+    if (!this->data) {
+      printf("Unable to mmap writeback file (path: %s, error: %s)\n", path, strerror(errno));
+      close(fd);
+      return -1;
+    }
+
+    /*
+    * fd is even not useful anymore and can be closed.
+    * Data are automatically write back to the file
+    * at random time during execution (depending of the kernel cache behavior)
+    * and, anyway, at the termination of the application.
+    */
+    close(fd);
+  }
+  else
+  {
+    FILE *file = fopen(path, "r");
+    if (file == NULL) {
+      printf("Unable to open stimulus file (path: %s, error: %s)\n", path, strerror(errno));
+      return -1;
+    }
+
+    if (fread(this->data, 1, this->size, file) == 0)
+      return -1;
+  }
 
   return 0;
 }
@@ -392,18 +430,18 @@ void Hyperflash::sync_cycle(void *__this, int data)
 
   if (_this->hyper_state == HYPERBUS_STATE_CA)
   {
-    _this->trace.msg(vp::trace::LEVEL_INFO, "Received command byte (value: 0x%x)\n", data);
+    _this->trace.msg(vp::trace::LEVEL_TRACE, "Received command byte (value: 0x%x)\n", data);
 
     _this->ca_count--;
     _this->ca.raw[_this->ca_count] = data;
     if (_this->ca_count == 0)
     {
       _this->hyper_state = HYPERBUS_STATE_DATA;
-      _this->current_address = (_this->ca.low_addr | (_this->ca.high_addr << 3)) & ~1;
+      _this->current_address = (_this->ca.low_addr | (_this->ca.high_addr << 3));
 
       _this->reg_access = _this->ca.address_space == 1;
 
-      _this->trace.msg(vp::trace::LEVEL_INFO, "Received command header (reg_access: %d, addr: 0x%x, read: %d)\n", _this->ca.address_space, _this->current_address, _this->ca.read);
+      _this->trace.msg(vp::trace::LEVEL_TRACE, "Received command header (reg_access: %d, addr: 0x%x, read: %d)\n", _this->ca.address_space, _this->current_address, _this->ca.read);
 
       if (_this->state == HYPERFLASH_STATE_PROGRAM)
         _this->trace.msg(vp::trace::LEVEL_DEBUG, "Received program command header (addr: 0x%x)\n", _this->current_address);
@@ -420,7 +458,7 @@ void Hyperflash::sync_cycle(void *__this, int data)
 void Hyperflash::cs_sync(void *__this, bool value)
 {
   Hyperflash *_this = (Hyperflash *)__this;
-  _this->trace.msg(vp::trace::LEVEL_INFO, "Received CS sync (value: %d)\n", value);
+  _this->trace.msg(vp::trace::LEVEL_TRACE, "Received CS sync (value: %d)\n", value);
 
   _this->hyper_state = HYPERBUS_STATE_CA;
   _this->ca_count = 6;
@@ -433,6 +471,8 @@ void Hyperflash::cs_sync(void *__this, bool value)
     }
     else if (_this->state == HYPERFLASH_STATE_PROGRAM)
     {
+      _this->trace.msg(vp::trace::LEVEL_DEBUG, "End of program command (addr: 0x%x)\n", _this->current_address);
+
       if(_this->get_nb_word() < 0)
       {
         _this->state = HYPERFLASH_STATE_WAIT_CMD0;
@@ -441,8 +481,6 @@ void Hyperflash::cs_sync(void *__this, bool value)
       {
         _this->state = HYPERFLASH_STATE_PROGRAM;
       }
-      _this->trace.msg(vp::trace::LEVEL_DEBUG, "End of program command (addr: 0x%x)\n", _this->current_address);
-      //_this->state = HYPERFLASH_STATE_WAIT_CMD0;
     }
   }
 }
@@ -460,6 +498,7 @@ int Hyperflash::build()
   js::config *conf = this->get_js_config();
 
   this->size = conf->get("size")->get_int();
+  this->trace.msg(vp::trace::LEVEL_INFO, "Building flash (size: 0x%x)\n", this->size);
 
   this->data = new uint8_t[this->size];
   memset(this->data, 0xff, this->size);
@@ -472,7 +511,7 @@ int Hyperflash::build()
   this->state = HYPERFLASH_STATE_WAIT_CMD0;
   this->pending_bytes = 0;
   this->pending_cmd = 0;
-  
+
   js::config *preload_file_conf = conf->get("preload_file");
   if (preload_file_conf == NULL)
   {
@@ -486,6 +525,7 @@ int Hyperflash::build()
   }
 
   js::config *writeback_file_conf = conf->get("writeback_file");
+
   if (writeback_file_conf)
   {
     if (this->setup_writeback_file(writeback_file_conf->get_str().c_str()))
@@ -494,7 +534,6 @@ int Hyperflash::build()
 
   return 0;
 }
-
 
 
 extern "C" vp::component *vp_constructor(js::config *config)

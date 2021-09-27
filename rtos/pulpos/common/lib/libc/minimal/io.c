@@ -265,7 +265,7 @@ typedef struct
 static void pos_libc_putc_host_req(void *_req)
 {
     pos_cl_libc_putc_host_flush_t *req = _req;
-    pos_semihost_write0(pos_libc_host_buffer_cl[req->cid]);
+    pos_semihost_write(0, pos_libc_host_buffer_cl[req->cid], strlen(pos_libc_host_buffer_cl[req->cid]));
     int cid = req->cid;
   __asm__ __volatile__ ("" : : : "memory");
     req->done = 1;
@@ -317,7 +317,7 @@ static void pos_libc_putc_host(char c)
         *index = 0;
         if (hal_is_fc())
         {
-            pos_semihost_write0(buffer);
+            pos_semihost_write(0, buffer, strlen(buffer));
         }
         else
         {
@@ -526,8 +526,7 @@ void exit(int status)
     pos_init_stop();
 
     apb_soc_ctrl_corestatus_set(ARCHI_APB_SOC_CTRL_ADDR,
-        APB_SOC_CTRL_CORESTATUS_EOC(1) |
-        APB_SOC_CTRL_CORESTATUS_STATUS(status)
+        APB_SOC_CTRL_CORESTATUS_STATUS((1<<31) | status)
     );
 
 #if defined(POS_CONFIG_IO_HOST) && POS_CONFIG_IO_HOST == 1

@@ -97,11 +97,12 @@ void vp::component_trace::new_trace_event_string(std::string name, trace *trace)
 
 void vp::component_trace::post_post_build()
 {
-  trace_manager = (vp::trace_engine *)top.get_service("trace");
-  for (auto& x: trace_events) {
-    x.second->trace_manager = trace_manager;
-    trace_manager->reg_trace(x.second, 1, top.get_path(), x.first);
-  }
+  // TODO this seems useless now that the traces are registered immediately to the trace engine
+  // trace_manager = (vp::trace_engine *)top.get_service("trace");
+  // for (auto& x: trace_events) {
+  //   x.second->trace_manager = trace_manager;
+  //   trace_manager->reg_trace(x.second, 1, top.get_path(), x.first);
+  // }
 }
 
 
@@ -125,8 +126,16 @@ void vp::trace::dump_header()
     time = comp->get_time_engine()->get_time();
   }
 
-  int max_trace_len = comp->traces.get_trace_manager()->get_max_path_len();
-  fprintf(this->trace_file, "%ld: %ld: [\033[34m%-*.*s\033[0m] ", time, cycles, max_trace_len, max_trace_len, path.c_str());
+  int format = comp->traces.get_trace_manager()->get_format();
+  if (format == TRACE_FORMAT_SHORT)
+  {
+    fprintf(this->trace_file, "%ldps %ld ", time, cycles);
+  }
+  else
+  {
+    int max_trace_len = comp->traces.get_trace_manager()->get_max_path_len();
+    fprintf(this->trace_file, "%ld: %ld: [\033[34m%-*.*s\033[0m] ", time, cycles, max_trace_len, max_trace_len, path.c_str());
+  }
 }
 
 void vp::trace::dump_warning_header()
@@ -425,6 +434,7 @@ void vp::trace_engine::vcd_routine()
     char *event_buffer, *event_buffer_start;
 
     pthread_mutex_lock(&this->mutex);
+
     while(this->ready_event_buffers.size() == 0 && !end)
     {
       pthread_cond_wait(&this->cond, &this->mutex);
@@ -503,7 +513,6 @@ void vp::trace_engine::vcd_routine()
           this->first_trace_to_dump = trace->event_trace;
         }
       }
-
     }
 
     pthread_mutex_lock(&this->mutex);

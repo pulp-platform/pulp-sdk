@@ -110,20 +110,14 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (_this->state == HYPER_STATE_IDLE)
   {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:IDLE\n", _this->channel_id);
-
     if (_this->pending_bytes > 0)
     {
       _this->delay = _this->current_command->latency << _this->current_command->en_add_latency;
+      /* Skip to the end of delay part of the protocol */
+      _this->next_bit_cycle = _this->top->get_periph_clock()->get_clock()->get_cycles() + _this->clkdiv + _this->delay;
+      _this->delay = 0;
+      _this->state = HYPER_STATE_CS;     
 
-      if (_this->delay > 0)
-      {
-        _this->state = HYPER_STATE_DELAY;
-      }
-      else
-      {
-        _this->state = HYPER_STATE_CS;        
-      }
       _this->ca_count = 6;
       _this->ca.low_addr = ARCHI_REG_FIELD_GET(_this->current_command->ex_addr, 0, 3);
       _this->ca.high_addr = ARCHI_REG_FIELD_GET(_this->current_command->ex_addr, 3, 29);      
@@ -149,16 +143,8 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
       }
     }
   }
-  else if (_this->state == HYPER_STATE_DELAY)
-  {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:DELAY (left: %d)\n", _this->channel_id, _this->delay);
-    _this->delay--;
-    if (_this->delay == 0)
-      _this->state = HYPER_STATE_CS;
-  }
   else if (_this->state == HYPER_STATE_CS)
   {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:CS\n", _this->channel_id);
     _this->state = HYPER_STATE_CA;
     send_cs = true;
     /* Selects first  the right device */
@@ -168,7 +154,6 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_CA)
   {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:CA\n", _this->channel_id);
     send_byte = true;
     _this->ca_count--;
     byte = _this->ca.raw[_this->ca_count];
@@ -180,6 +165,7 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   else if (_this->state == HYPER_STATE_DATA && _this->pending_bytes > 0)
   {
     send_byte = true;
+
     // /* If L2 request is misaligned skips the number of more loaded bytes, just the first time and during transaction from L2 to memory */
     // if(_this->current_command->is_write && _this->current_command->extra_size)
     // {
@@ -189,7 +175,7 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
     //   _this->transfer_size -= _this->current_command->extra_size;
     //   _this->current_command->extra_size = 0;
     // }
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:DATA (left: %x of transfer_size)\n", _this->channel_id, _this->transfer_size);
+
     byte = _this->pending_word & 0xff;
     _this->pending_word >>= 8;
     _this->pending_bytes--;
@@ -209,7 +195,6 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
   }
   else if (_this->state == HYPER_STATE_CS_OFF)
   {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:CS OFF\n", _this->channel_id);
     _this->state = HYPER_STATE_IDLE;
     send_cs = true;
     cs = _this->mem_sel;
@@ -242,14 +227,13 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (send_byte || send_cs)
   {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:SENDING\n", _this->channel_id);
     if (!_this->hyper_itf.is_bound())
     {
       _this->top->get_trace()->warning("%d: Trying to send to HYPER interface while it is not connected\n", _this->channel_id);
     }
     else
     {
-      _this->next_bit_cycle = _this->top->get_clock()->get_cycles() + _this->clkdiv;
+      _this->next_bit_cycle = _this->top->get_periph_clock()->get_clock()->get_cycles() + _this->clkdiv;
       if (send_byte)
       {
         _this->top->get_trace()->msg("%d: Sending byte (value: 0x%x)\n", _this->channel_id, byte);
@@ -265,8 +249,6 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
 
   if (end)
   {
-    _this->trace.msg(vp::trace::LEVEL_DEBUG, "%d:END, ending: %d\n", _this->channel_id, _this->ending);
-
     /* Transaction is resetted only when whole 2d transfer is completed */
     if(_this->ending && _this->twd_count == 0)
     {
@@ -324,11 +306,11 @@ void Hyper_periph_v3::check_state()
     if (!this->pending_word_event->is_enqueued())
     {
       int latency = 1;
-      int64_t cycles = this->top->get_clock()->get_cycles();
+      int64_t cycles = this->top->get_periph_clock()->get_clock()->get_cycles();
       if (this->next_bit_cycle > cycles)
         latency = this->next_bit_cycle - cycles;
 
-      this->top->event_enqueue_ext(this->pending_word_event, latency);
+      this->top->get_periph_clock()->enqueue_ext(this->pending_word_event, latency);
     }
   }
 }
@@ -644,20 +626,20 @@ int Hyper_periph_v3::unpack(int original_size)
   switch (page_bound)
   {
     case 4:
-      trace.msg("Page bound is not considered\n");
+      trace.msg(vp::trace::LEVEL_INFO, "Page bound is not considered\n");
       return 0;
     break;
 
     default:
       if(original_size < page_bound)
       {
-        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) but unpacking is not necessary (value: %d)\n", 
+        trace.msg(vp::trace::LEVEL_INFO, "Page bound is considered (value: %d) but unpacking is not necessary (value: %d)\n",
           page_bound == 0 ? 128 : page_bound == 1 ? 256 : page_bound == 2 ? 512 : page_bound == 3 ? 1024 : 0, original_size);
         return original_size;
       }
       else
       {
-        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) and unpacking is necessary (original: %d, new: %d)\n", 
+        trace.msg(vp::trace::LEVEL_INFO, "Page bound is considered (value: %d) and unpacking is necessary (original: %d, new: %d)\n",
           page_bound == 0 ? 128 : page_bound == 1 ? 256 : page_bound == 2 ? 512 : page_bound == 3 ? 1024 : 0, original_size, page_bound - original_size);
         return page_bound - original_size;
       }
@@ -724,23 +706,18 @@ void Hyper_periph_v3::set_device(int cs)
   switch (dev)
   {
     case 0:
-      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing HyperRam\n");
       this->mem_sel = dev;
     break;
     case 1:
-      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing HyperFlash\n");
       this->mem_sel = dev;
     break;
     case 2:
-      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing PSRAM(x8)\n");
       this->mem_sel = dev;
     break;
     case 3:
-      trace.msg(vp::trace::LEVEL_DEBUG, "Choosing PSRAM(x16)\n");
       this->mem_sel = dev;
     break;
     default:
-      trace.warning("Choosing invalid device. Default is set to 0\n");
       this->mem_sel = 0;
     break;
   }

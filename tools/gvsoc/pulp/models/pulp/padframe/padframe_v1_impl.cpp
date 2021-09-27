@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2020 GreenWaves Technologies, SAS, ETH Zurich and
- *                    University of Bologna
+ * Copyright (C) 2020 ETH Zurich
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +14,9 @@
  * limitations under the License.
  */
 
+
 /* 
- * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
+ * Authors: Germain Haugou, ETH Zurich (germain.haugou@iis.ee.ethz.ch)
  */
 
 #include <vp/vp.hpp>
@@ -104,7 +104,16 @@ public:
   vp::i2s_master master;
   vp::trace sck_trace;
   vp::trace ws_trace;
-  vp::trace sd_trace;
+  vp::trace sdi_trace;
+  vp::trace sdo_trace;
+  int sck_in;
+  int ws_in;
+  int sdi_in;
+  int sdo_in;
+  int sck_out;
+  int ws_out;
+  int sdi_out;
+  int sdo_out;
 };
 
 class I2c_group : public Pad_group
@@ -159,9 +168,8 @@ public:
 
 private:
 
-  static void qspim_master_sync(void *__this, int data_0, int data_1, int data_2, int data_3, int mask, int id);
+  static void qspim_master_sync(void *__this, int sck, int data_0, int data_1, int data_2, int data_3, int mask, int id);
   static void qspim_sync(void *__this, int sck, int data_0, int data_1, int data_2, int data_3, int mask, int id);
-  static void qspim_sync_cycle(void *__this, int data_0, int data_1, int data_2, int data_3, int mask, int id);
   static void qspim_cs_sync(void *__this, int cs, int active, int id);
 
   static void jtag_pad_slave_sync(void *__this, int tck, int tdi, int tms, int trst, int id);
@@ -182,8 +190,7 @@ private:
   static void i2s_external_edge(void *__this, int sck, int ws, int sd, int id);
 
   static void i2c_chip_sync(void *__this, int scl, int sda, int id);
-  static void i2c_chip_sync_cycle(void *__this, int sda, int id);
-  static void i2c_master_sync(void *__this, int data, int id);
+  static void i2c_master_sync(void *__this, int scl, int data, int id);
 
   static void hyper_master_sync_cycle(void *__this, int data, int id);
   static void hyper_sync_cycle(void *__this, int data, int id);
@@ -197,6 +204,8 @@ private:
 
   static void ref_clock_sync(void *__this, bool value);
   static void ref_clock_set_frequency(void *, int64_t value);
+
+  void set_pad(int *padin_value, int *padout_value, int *pad_value);
 
   vp::trace     trace;
   vp::io_slave in;
@@ -216,13 +225,39 @@ padframe::padframe(js::config *config)
 
 }
 
-void padframe::qspim_sync(void *__this, int sck, int data_0, int data_1, int data_2, int data_3, int mask, int id)
-{
 
-  printf("%s %d\n", __FILE__, __LINE__);
+void padframe::set_pad(int *padin_value, int *padout_value, int *pad_value)
+{
+    if (*padin_value == 3 || *padout_value == 3)
+    {
+        *pad_value = 3;
+    }
+    else if (*padin_value == 2 || *padout_value == 2)
+    {
+        if (*padin_value == 2)
+        {
+            *pad_value = *padout_value;
+        }
+        else
+        {
+            *pad_value = *padin_value;
+        }
+    }
+    else
+    {
+        if (*padin_value != *padout_value)
+        {
+            *pad_value = 3;
+        }
+        else
+        {
+            *pad_value = *padin_value;
+        }
+    }
 }
 
-void padframe::qspim_sync_cycle(void *__this, int data_0, int data_1, int data_2, int data_3, int mask, int id)
+
+void padframe::qspim_sync(void *__this, int sck, int data_0, int data_1, int data_2, int data_3, int mask, int id)
 {
   padframe *_this = (padframe *)__this;
   Qspim_group *group = static_cast<Qspim_group *>(_this->groups[id]);
@@ -247,9 +282,10 @@ void padframe::qspim_sync_cycle(void *__this, int data_0, int data_1, int data_2
   }
   else
   {
-    group->master[group->active_cs]->sync_cycle(data_0, data_1, data_2, data_3, mask);
+    group->master[group->active_cs]->sync(sck, data_0, data_1, data_2, data_3, mask);
   }
 }
+
 
 void padframe::qspim_cs_sync(void *__this, int cs, int active, int id)
 {
@@ -275,7 +311,7 @@ void padframe::qspim_cs_sync(void *__this, int cs, int active, int id)
   }
 } 
 
-void padframe::qspim_master_sync(void *__this, int data_0, int data_1, int data_2, int data_3, int mask, int id)
+void padframe::qspim_master_sync(void *__this, int sck, int data_0, int data_1, int data_2, int data_3, int mask, int id)
 {
   padframe *_this = (padframe *)__this;
   Qspim_group *group = static_cast<Qspim_group *>(_this->groups[id]);
@@ -289,7 +325,7 @@ void padframe::qspim_master_sync(void *__this, int data_0, int data_1, int data_
   if (mask & (1<<3))
     group->data_3_trace.event((uint8_t *)&data_3);
 
-  group->slave.sync(data_0, data_1, data_2, data_3, mask);
+  group->slave.sync(sck, data_0, data_1, data_2, data_3, mask);
 }
 
 
@@ -329,8 +365,7 @@ void padframe::jtag_chip_slave_sync(void *__this, int tck, int tdi, int tms, int
 
   group->tdo_trace.event((uint8_t *)&tdi);
 
-  if (tck)
-    group->pad_slave.sync(tdi);
+  group->pad_slave.sync(tdi);
 }
 
 
@@ -406,7 +441,26 @@ void padframe::i2s_internal_edge(void *__this, int sck, int ws, int sd, int id)
 {
   padframe *_this = (padframe *)__this;
   I2s_group *group = static_cast<I2s_group *>(_this->groups[id]);
-  //group->tx_trace.event((uint8_t *)&data);
+  int sdi = sd & 0x3;
+  int sdo = sd >> 2;
+
+  group->sck_in = sck;
+  group->ws_in = ws;
+  group->sdi_in = sdi;
+  group->sdo_in = sdo;
+
+  _this->set_pad(&group->sck_in, &group->sck_out, &sck);
+  _this->set_pad(&group->ws_in, &group->ws_out, &ws);
+  _this->set_pad(&group->sdi_in, &group->sdi_out, &sdi);
+  _this->set_pad(&group->sdo_in, &group->sdo_out, &sdo);
+
+  group->sck_trace.event((uint8_t *)&sck);
+  group->ws_trace.event((uint8_t *)&ws);
+  group->sdi_trace.event((uint8_t *)&sdi);
+  group->sdo_trace.event((uint8_t *)&sdo);
+
+  sd = sdi | (sdo << 2);
+
   if (!group->slave.is_bound())
   {
     //vp_warning_always(&_this->warning, "Trying to send I2S stream while pad is not connected (interface: %s)\n", group->name.c_str());
@@ -423,12 +477,33 @@ void padframe::i2s_external_edge(void *__this, int sck, int ws, int sd, int id)
 {
   padframe *_this = (padframe *)__this;
   I2s_group *group = static_cast<I2s_group *>(_this->groups[id]);
+  int sdi = sd & 0x3;
+  int sdo = sd >> 2;
+
+  group->sck_out = sck;
+  group->ws_out = ws;
+  group->sdi_out = sdi;
+  group->sdo_out = sdo;
+
+  _this->set_pad(&group->sck_in, &group->sck_out, &sck);
+  _this->set_pad(&group->ws_in, &group->ws_out, &ws);
+  _this->set_pad(&group->sdi_in, &group->sdi_out, &sdi);
+  _this->set_pad(&group->sdo_in, &group->sdo_out, &sdo);
 
   group->sck_trace.event((uint8_t *)&sck);
   group->ws_trace.event((uint8_t *)&ws);
-  group->sd_trace.event((uint8_t *)&sd);
+  group->sdi_trace.event((uint8_t *)&sdi);
+  group->sdo_trace.event((uint8_t *)&sdo);
+
+  sd = sdi | (sdo << 2);
 
   group->master.sync(sck, ws, sd);
+
+  // Resynchronized the pad value outside after they have been resolved between internal and external state
+  if (group->slave.is_bound())
+  {
+    group->slave.sync(sck, ws, sd);
+  }
 }
 
 
@@ -449,29 +524,14 @@ void padframe::i2c_chip_sync(void *__this, int scl, int sda, int id)
   }
 }
 
-void padframe::i2c_chip_sync_cycle(void *__this, int sda, int id)
-{
-  padframe *_this = (padframe *)__this;
-  I2c_group *group = static_cast<I2c_group *>(_this->groups[id]);
-  group->sda_trace.event((uint8_t *)&sda);
-  if (!group->master.is_bound())
-  {
-    vp_warning_always(&_this->warning, "Trying to send I2C stream while pad is not connected (interface: %s)\n", group->name.c_str());
-  }
-  else
-  {
-    group->master.sync_cycle(sda);
-  }
-}
-
-void padframe::i2c_master_sync(void *__this, int sda, int id)
+void padframe::i2c_master_sync(void *__this, int scl, int sda, int id)
 {
   padframe *_this = (padframe *)__this;
   I2c_group *group = static_cast<I2c_group *>(_this->groups[id]);
 
   group->sda_trace.event((uint8_t *)&sda);
 
-  group->slave.sync(sda);
+  group->slave.sync(scl, sda);
 }
 
 
@@ -616,7 +676,6 @@ int padframe::build()
         new_slave_port(name, &group->slave);
         group->active_cs = -1;
         group->slave.set_sync_meth_muxed(&padframe::qspim_sync, nb_itf);
-        group->slave.set_sync_cycle_meth_muxed(&padframe::qspim_sync_cycle, nb_itf);
         group->slave.set_cs_sync_meth_muxed(&padframe::qspim_cs_sync, nb_itf);
         this->groups.push_back(group);
 
@@ -700,10 +759,19 @@ int padframe::build()
         new_master_port(name, &group->master);
         group->master.set_sync_meth_muxed(&padframe::i2s_internal_edge, nb_itf);
         group->slave.set_sync_meth_muxed(&padframe::i2s_external_edge, nb_itf);
+        group->sck_in = 2;
+        group->ws_in = 2;
+        group->sdi_in = 2;
+        group->sdo_in = 2;
+        group->sck_out = 2;
+        group->ws_out = 2;
+        group->sdi_out = 2;
+        group->sdo_out = 2;
         this->groups.push_back(group);
         traces.new_trace_event(name + "/sck", &group->sck_trace, 1);
         traces.new_trace_event(name + "/ws", &group->ws_trace, 1);
-        traces.new_trace_event(name + "/sd", &group->sd_trace, 1);
+        traces.new_trace_event(name + "/sdi", &group->sdi_trace, 1);
+        traces.new_trace_event(name + "/sdo", &group->sdo_trace, 1);
         nb_itf++;
       }
       else if (type == "i2c")
@@ -713,7 +781,6 @@ int padframe::build()
         new_slave_port(name, &group->slave);
         group->master.set_sync_meth_muxed(&padframe::i2c_master_sync, nb_itf);
         group->slave.set_sync_meth_muxed(&padframe::i2c_chip_sync, nb_itf);
-        group->slave.set_sync_cycle_meth_muxed(&padframe::i2c_chip_sync_cycle, nb_itf);
         this->groups.push_back(group);
         traces.new_trace_event(name + "/scl", &group->scl_trace, 1);
         traces.new_trace_event(name + "/sda", &group->sda_trace, 1);

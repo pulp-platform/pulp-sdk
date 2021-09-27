@@ -22,27 +22,12 @@
 #
 
 
-
 from isa_gen import *
 import argparse
 import os.path
-
-fpuGroup      = IsaGroup('fpu', offload=['shfpu_offload', '--shared-fpu'], timingTable=TimingTable(name='fpu', option='--fpu-timing', default='timing_fpu_private.cfg'))
-rv32mGroup     = IsaGroup('rv32m', timingTable=TimingTable(name='rv32m', option='--rv32m-timing', default='timing_rv32m_ri5cy.cfg'))
-
-fpuGroupOther = InstrGroup(fpuGroup, 'INSTR_GROUP_OTHER')
-fpuGroupAdd   = InstrGroup(fpuGroup, 'INSTR_GROUP_FPU_ADD')
-fpuGroupMul   = InstrGroup(fpuGroup, 'INSTR_GROUP_FPU_MUL')
-fpuGroupDiv   = InstrGroup(fpuGroup, 'INSTR_GROUP_FPU_DIV')
-fpuGroupFmadd = InstrGroup(fpuGroup, 'INSTR_GROUP_FPU_FMADD')
-fpuGroupConv  = InstrGroup(fpuGroup, 'INSTR_GROUP_FPU_CONV')
+import importlib
 
 
-
-rv32mGroupOther   = InstrGroup(rv32mGroup, 'INSTR_GROUP_RV32M_OTHER')
-rv32mGroupMul     = InstrGroup(rv32mGroup, 'INSTR_GROUP_RV32M_MUL')
-rv32mGroupMulh    = InstrGroup(rv32mGroup, 'INSTR_GROUP_RV32M_MULH')
-rv32mGroupDiv     = InstrGroup(rv32mGroup, 'INSTR_GROUP_RV32M_DIV')
 
 class R5(Instr):
     def __init__(self, label, format, encoding, decode=None, N=None, L=None, mapTo=None, group=None, fast_handler=False, tags=[], isa_tags=[]):
@@ -98,11 +83,80 @@ class R5(Instr):
                             InReg (0, Range(15, 5)),
                             InReg (1, Range(20, 5)),
                             ]
-        elif format == 'R64':
-            self.args = [   OutReg64(0, Range(7,  5)),
+
+            
+        # int64 formats
+        elif format == 'R1x64_W64':
+            self.args = [   OutReg64 (0, Range(7,  5)),
+                            InReg64  (0, Range(15, 5)),
+                            ]
+            
+        elif format == 'R2x64_W64':
+            self.args = [   OutReg64 (0, Range(7,  5)),
+                            InReg64  (0, Range(15, 5)),
+                            InReg64  (1, Range(20, 5)),
+                            ]
+            
+        elif format == 'R1x64puImm_W64':
+            self.args = [   OutReg64    (0, Range(7,  5)),
+                            InReg64     (0, Range(15, 5)),
+                            UnsignedImm (0, Range(20, 5)),
+                            ]
+
+        elif format == 'R1x64psImm_W64':
+            self.args = [   OutReg64    (0, Range(7,  5)),
+                            InReg64     (0, Range(15, 5)),
+                            SignedImm   (0, Range(20, 5)),
+                            ]
+
+        elif format == 'R1x64puImm_W32':
+            self.args = [   OutReg      (0, Range(7,  5)),
+                            InReg64     (0, Range(15, 5)),
+                            UnsignedImm (0, Range(20, 5)),
+                            ]
+            
+        elif format == 'R1x64psImm_W32':
+            self.args = [   OutReg      (0, Range(7,  5)),
+                            InReg64     (0, Range(15, 5)),
+                            SignedImm   (0, Range(20, 5)),
+                            ]
+
+        elif format == 'R1x64_W32':
+            self.args = [   OutReg  (0, Range(7,  5)),
+                            InReg64 (0, Range(15, 5)),
+                            ]
+
+        elif format == 'R2x64_W32':
+            self.args = [   OutReg  (0, Range(7,  5)),
                             InReg64 (0, Range(15, 5)),
                             InReg64 (1, Range(20, 5)),
                             ]
+            
+        elif format == 'R1x32_W64':
+            self.args = [   OutReg64 (0, Range(7,  5)),
+                            InReg    (0, Range(15, 5)),
+                            ]
+
+        elif format == 'R2x32_W64':
+            self.args = [   OutReg64 (0, Range(7,  5)),
+                            InReg    (0, Range(15, 5)),
+                            InReg    (1, Range(20, 5)),
+                            ]
+
+        elif format == 'R2x32_W32':
+            self.args = [   OutReg   (0, Range(7,  5)),
+                            InReg    (0, Range(15, 5)),
+                            InReg    (1, Range(20, 5)),
+                            ]
+
+        elif format == 'R2x32p64_W64':
+            self.args = [   OutReg64 (0, Range(7,  5)),
+                            InReg    (0, Range(15, 5)),
+                            InReg    (1, Range(20, 5)),
+                            InReg64  (2, Range(7,  5)),
+                            ]
+
+            
         elif format == 'BITREV':
             self.args = [   OutReg(0, Range(7,  5)),
                             InReg (0, Range(15, 5)),
@@ -972,8 +1026,8 @@ Xfvec = IsaSubset('fvec', [
 
     R5('vfclass.h', 'R2VF2','1001100 00001 ----- 010 ----- 0110011', tags=['fother'], isa_tags=['f16vec']),
 
-    R5('vfsgnj.r.h', 'RVF', '1001101 ----- ----- 010 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
-    R5('vfsgnj.h',   'RVF', '1001101 ----- ----- 110 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
+    R5('vfsgnj.h',   'RVF', '1001101 ----- ----- 010 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
+    R5('vfsgnj.r.h', 'RVF', '1001101 ----- ----- 110 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
     R5('vfsgnjn.h',  'RVF', '1001110 ----- ----- 010 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
     R5('vfsgnjn.r.h','RVF', '1001110 ----- ----- 110 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
     R5('vfsgnjx.h',  'RVF', '1001111 ----- ----- 010 ----- 0110011', tags=['fconv'], isa_tags=['f16vec']),
@@ -1303,6 +1357,18 @@ rv32c = IsaSubset('c', [
     R5('c.swsp',     'CSS', '110 --- --- -- --- 10', fast_handler=True),
     R5('c.sbreak',   'CI1', '100 000 000 00 000 10'),
 ])
+
+
+if os.environ.get('CONFIG_GVSOC_USE_UNCOMPRESSED_LABELS') is not None:
+    unconmpressed_names = [
+        'addi', 'lw', 'sw', 'nop', 'addi', 'jal', 'addi', 'addi', 'lui', 'srli', 'srai', 'andi', 'sub', 'xor', 'or', 'and', 'j', 'beqz', 'bnez', 'slli',
+        'lw', 'jr', 'mv', 'ebreak', 'jalr', 'add', 'sw', 'sbreak',
+    ]
+
+    for insn in rv32c.instrs:
+        label = unconmpressed_names.pop(0)
+        insn.traceLabel = label
+
 
 
 
@@ -1737,7 +1803,7 @@ pulp_nn_insns = [
     R5('pv.sub.n',         'R',     '0000100 ----- ----- 010 ----- 1010111'),
     R5('pv.sub.sc.n',      'R',     '0000100 ----- ----- 011 ----- 1010111'),
     R5('pv.sub.c',         'R',     '0000101 ----- ----- 010 ----- 1010111'),
-    R5('pv.sub.sc.c',      'R',     '0000101 ----- ----- 011 ----- 1010111'),    
+    R5('pv.sub.sc.c',      'R',     '0000101 ----- ----- 011 ----- 1010111'),
     # avg signed operands
     R5('pv.avg.n',        'R',   '0001000 ----- ----- 010 ----- 1010111'),
     R5('pv.avg.sc.n',     'R',   '0001000 ----- ----- 011 ----- 1010111'),
@@ -1854,6 +1920,7 @@ rnnext = [
     R5('pl.sig',      'R1',   '1111100 00000 ----- 001 ----- 1110111'),
 ]
 
+
 pulp_v2 = IsaSubset('pulpv2', pulp_v2_insns + pulp_common_insns)
 pulp_nn = IsaSubset('pulpnn', pulp_nn_insns)
 pulp_v2_rnnext = IsaSubset('rnnext', rnnext)
@@ -1924,172 +1991,51 @@ gap9 = IsaSubset('gap9',
 
 int64 = IsaSubset('int64',
 [
-    R5('add.d',      'R64',     '0010000 ----- ----- 000 ----- 0110011'),
-    R5('sub.d',      'R64',     '0110000 ----- ----- 000 ----- 0110011'),
-    R5('sll.d',      'R64',     '0010000 ----- ----- 001 ----- 0110011'),
-    R5('slt.d',      'R64',     '0011000 ----- ----- 010 ----- 0110011'),
-    R5('sltu.d',     'R64',     '0011000 ----- ----- 011 ----- 0110011'),
-    R5('xor.d',      'R64',     '0010000 ----- ----- 100 ----- 0110011'),
-    R5('srl.d',      'R64',     '0010000 ----- ----- 101 ----- 0110011'),
-    R5('sra.d',      'R64',     '0110000 ----- ----- 101 ----- 0110011'),
-    R5('or.d',       'R64',     '0110000 ----- ----- 110 ----- 0110011'),
-    R5('and.d',      'R64',     '0110000 ----- ----- 111 ----- 0110011'),
+    R5('add.d',      'R2x64_W64',      '0010000 ----- ----- 000 ----- 0110011'),
+    R5('sub.d',      'R2x64_W64',      '0110000 ----- ----- 000 ----- 0110011'),
+    R5('sll.d',      'R2x64_W64',      '0010000 ----- ----- 001 ----- 0110011'),
+    R5('slt.d',      'R2x64_W32',      '0011000 ----- ----- 010 ----- 0110011'),
+    R5('sltu.d',     'R2x64_W32',      '0011000 ----- ----- 011 ----- 0110011'),
+    R5('xor.d',      'R2x64_W64',      '0010000 ----- ----- 100 ----- 0110011'),
+    R5('srl.d',      'R2x64_W64',      '0010000 ----- ----- 101 ----- 0110011'),
+    R5('sra.d',      'R2x64_W64',      '0110000 ----- ----- 101 ----- 0110011'),
+    R5('or.d',       'R2x64_W64',      '0110000 ----- ----- 110 ----- 0110011'),
+    R5('and.d',      'R2x64_W64',      '0110000 ----- ----- 111 ----- 0110011'),
 
-    R5('slli.d',     'I64',    '0010000 ----- ----- 001 ----- 0010011'),
-    R5('srli.d',     'I64',    '0010010 ----- ----- 101 ----- 0010011'),
-    R5('srai.d',     'I64',    '0110010 ----- ----- 101 ----- 0010011'),
-    R5('addi.d',     'I64',    '0010001 ----- ----- 001 ----- 0010011'),
+    R5('slli.d',     'R1x64puImm_W64', '0010000 ----- ----- 001 ----- 0010011'),
+    R5('srli.d',     'R1x64puImm_W64', '0010010 ----- ----- 101 ----- 0010011'),
+    R5('srai.d',     'R1x64puImm_W64', '0110010 ----- ----- 101 ----- 0010011'),
+    R5('addi.d',     'R1x64psImm_W64', '0010001 ----- ----- 001 ----- 0010011'),
 
-    R5('slti.d',     'I64',    '0011000 ----- ----- 010 ----- 0011011'),
-    R5('sltiu.d',    'I64',    '0011000 ----- ----- 011 ----- 0011011'),
-    R5('xori.d',     'I64',    '0010000 ----- ----- 100 ----- 0011011'),
-    R5('ori.d',      'I64',    '0010000 ----- ----- 110 ----- 0011011'),
-    R5('andi.d',     'I64',    '0010000 ----- ----- 111 ----- 0011011'),
+    R5('slti.d',     'R1x64psImm_W32', '0011000 ----- ----- 010 ----- 0011011'),
+    R5('sltiu.d',    'R1x64puImm_W32', '0011000 ----- ----- 011 ----- 0011011'),
+    R5('xori.d',     'R1x64puImm_W64', '0010000 ----- ----- 100 ----- 0011011'),
+    R5('ori.d',      'R1x64puImm_W64', '0010000 ----- ----- 110 ----- 0011011'),
+    R5('andi.d',     'R1x64puImm_W64', '0010000 ----- ----- 111 ----- 0011011'),
 
-    R5('p.abs.d',    'R1_64',     '0010010 00000 ----- 000 ----- 0110011'),
-    R5('p.seq.d',    'RRRR64',   '0011011 ----- ----- 010 ----- 0110011'),
-    R5('p.slet.d',   'RRRR64',   '0011010 ----- ----- 010 ----- 0110011'),
-    R5('p.sletu.d',  'RRRR64',   '0011010 ----- ----- 011 ----- 0110011'),
-    R5('p.sne.d',    'RRRR64',   '0011011 ----- ----- 011 ----- 0110011'),
-    R5('p.min.d',    'RRRR64',   '0010010 ----- ----- 100 ----- 0110011'),
-    R5('p.minu.d',   'RRRR64',   '0010010 ----- ----- 101 ----- 0110011'),
-    R5('p.max.d',    'RRRR64',   '0010010 ----- ----- 110 ----- 0110011'),
-    R5('p.maxu.d',   'RRRR64',   '0010010 ----- ----- 111 ----- 0110011'),
-    R5('p.cnt.d',    'R1_64',     '0011010 00000 ----- 001 ----- 0110011'),
-    R5('p.exths.d',  'R1_64',     '0110010 00000 ----- 000 ----- 0110011'),
-    R5('p.exthz.d',  'R1_64',     '0110010 00000 ----- 001 ----- 0110011'),
-    R5('p.extbs.d',  'R1_64',     '0110010 00000 ----- 011 ----- 0110011'),
-    R5('p.extbz.d',  'R1_64',     '0010010 00000 ----- 100 ----- 0110011'),
-    R5('p.extws.d',  'R1_64',     '0110010 00000 ----- 101 ----- 0110011'),
-    R5('p.extwz.d',  'R1_64',     '0110010 00000 ----- 110 ----- 0110011'),
+    R5('p.abs.d',    'R1x64_W64',      '0010010 00000 ----- 000 ----- 0110011'),
+    R5('p.seq.d',    'R2x64_W32',      '0011011 ----- ----- 010 ----- 0110011'),
+    R5('p.slet.d',   'R2x64_W32',      '0011010 ----- ----- 010 ----- 0110011'),
+    R5('p.sletu.d',  'R2x64_W32',      '0011010 ----- ----- 011 ----- 0110011'),
+    R5('p.sne.d',    'R2x64_W32',      '0011011 ----- ----- 011 ----- 0110011'),
+    R5('p.min.d',    'R2x64_W64',      '0010010 ----- ----- 100 ----- 0110011'),
+    R5('p.minu.d',   'R2x64_W64',      '0010010 ----- ----- 101 ----- 0110011'),
+    R5('p.max.d',    'R2x64_W64',      '0010010 ----- ----- 110 ----- 0110011'),
+    R5('p.maxu.d',   'R2x64_W64',      '0010010 ----- ----- 111 ----- 0110011'),
+    R5('p.cnt.d',    'R1x64_W32',      '0011010 00000 ----- 001 ----- 0110011'),
+    R5('p.exths.d',  'R1x32_W64',      '0110010 00000 ----- 000 ----- 0110011'),
+    R5('p.exthz.d',  'R1x32_W64',      '0110010 00000 ----- 001 ----- 0110011'),
+    R5('p.extbs.d',  'R1x32_W64',      '0110010 00000 ----- 010 ----- 0110011'),
+    R5('p.extbz.d',  'R1x32_W64',      '0110010 00000 ----- 011 ----- 0110011'),
+    R5('p.extws.d',  'R1x32_W64',      '0110010 00000 ----- 100 ----- 0110011'),
+    R5('p.extwz.d',  'R1x32_W64',      '0110010 00000 ----- 101 ----- 0110011'),
 
-    R5('p.mac.d',    'RR64',   '0111001 ----- ----- 000 ----- 0110011'),
-    R5('p.msu.d',    'RR64',   '0111001 ----- ----- 001 ----- 0110011'),
-    R5('p.macu.d',   'RR64',   '0111001 ----- ----- 010 ----- 0110011'),
-    R5('p.msuu.d',   'RR64',   '0111001 ----- ----- 011 ----- 0110011'),
-    R5('p.muls.d',   'R64',      '0111001 ----- ----- 100 ----- 0110011'),
-    R5('p.mulu.d',   'R64',      '0111001 ----- ----- 101 ----- 0110011'),
-    R5('p.mulsh.d',  'R64',      '0111001 ----- ----- 110 ----- 0110011'),
-    R5('p.muluh.d',  'R64',      '0111001 ----- ----- 111 ----- 0110011'),
+    R5('p.mac.d',    'R2x32p64_W64',   '0111001 ----- ----- 000 ----- 0110011'),
+    R5('p.msu.d',    'R2x32p64_W64',   '0111001 ----- ----- 001 ----- 0110011'),
+    R5('p.macu.d',   'R2x32p64_W64',   '0111001 ----- ----- 010 ----- 0110011'),
+    R5('p.msuu.d',   'R2x32p64_W64',   '0111001 ----- ----- 011 ----- 0110011'),
+    R5('p.muls.d',   'R2x32_W64',      '0111001 ----- ----- 100 ----- 0110011'),
+    R5('p.mulu.d',   'R2x32_W64',      '0111001 ----- ----- 101 ----- 0110011'),
+    R5('p.mulsh.d',  'R2x32_W64',      '0111001 ----- ----- 110 ----- 0110011'),
+    R5('p.muluh.d',  'R2x32_W64',      '0111001 ----- ----- 111 ----- 0110011'),
 ])
-
-
-parser = argparse.ArgumentParser(description='Generate ISA for RISCV')
-
-parser.add_argument("--version", dest="version", default=1, type=int, metavar="VALUE", help="Specify ISA version")
-parser.add_argument("--header-file", dest="header_file", default=None, metavar="PATH", help="Specify header output file")
-parser.add_argument("--source-file", dest="source_file", default=None, metavar="PATH", help="Specify source output file")
-parser.add_argument("--implem", dest="implem", default=None, help="Specify implementation name")
-
-args = parser.parse_args()
-
-commonOptions = ["--pulp-perf-counters", "--pulp-hw-loop", "--itc-internal", "--itc-external-req", "--itc-external-wire", "--is-secured"]
-
-#if args.version == 1:
-#    isa = Isa('riscv', [IsaSubset('rv32i', rv32i),
-#                        IsaSubset('rv32m', rv32m),
-#                        IsaSubset('rv32c', rv32c),
-#                        IsaSubset('priv', priv),
-#                        IsaSubset('priv_pulp', priv_pulp, file=None, active='--priv_pulp'),
-#                        IsaSubset('priv_1_9', priv_1_9, file=None, active='--priv_1_9'),
-#                        IsaSubset('pulp', pulp),
-#                        IsaSubset('fpu', rv32f, active='--fpu', file=None),
-#                        IsaSubset('fpud', rv32d, active='--fpud', file=None),
-#                        IsaSubset('pulp_v1', pulp_v1, file=None)
-#                        ], options=commonOptions, power='pe.instr')
-#    isaName = 'riscv'
-
-
-
-isa = Isa(
-    'riscv',
-    [
-        IsaDecodeTree('pulp_v2', [priv_pulp_v2]),
-        IsaDecodeTree('i', [rv32i]),
-        IsaDecodeTree('m', [rv32m]),
-        IsaDecodeTree('c', [rv32c]),
-        IsaDecodeTree('priv', [priv]),
-        IsaDecodeTree('pulp_v2', [pulp_v2]),
-        IsaDecodeTree('pulp_nn', [pulp_nn]),
-        IsaDecodeTree('rnnext', [pulp_v2_rnnext]),
-        IsaDecodeTree('f', [rv32f]),
-        IsaDecodeTree('sfloat', [Xf16, Xf16alt, Xf8, Xfvec, Xfaux]),
-        IsaDecodeTree('gap8', [gap8]),
-        IsaDecodeTree('gap9', [gap9]),
-        IsaDecodeTree('int64', [int64]),
-        #IsaTree('fpud', rv32d),
-        #IsaTree('gap8', gap8),
-        #IsaTree('priv_pulp_v2', priv_pulp_v2),
-        #IsaTree('priv_1_9', priv_1_9)
-        #IsaTree('rv32a', rv32a),
-        #IsaTree('pulp_zeroriscy', pulp_zeroriscy),
-    ]
-)
-
-try:
-    os.makedirs(os.path.dirname(args.header_file))
-except Exception:
-    pass
-
-try:
-    os.makedirs(os.path.dirname(args.source_file))
-except Exception:
-    pass
-
-with open(args.header_file, 'w') as isaFileHeader:
-    with open(args.source_file, 'w') as isaFile:
-
-        for insn in isa.get_insns():
-
-            if args.implem is None:
-
-                if "load" in insn.tags:
-                    insn.get_out_reg(0).set_latency(2)
-                elif "fdiv" in insn.tags:
-                    insn.get_out_reg(0).set_latency(9)
-                elif "sfdiv" in insn.tags:
-                    insn.get_out_reg(0).set_latency(4)
-                elif "mul" in insn.tags:
-                    insn.get_out_reg(0).set_latency(2)
-                elif "mulh" in insn.tags:
-                    insn.set_latency(5)
-                elif "div" in insn.tags:
-                    insn.get_out_reg(0).set_latency(31)
-
-
-            elif args.implem == 'zeroriscy':
-
-                if "load" in insn.tags:
-                    insn.get_out_reg(0).set_latency(2)
-                elif "fdiv" in insn.tags:
-                    insn.get_out_reg(0).set_latency(9)
-                elif "sfdiv" in insn.tags:
-                    insn.get_out_reg(0).set_latency(4)
-                elif "mul" in insn.tags:
-                    insn.get_out_reg(0).set_latency(3)
-                elif "mulh" in insn.tags:
-                    insn.set_latency(5)
-                elif "div" in insn.tags:
-                    insn.get_out_reg(0).set_latency(37)
-
-
-        # TODO these are the old timings, find a way to make that more configurable        
-        # for insn in isa.get_insns():
-        #     if "load" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(2)
-        #     elif "fmul" in insn.tags or "fadd" in insn.tags or "fconv" in insn.tags or "fother" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(2)
-        #     elif "fmadd" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(3)
-        #     elif "fdiv" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(9)
-        #     elif "sfdiv" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(4)
-        #     elif "mul" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(2)
-        #     elif "mulh" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(3)
-        #     elif "div" in insn.tags:
-        #         insn.get_out_reg(0).set_latency(8)
-
-        isa.gen(isaFile, isaFileHeader)

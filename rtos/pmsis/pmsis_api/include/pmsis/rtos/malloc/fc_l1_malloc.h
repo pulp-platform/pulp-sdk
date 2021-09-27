@@ -19,6 +19,10 @@
 
 #include "pmsis/rtos/malloc/malloc_internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(__FC_MALLOC_NATIVE__) || (__FC_MALLOC_NATIVE__ == 0)
 
 /**
@@ -86,6 +90,14 @@ void pi_fc_l1_free(void *chunk, int size);
 void *pi_fc_l1_malloc_align(int size, int align);
 
 /**
+ * \brief Display free blocks.
+ *
+ * This function can be used to display free blocks available from the FC allocator.
+ */
+void pi_fc_l1_malloc_dump(void);
+
+
+/**
  * @cond IMPLEM
  */
 
@@ -121,8 +133,6 @@ void *pi_fc_l1_malloc_align(int size, int align);
  */
 void pi_fc_l1_malloc_init(void *heapstart, uint32_t size);
 
-void pi_fc_l1_malloc_dump();
-
 void pi_fc_l1_malloc_struct_set(malloc_t malloc_struct);
 
 malloc_t pi_fc_l1_malloc_struct_get(void);
@@ -141,4 +151,7 @@ malloc_t pi_fc_l1_malloc_struct_get(void);
 
 #endif  /* (__FC_MALLOC_NATIVE__) || (__FC_MALLOC_NATIVE__ == 0) */
 
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PMSIS_RTOS_MALLOC_FC_L1_MALLOC_H__ */

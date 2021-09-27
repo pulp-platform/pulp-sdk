@@ -25,10 +25,10 @@ void pos_soc_init()
 {
     pos_fll_constructor();
 
-    pos_freq_domains[PI_FREQ_DOMAIN_FC] = pos_fll_init(POS_FLL_FC);
+    pos_freq_domains[PI_FREQ_DOMAIN_FC] = pos_fll_init(POS_FLL_FC, 0);
 
-    pos_freq_domains[PI_FREQ_DOMAIN_PERIPH] = pos_fll_init(POS_FLL_PERIPH);
+    pos_freq_domains[PI_FREQ_DOMAIN_PERIPH] = pos_fll_init(POS_FLL_PERIPH, 0);
 
-    pos_freq_domains[PI_FREQ_DOMAIN_CL] = pos_fll_init(POS_FLL_CL);
+    pos_freq_domains[PI_FREQ_DOMAIN_CL] = pos_fll_init(POS_FLL_CL, 0);
 }
 

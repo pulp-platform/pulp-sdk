@@ -19,9 +19,17 @@
 
 #include "pmsis/pmsis_types.h"
 
-// #ifndef PI_INLINE_HYPER_LVL_0
-// #define PI_INLINE_HYPER_LVL_0
-// #endif
+#if defined(__GAP9__)
+#include "pmsis/drivers/aes_utils.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef PI_INLINE_HYPER_LVL_0
+#define PI_INLINE_HYPER_LVL_0
+#endif
 
 /**
 * @ingroup groupDrivers
@@ -69,7 +77,11 @@ typedef struct pi_hyper_conf
 {
     pi_device_e device;  /*!< Interface type. */
     signed char id;      /*!< Hyperbus interface where the device is connected.*/
+#if defined(__GAP9__)
     uint8_t xip_en;      /*!< Specify whether xip is on */
+    pi_aes_utils_conf_t* aes_conf; /*!< pointer to the AES configuration for
+                                        on-the-fly encryption/decryption */
+#endif
     uint32_t cs;         /*!< Chip select where the device is connected. */
     pi_hyper_type_e type;/*!< Type of device connected on the hyperbus interface. */
     uint32_t baudrate;   /*!< Baudrate (in bytes/second). */
@@ -146,6 +158,13 @@ enum pi_hyper_ioctl_cmd
      */
     PI_HYPER_IOCTL_SET_LATENCY,
     PI_HYPER_IOCTL_SET_TRAN_ID,
+#if defined(__GAP9__)
+    /** @brief Enable AES
+     *
+     * This command can be used to enable/disable the on-the-fly AES at runtime
+     */
+    PI_HYPER_IOCTL_ENABLE_AES,
+#endif
 };
 
 /**
@@ -177,7 +196,7 @@ int pi_hyper_ioctl(struct pi_device *device, uint32_t cmd, void *arg);
  * \param addr        The address of the copy in the processor.
  * \param size        The size in bytes of the copy
  */
-void pi_hyper_read(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_read(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size);
 
 /** \brief Enqueue an asynchronous read copy to the Hyperbus (from Hyperbus
@@ -198,7 +217,7 @@ void pi_hyper_read(struct pi_device *device,
  * \param task        The task used to notify the end of transfer.
    See the documentation of pi_task_t for more details.
  */
-void pi_hyper_read_async(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_read_async(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size, struct pi_task *task);
 
 /** \brief Enqueue a write copy to the Hyperbus (from processor to Hyperbus).
@@ -215,7 +234,7 @@ void pi_hyper_read_async(struct pi_device *device,
  * \param addr        The address of the copy in the processor.
  * \param size        The size in bytes of the copy
  */
-void pi_hyper_write(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_write(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size);
 
 /** \brief Enqueue an asynchronous write copy to the Hyperbus (from processor
@@ -236,7 +255,7 @@ void pi_hyper_write(struct pi_device *device,
  * \param task        The task used to notify the end of transfer. See the
  *   documentation of pi_task_t for more details.
  */
-void pi_hyper_write_async(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_write_async(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size, struct pi_task *task);
 
 /** \brief Enqueue a 2D read copy (rectangle area) to the Hyperbus (from
@@ -258,7 +277,7 @@ void pi_hyper_write_async(struct pi_device *device,
  * \param length      2D length, which is the number of transferred bytes after
  *   which the driver will switch to the next line.
  */
-void pi_hyper_read_2d(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_read_2d(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size, uint32_t stride,
   uint32_t length);
 
@@ -284,7 +303,7 @@ void pi_hyper_read_2d(struct pi_device *device,
  * \param task        The task used to notify the end of transfer. See the
  * documentation of pi_task_t for more details.
  */
-void pi_hyper_read_2d_async(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_read_2d_async(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size, uint32_t stride,
   uint32_t length, struct pi_task *task);
 
@@ -307,7 +326,7 @@ void pi_hyper_read_2d_async(struct pi_device *device,
  * \param length      2D length, which is the number of transferred bytes after
  *   which the driver will switch to the next line.
  */
-void pi_hyper_write_2d(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_write_2d(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size, uint32_t stride,
   uint32_t length);
 
@@ -333,7 +352,7 @@ void pi_hyper_write_2d(struct pi_device *device,
  * \param task        The task used to notify the end of transfer. See the
  *   documentation of pi_task_t for more details.
  */
-void pi_hyper_write_2d_async(struct pi_device *device,
+PI_INLINE_HYPER_LVL_0 void pi_hyper_write_2d_async(struct pi_device *device,
   uint32_t hyper_addr, void *addr, uint32_t size, uint32_t stride,
   uint32_t length, struct pi_task *task);
 
@@ -526,6 +545,32 @@ static inline void pi_cl_hyper_copy_2d(struct pi_device *device,
   uint32_t length, int ext2loc, pi_cl_hyper_req_t *req);
 
 
+/** \brief Forbid XIP refills
+ *
+ * This function can be called to prevent the hyperbus from triggering any
+ * XIP refill transfer. This can be used to do an operation in a device which
+ * would make an XIP refill fail, like an erase operation.
+ * Be careful that locking XIP refills can lead to a deadlock if XIP code is
+ * executed so only local code must be execyted when the XIP refill
+ * is locked.
+ * This will only apply to the new transfer enqueued after calling this
+ * function, not to the pending transfers enqueued before.
+ *
+ * \param device    The device structure of the device to close.
+ */
+void pi_hyper_xip_lock(struct pi_device *device);
+
+
+/** \brief Allow XIP refills
+ *
+ * This function can be called to allow again XIP refills after they have been
+ * forbidden.
+ *
+ * \param device    The device structure of the device to close.
+ */
+void pi_hyper_xip_unlock(struct pi_device *device);
+
+
 //!@}
 
 /**
@@ -567,5 +612,7 @@ void pi_hyper_flash_sync(struct pi_device *device);
 
 /// @endcond
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif  /* __PI_PMSIS_DRIVERS_HYPERBUS_H__ */

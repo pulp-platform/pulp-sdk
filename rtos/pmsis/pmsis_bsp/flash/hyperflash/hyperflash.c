@@ -23,6 +23,9 @@
 #include "bsp/flash/hyperflash.h"
 #include "pmsis/drivers/hyperbus.h"
 
+#ifndef PI_LOCAL_CODE
+#define PI_LOCAL_CODE
+#endif
 
 #define SECTOR_SIZE (1<<18)
 
@@ -91,10 +94,68 @@ static void hyperflash_erase_sector_async(struct pi_device *device, uint32_t add
 
 static void hyperflash_set_reg_exec(hyperflash_t *hyperflash, unsigned int addr, unsigned short value)
 {
+#if defined(__GAP9__)
+  int32_t prev = pi_hyper_ioctl(&hyperflash->hyper_device,
+          PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+#endif
   hyperflash->udma_buffer[0] = value;
   pi_hyper_write(&hyperflash->hyper_device, addr, hyperflash->udma_buffer, 2);
+#if defined(__GAP9__)
+  pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES,
+          (void*) prev);
+#endif
 }
 
+#ifdef CONFIG_XIP
+
+PI_LOCAL_CODE static void hyperflash_set_reg_exec_xip(hyperflash_t *hyperflash, unsigned int addr, unsigned short value)
+{
+#if defined(__GAP9__)
+  int32_t prev = pi_hyper_ioctl(&hyperflash->hyper_device,
+          PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+#endif
+    struct pi_task task;
+    hyperflash->udma_buffer[0] = value;
+    pi_hyper_write_async(&hyperflash->hyper_device, addr, hyperflash->udma_buffer, 2, pi_task_block(&task));
+    pi_task_wait_on_xip(&task);
+#if defined(__GAP9__)
+  pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES,
+          (void*) prev);
+#endif
+}
+
+
+PI_LOCAL_CODE static unsigned short hyperflash_get_reg_exec_xip(hyperflash_t *hyperflash, unsigned int addr)
+{
+#if defined(__GAP9__)
+  int32_t prev = pi_hyper_ioctl(&hyperflash->hyper_device,
+          PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+#endif
+    struct pi_task task;
+    pi_hyper_read_async(&hyperflash->hyper_device, addr, hyperflash->udma_buffer, 4, pi_task_block(&task));
+    pi_task_wait_on_xip(&task);
+#if defined(__GAP9__)
+  pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES,
+          (void*) prev);
+#endif
+    return hyperflash->udma_buffer[0];
+}
+
+PI_LOCAL_CODE static unsigned int hyperflash_get_status_reg_xip(hyperflash_t *hyperflash)
+{
+#if defined(__GAP9__)
+  int32_t prev = pi_hyper_ioctl(&hyperflash->hyper_device,
+          PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+#endif
+    hyperflash_set_reg_exec_xip(hyperflash, 0x555<<1, 0x70);
+#if defined(__GAP9__)
+  pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES,
+          (void*) prev);
+#endif
+    return hyperflash_get_reg_exec_xip(hyperflash, 0);
+}
+
+#endif
 
 
 // TODO should be moved to pmsis api
@@ -107,7 +168,15 @@ static void pi_task_enqueue(pi_task_t *task)
 
 static unsigned short hyperflash_get_reg_exec(hyperflash_t *hyperflash, unsigned int addr)
 {
+#if defined(__GAP9__)
+  int32_t prev = pi_hyper_ioctl(&hyperflash->hyper_device,
+          PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+#endif
   pi_hyper_read(&hyperflash->hyper_device, addr, hyperflash->udma_buffer, 4);
+#if defined(__GAP9__)
+  pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES,
+          (void*) prev);
+#endif
   return hyperflash->udma_buffer[0];
 }
 
@@ -115,8 +184,40 @@ static unsigned short hyperflash_get_reg_exec(hyperflash_t *hyperflash, unsigned
 
 static unsigned int hyperflash_get_status_reg(hyperflash_t *hyperflash)
 {
+#if defined(__GAP9__)
+  int32_t prev = pi_hyper_ioctl(&hyperflash->hyper_device,
+          PI_HYPER_IOCTL_ENABLE_AES, (void*) 0);
+#endif
   hyperflash_set_reg_exec(hyperflash, 0x555<<1, 0x70);
+#if defined(__GAP9__)
+  pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES,
+          (void*) prev);
+#endif
   return hyperflash_get_reg_exec(hyperflash, 0);
+}
+
+
+void pi_hyperflash_deep_sleep_enter(pi_device_t *device)
+{
+    hyperflash_t *hyperflash = (hyperflash_t *)device->data;
+    hyperflash_set_reg_exec(hyperflash, 0x555<<1, 0xAA);
+    hyperflash_set_reg_exec(hyperflash, 0x2AA<<1, 0x55);
+    hyperflash_set_reg_exec(hyperflash, 0x000<<1, 0xB9);
+}
+
+
+void pi_hyperflash_deep_sleep_exit(pi_device_t *device)
+{
+    hyperflash_t *hyperflash = (hyperflash_t *)device->data;
+
+    // Execute dummy command to wakeup the flash
+    hyperflash_set_reg_exec(hyperflash, 0x000<<1, 0x00);
+
+    // Wait wakeup time
+    pi_time_wait_us(300);
+
+    // Don't know why on RTL, the flash model needs a SW reset
+    hyperflash_set_reg_exec(hyperflash, 0x000<<1, 0xF0);
 }
 
 
@@ -144,7 +245,11 @@ static int hyperflash_open(struct pi_device *device)
   hyper_conf.id = (unsigned char) conf->hyper_itf;
   hyper_conf.cs = conf->hyper_cs;
   hyper_conf.type = PI_HYPER_TYPE_FLASH;
+  #if defined(__GAP9__)
+  hyper_conf.baudrate = 200000000;
   hyper_conf.xip_en = conf->xip_en;
+  hyper_conf.aes_conf = &(conf->flash.aes_conf);
+  #endif  /* __GAP9__ */
 
   pi_open_from_conf(&hyperflash->hyper_device, &hyper_conf);
 
@@ -188,6 +293,15 @@ static int32_t hyperflash_ioctl(struct pi_device *device, uint32_t cmd, void *ar
       flash_info->sector_size = 1<<18;
       // TODO find a way to know what is on the flash, as they may be a boot binary
       flash_info->flash_start = flash_info->sector_size;
+      break;
+    }
+    case PI_FLASH_IOCTL_AES_ENABLE:
+    {
+#if defined(__GAP9__)
+      hyperflash_t *hyperflash = (hyperflash_t *)device->data;
+      printf("Hello ioctl\n");
+      pi_hyper_ioctl(&hyperflash->hyper_device, PI_HYPER_IOCTL_ENABLE_AES, (void*) arg);
+#endif
       break;
     }
     case PI_FLASH_IOCTL_ID:
@@ -494,7 +608,7 @@ static int hyperflash_stall_erase_task(hyperflash_t *hyperflash, pi_task_t *task
 
 
 
-static void hyperflash_program_resume(void *arg)
+PI_LOCAL_CODE __attribute__((noinline)) static void hyperflash_program_resume(void *arg)
 {
   struct pi_device *device = (struct pi_device *)arg;
   hyperflash_t *hyperflash = (hyperflash_t *)device->data;
@@ -505,9 +619,44 @@ static void hyperflash_program_resume(void *arg)
   }
   else
   {
-    unsigned int iter_size = 512 - (hyperflash->pending_hyper_addr & 0x1ff);
+#ifdef CONFIG_XIP
+    // In XIP mode, we need to lock XIP refills to avoid having a read while the flash is doing the program operation.
+    pi_hyper_xip_lock(&hyperflash->hyper_device);
+
+    while (hyperflash->pending_size > 0)
+    {
+      unsigned int iter_size = 512 - (hyperflash->pending_hyper_addr & 0x1ff);
       if (iter_size > hyperflash->pending_size)
         iter_size = hyperflash->pending_size;
+
+      // Enqueue command header synchronously as this should be quick
+      hyperflash_set_reg_exec_xip(hyperflash, 0x555<<1, 0xAA);
+      hyperflash_set_reg_exec_xip(hyperflash, 0x2AA<<1, 0x55);
+      hyperflash_set_reg_exec_xip(hyperflash, 0x555<<1, 0xA0);
+
+      uint32_t hyper_addr = hyperflash->pending_hyper_addr;
+      uint32_t data = hyperflash->pending_data;
+
+      hyperflash->pending_hyper_addr += iter_size;
+      hyperflash->pending_data += iter_size;
+      hyperflash->pending_size -= iter_size;
+
+      // Even though the operation should be asynchronous, do everything synchronously to avoid XIP refills until the operation is done
+      struct pi_task task;
+      pi_hyper_write_async(&hyperflash->hyper_device, hyper_addr, (void *)data, iter_size, pi_task_block(&task));
+      pi_task_wait_on_xip(&task);
+      while (((hyperflash_get_status_reg_xip(hyperflash) >> 7) & 1) == 0)
+      {
+      }
+    }
+
+    pi_hyper_xip_unlock(&hyperflash->hyper_device);
+    hyperflash_handle_pending_task(device);
+#else
+
+    unsigned int iter_size = 512 - (hyperflash->pending_hyper_addr & 0x1ff);
+    if (iter_size > hyperflash->pending_size)
+      iter_size = hyperflash->pending_size;
 
     // Enqueue command header synchronously as this should be quick
     hyperflash_set_reg_exec(hyperflash, 0x555<<1, 0xAA);
@@ -522,6 +671,7 @@ static void hyperflash_program_resume(void *arg)
     hyperflash->pending_size -= iter_size;
 
     pi_hyper_write_async(&hyperflash->hyper_device, hyper_addr, (void *)data, iter_size, pi_task_callback(&hyperflash->task, hyperflash_check_program, device));
+#endif
   }
 }
 
@@ -620,7 +770,7 @@ static void hyperflash_erase_sector_async(struct pi_device *device, uint32_t add
 
 
 
-static void hyperflash_erase_resume(void *arg)
+PI_LOCAL_CODE __attribute__((noinline)) static void hyperflash_erase_resume(void *arg)
 {
   struct pi_device *device = (struct pi_device *)arg;
   hyperflash_t *hyperflash = (hyperflash_t *)device->data;
@@ -631,6 +781,40 @@ static void hyperflash_erase_resume(void *arg)
   }
   else
   {
+#ifdef CONFIG_XIP
+    // When XIP is active and flash does not support concurrent read and write, loop on the erase operation until it is done
+    // Since XIP can not work at the same time.
+    // On multi-threaded systems, we should also put on hold any request to this driver and resume them after the program operation is done,
+    // since the octosp drover will let other requests execute between 2 operations, to let other devices being used.
+    while (hyperflash->pending_erase_size > 0)
+    {
+      unsigned int iter_size = SECTOR_SIZE - (hyperflash->pending_erase_hyper_addr & (SECTOR_SIZE - 1));
+      if (iter_size > hyperflash->pending_erase_size)
+        iter_size = hyperflash->pending_erase_size;
+
+      uint32_t hyper_addr = hyperflash->pending_erase_hyper_addr;
+
+      hyperflash->pending_erase_hyper_addr += iter_size;
+      hyperflash->pending_erase_size -= iter_size;
+
+      pi_hyper_xip_lock(&hyperflash->hyper_device);
+
+      // Even though the operation should be asynchronous, do everything synchronously to avoid XIP refills until the operation is done
+      hyperflash_set_reg_exec_xip(hyperflash, 0x555<<1, 0xAA);
+      hyperflash_set_reg_exec_xip(hyperflash, 0x2AA<<1, 0x55);
+      hyperflash_set_reg_exec_xip(hyperflash, 0x555<<1, 0x80);
+      hyperflash_set_reg_exec_xip(hyperflash, 0x555<<1, 0xAA);
+      hyperflash_set_reg_exec_xip(hyperflash, 0x2AA<<1, 0x55);
+      hyperflash_set_reg_exec_xip(hyperflash, hyper_addr, 0x30);
+
+      while (((hyperflash_get_status_reg_xip(hyperflash) >> 7) & 1) == 0)
+      {
+      }
+      pi_hyper_xip_unlock(&hyperflash->hyper_device);
+    }
+
+    hyperflash_handle_pending_erase_task(device);
+#else
     unsigned int iter_size = SECTOR_SIZE - (hyperflash->pending_erase_hyper_addr & (SECTOR_SIZE - 1));
     if (iter_size > hyperflash->pending_erase_size)
       iter_size = hyperflash->pending_erase_size;
@@ -640,6 +824,7 @@ static void hyperflash_erase_resume(void *arg)
 
     hyperflash->pending_erase_hyper_addr += iter_size;
     hyperflash->pending_erase_size -= iter_size;
+#endif
   }
 }
 
@@ -765,8 +950,8 @@ static inline int hyperflash_copy_2d(struct pi_device *device, uint32_t pi_flash
 static inline int hyperflash_id_alloc(struct pi_device *device)
 {
   hyperflash_t *hyperflash = (hyperflash_t *)device->data;
-  
-  return pi_hyper_id_alloc(&hyperflash->hyper_device);  
+
+  return pi_hyper_id_alloc(&hyperflash->hyper_device);
 }
 
 static inline void hyperflash_bwrite(struct pi_device *device, uint32_t pi_flash_addr, void *buffer, int nb_word)
@@ -827,6 +1012,10 @@ static pi_flash_api_t hyperflash_api = {
 void pi_hyperflash_conf_init(struct pi_hyperflash_conf *conf)
 {
   conf->flash.api = &hyperflash_api;
+#if defined(__GAP9__)
+  conf->flash.aes_conf.enabled = 0;
+  conf->flash.aes_conf.qk_en = 0;
+#endif
   bsp_hyperflash_conf_init(conf);
   __flash_conf_init(&conf->flash);
   conf->xip_en = 0;

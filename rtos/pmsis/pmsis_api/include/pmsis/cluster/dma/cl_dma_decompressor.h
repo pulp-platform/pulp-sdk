@@ -17,6 +17,10 @@
 #ifndef __CL_DMA_DECOMPRESSOR_H__
 #define __CL_DMA_DECOMPRESSOR_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Decompression/compression mode
  * TODO explain compression/decompression modes
@@ -61,7 +65,6 @@ typedef enum
     PI_CL_DMA_DECOMPRESSOR_TRANSF_EXT_LIN_LOC_LIN,
     PI_CL_DMA_DECOMPRESSOR_TRANSF_EXT_2D_LOC_LIN,
     PI_CL_DMA_DECOMPRESSOR_TRANSF_EXT_LIN_LOC_2D,
-    PI_CL_DMA_DECOMPRESSOR_TRANSF_EXT_2D_LOC_2D,
 } pi_cl_dma_decompressor_transfer_type_e;
 
 typedef struct pi_cl_dma_decompressor_2d_transfer
@@ -109,4 +112,7 @@ void pi_cl_dma_decompressor_cmd(pi_cl_dma_decompressor_cmd_t* cmd);
  */
 void pi_cl_dma_decompressor_wait(pi_cl_dma_decompressor_cmd_t* cmd);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
