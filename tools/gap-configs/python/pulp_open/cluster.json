@@ -47,7 +47,7 @@
             "remove_offset": "0x10100000"
         },
         "banking_factor": 2,
-        "power_models": "gap/gap9/power_models/l1/l1.json"
+        "power_models": "pulp_open/power_models/l1/l1.json"
     },
 
     "icache": {

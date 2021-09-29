@@ -85,13 +85,7 @@
     "rom": {
         "version": 2,
         "base": "0x1A000000",
-        "size": "0x00002000",
-        "config": {
-            "@eval@": {
-                "binary": "os.path.join(os.environ.get('TARGET_INSTALL_DIR'), 'bin', 'boot-gap9_v2')",
-                "stim_file": "os.path.join(os.environ.get('INSTALL_DIR'), 'python', 'pulp', 'chips', 'gap9_v2', 'rom.bin')"
-            }
-        }
+        "size": "0x00002000"
     },
 
     "apb_ico": {
@@ -228,7 +222,6 @@
         },
 
         "udma": {
-            "content"      : "chips/gap9_v2/udma.json"
         },
 
         "apb_soc_ctrl": {
@@ -253,7 +246,6 @@
         },
 
         "pmu": {
-            "content"      : "chips/gap9_v2/pmu.json",
             "version"      : 4
         },
 
@@ -331,12 +323,7 @@
         },
 
         "debug_rom": {
-            "version": 2,
-            "config": {
-                "@eval@": {
-                "stim_file": "os.path.join(os.environ.get('INSTALL_DIR'), 'python', 'pulp', 'chips', 'gap9_v2', 'debug_rom.bin')"
-                }
-            }
+            "version": 2
         }
     },
 
