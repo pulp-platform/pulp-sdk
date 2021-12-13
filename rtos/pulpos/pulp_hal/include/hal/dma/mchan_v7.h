@@ -241,10 +241,11 @@ static inline void plp_dma_cmd_push(unsigned int cmd, unsigned int locAddr, mcha
 
 /** Push a 2D transfer to the DMA
  * 
+  \param      cmd        The command that specifies the type of the transfer.
   \param      locAddr    The address of the transfer for the cluster memory
   \param      extAddr    The address of the transfer for the external memory
-  \param      cmd        The command that specifies the type of the transfer. This can be generated using plp_dma_getStrides.
-  \param      strides    The command that specifies the 2D transfer (stride and len). This can be generated using plp_dma_getStrides.
+  \param      stride     2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one.
+  \param      length     2D length, which is the number of transferred bytes after which the DMA will switch to the next line.
   */
 static inline void plp_dma_cmd_push_2d(unsigned int cmd, unsigned int locAddr, mchan_ext_t extAddr, unsigned int stride, unsigned int length);
 
