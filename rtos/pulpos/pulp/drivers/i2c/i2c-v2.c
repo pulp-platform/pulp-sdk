@@ -670,6 +670,8 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 	}
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[conf->itf];
+    unsigned char i2c_id = conf->itf;
+	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
 	if (driver_data == NULL) {
 		/* Allocate driver data. */
 		driver_data = (struct i2c_itf_data_s *)pi_l2_malloc(sizeof(struct i2c_itf_data_s));
@@ -716,9 +718,7 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		hal_soc_eu_set_fc_mask(SOC_EVENT_UDMA_I2C_RX(conf->itf));
 		hal_soc_eu_set_fc_mask(SOC_EVENT_UDMA_I2C_TX(conf->itf));
 
-		/* Disable UDMA CG. */
-		udma_init_device(UDMA_I2C_ID(conf->itf));
-
+        plp_udma_cg_set(plp_udma_cg_get() | (1 << periph_id));
 
 		I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
 	}
@@ -752,6 +752,8 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 {
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[device_data->device_id];
 	__pi_i2c_cs_data_remove(driver_data, device_data);
+    unsigned char i2c_id = conf->itf;
+	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
 	driver_data->nb_open--;
 	I2C_TRACE("I2C(%d) : number of opened devices %ld.\n", driver_data->device_id,
 		  driver_data->nb_open);
@@ -778,7 +780,7 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 		hal_soc_eu_clear_fc_mask(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
 
 		/* Enable UDMA CG. */
-		udma_deinit_device(UDMA_I2C_ID(driver_data->device_id));
+		plp_udma_cg_set(plp_udma_cg_get() & ~(1 << periph_id));
 
 		/* Free allocated struct. */
 		pi_l2_free(driver_data, sizeof(struct i2c_itf_data_s));
