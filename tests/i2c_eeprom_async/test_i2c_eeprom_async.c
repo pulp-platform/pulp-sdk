@@ -121,15 +121,9 @@ void eeprom(void)
 	exit(0);
 }
 
-static void test_kickoff(void *arg)
-{
-	int ret = eeprom();
-	pmsis_exit(ret);
-}
-
 /* Program Entry. */
 int main(void)
 {
 	printf("\n\n\t *** Pulp-SDK Hello World *** \n\n");
-	return pmsis_kickoff((void *)test_kickoff);
+	return pmsis_kickoff((void *)eeprom);
 }
