@@ -83,6 +83,7 @@ endif
 ifeq '$(CONFIG_SPIFLASH)' '1'
 PULP_SRCS += $(BSP_SPIFLASH_SRC)
 CONFIG_FLASH = 1
+CONFIG_SPIM = 1
 endif
 
 ifeq '$(CONFIG_ATXP032)' '1'
