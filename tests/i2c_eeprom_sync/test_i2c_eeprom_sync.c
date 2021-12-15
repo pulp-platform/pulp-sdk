@@ -93,7 +93,7 @@ void eeprom(void)
 		0x00, /* addr msb */
 		0x00, /* addr lsb */
 	};
-
+/**
 	res = pi_i2c_write(&i2c, eeprom_addr, sizeof(eeprom_addr),
 			   PI_I2C_XFER_START | PI_I2C_XFER_STOP);
 	if (res != PI_OK) {
@@ -106,7 +106,7 @@ void eeprom(void)
 		printf("pi_i2c_read failed\n");
 		exit(1);
 	}
-
+*/
 	printf("comparing\n");
 	int error = 0;
 	for (int i = 0; i < sizeof(rx); i++) {
