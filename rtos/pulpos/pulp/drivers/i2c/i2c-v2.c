@@ -699,10 +699,12 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		return -11;
 	}
 	printf("__pi_i2c_open 1");
+	/**
 	for (int i = 0; i < ARCHI_NB_FLL; i++)
 	{
 		pos_fll_init(i);
 	}
+	*/
 
 	printf("__pi_i2c_open 2");
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[conf->itf];
