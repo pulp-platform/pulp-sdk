@@ -44,13 +44,23 @@
 /* Lenght of i2c eot subset of stop command sequence. */
 #define __PI_I2C_ONLY_EOT_CMD_SIZE (3)
 
-typedef enum {
+#if defined(TRACE_I2C)
+#define I2C_TRACE(...) printf
+#define I2C_TRACE_ERR(...) printf
+#else
+#define I2C_TRACE(...) ((void)0)
+#define I2C_TRACE_ERR(...) ((void)0)
+#endif /* TRACE_I2C */
+
+typedef enum
+{
 	RX_CHANNEL = 0,
 	TX_CHANNEL = 1,
 	COMMAND_CHANNEL = 2
 } udma_channel_e;
 
-struct i2c_pending_transfer_s {
+struct i2c_pending_transfer_s
+{
 	uint32_t pending_buffer;
 	uint32_t pending_size;
 	uint32_t pending_repeat;
@@ -60,41 +70,55 @@ struct i2c_pending_transfer_s {
 	udma_channel_e channel;
 };
 
-struct i2c_cs_data_s {
-	uint8_t device_id;	    /*!< I2C interface ID. */
-	uint8_t cs;		    /*!< Chip select i2c device. */
-	uint16_t clk_div;	    /*!< Clock divider for the selected i2c chip. */
-	uint32_t max_baudrate;	    /*!< Max baudrate for the selected i2c chip. */
+struct i2c_cs_data_s
+{
+	uint8_t device_id;			/*!< I2C interface ID. */
+	uint8_t cs;					/*!< Chip select i2c device. */
+	uint16_t clk_div;			/*!< Clock divider for the selected i2c chip. */
+	uint32_t max_baudrate;		/*!< Max baudrate for the selected i2c chip. */
 	struct i2c_cs_data_s *next; /*!< Pointer to next i2c cs data struct. */
 };
 
-struct i2c_itf_data_s {
+struct i2c_itf_data_s
+{
 	/* Best to use only one queue since both RX & TX can be used at the same time. */
-	struct pi_task *buf[2];		/*!< RX + TX */
-	struct pi_task *fifo_head;		/*!< Head of SW fifo waiting transfers. */
-	struct pi_task *fifo_tail;		/*!< Tail of SW fifo waiting transfers. */
+	struct pi_task *buf[2];					/*!< RX + TX */
+	struct pi_task *fifo_head;				/*!< Head of SW fifo waiting transfers. */
+	struct pi_task *fifo_tail;				/*!< Tail of SW fifo waiting transfers. */
 	struct i2c_pending_transfer_s *pending; /*!< RX + TX. */
-	uint32_t nb_open;			/*!< Number of devices opened. */
-	uint32_t i2c_cmd_index;			/*!< Number of commands in i2c_cmd_seq. */
+	uint32_t nb_open;						/*!< Number of devices opened. */
+	uint32_t i2c_cmd_index;					/*!< Number of commands in i2c_cmd_seq. */
 	/* pi_freq_cb_t i2c_freq_cb;		/\*!< Callback associated to frequency changes. *\/
 	 */
-	struct i2c_cs_data_s *cs_list;		      /*!< List of i2c associated to this itf. */
+	struct i2c_cs_data_s *cs_list;				  /*!< List of i2c associated to this itf. */
 	uint8_t i2c_cmd_seq[__PI_I2C_CMD_BUFF_SIZE];  /*!< Command sequence. */
-	uint8_t i2c_stop_send;			      /*!< Set if a stop cmd seq should be sent. */
+	uint8_t i2c_stop_send;						  /*!< Set if a stop cmd seq should be sent. */
 	uint8_t i2c_stop_seq[__PI_I2C_STOP_CMD_SIZE]; /*!< Command STOP sequence. */
-	uint8_t i2c_eot_send;			      /*!< Set if a eot cmd seq should be sent. */
-	uint8_t* i2c_only_eot_seq;                    /*!< Only EOT sequence part of of STOP sequence */
-	uint8_t device_id;			      /*!< I2C interface ID. */
+	uint8_t i2c_eot_send;						  /*!< Set if a eot cmd seq should be sent. */
+	uint8_t *i2c_only_eot_seq;					  /*!< Only EOT sequence part of of STOP sequence */
+	uint8_t device_id;							  /*!< I2C interface ID. */
 	/* This variable is used to count number of events received to handle EoT sequence. */
 	uint8_t nb_events; /*!< Number of events received. */
+	pos_udma_channel_t *rx_channel;
+	pos_udma_channel_t *tx_channel;
 };
 
 /* Defines for read & write adress access. */
 #define ADDRESS_WRITE 0x0
-#define ADDRESS_READ  0x1
+#define ADDRESS_READ 0x1
 
 /* Max length of a i2c request/data buffer. */
 #define MAX_SIZE (0xFF)
+
+#define UDMA_EVENT_OFFSET_RX (0)
+#define UDMA_EVENT_OFFSET_TX (1)
+
+#define SOC_EVENT_UDMA_I2C_RX(id)                                          \
+	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
+	 UDMA_EVENT_OFFSET_RX)
+#define SOC_EVENT_UDMA_I2C_TX(id)                                          \
+	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
+	 UDMA_EVENT_OFFSET_TX)
 
 static struct i2c_itf_data_s *g_i2c_itf_data[ARCHI_UDMA_NB_I2C] = {NULL};
 
@@ -109,7 +133,7 @@ static void __pi_i2c_cs_data_add(struct i2c_itf_data_s *driver_data, struct i2c_
 
 /* Remove a cs_data from list of opened devices. */
 static void __pi_i2c_cs_data_remove(struct i2c_itf_data_s *driver_data,
-				    struct i2c_cs_data_s *cs_data);
+									struct i2c_cs_data_s *cs_data);
 
 /* Handle a pending transfer after end of previous part of transfer. */
 static void __pi_i2c_handle_pending_transfer(struct i2c_itf_data_s *driver_data);
@@ -158,11 +182,11 @@ void __pi_i2c_ioctl(struct i2c_cs_data_s *device_data, uint32_t cmd, void *arg);
 
 /* Copy in UDMA. */
 void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t length,
-		   pi_i2c_xfer_flags_e flags, udma_channel_e channel, struct pi_task *task);
+				   pi_i2c_xfer_flags_e flags, udma_channel_e channel, struct pi_task *task);
 
 /* Scan i2c bus to detect connected devices. */
 int32_t __pi_i2c_detect(struct i2c_cs_data_s *cs_data, struct pi_i2c_conf *conf, uint8_t *rx_data,
-			struct pi_task *task);
+						struct pi_task *task);
 
 void pi_i2c_conf_init(pi_i2c_conf_t *conf)
 {
@@ -170,7 +194,7 @@ void pi_i2c_conf_init(pi_i2c_conf_t *conf)
 }
 
 void pi_i2c_conf_set_slave_addr(struct pi_i2c_conf *conf, uint16_t slave_addr,
-				int8_t is_10_bits)
+								int8_t is_10_bits)
 {
 	conf->cs = slave_addr;
 	conf->is_10_bits = is_10_bits;
@@ -183,14 +207,15 @@ int pi_i2c_open(struct pi_device *device)
 	I2C_TRACE("Open device id=%d\n", conf->itf);
 	status = __pi_i2c_open(conf, (struct i2c_cs_data_s **)&(device->data));
 	I2C_TRACE("Open status : %ld, driver data: %lx\n", status,
-		  (struct i2c_cs_data_s *)device->data);
+			  (struct i2c_cs_data_s *)device->data);
 	return status;
 }
 
 void pi_i2c_close(struct pi_device *device)
 {
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
-	if (device_data != NULL) {
+	if (device_data != NULL)
+	{
 		I2C_TRACE("Close device id=%d\n", device_data->device_id);
 		__pi_i2c_close(device_data);
 		device->data = NULL;
@@ -200,44 +225,31 @@ void pi_i2c_close(struct pi_device *device)
 void pi_i2c_ioctl(struct pi_device *device, uint32_t cmd, void *arg)
 {
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
-	if (device_data != NULL) {
+	if (device_data != NULL)
+	{
 		I2C_TRACE("Ioctl command : %lx, arg %lx\n", cmd, arg);
 		__pi_i2c_ioctl(device_data, cmd, arg);
 	}
 }
 
-#define MUTEX 1
 int pi_i2c_read(struct pi_device *device, uint8_t *rx_buff, int length, pi_i2c_xfer_flags_e flags)
 {
 	int status = PI_OK;
 	pi_task_t task_block;
-#if MUTEX
 	pi_task_block(&task_block);
 	pi_i2c_read_async(device, rx_buff, length, flags, &task_block);
 	pi_task_wait_on(&task_block);
 	pi_task_destroy(&task_block);
-#else
-	pi_task_block_no_mutex(&task_block);
-	pi_i2c_read_async(device, rx_buff, length, flags, &task_block);
-	pi_task_wait_on_no_mutex(&task_block);
-#endif
-	/* only some udma i2c peripherals support ack detection */
-#ifdef CONFIG_UDMA_I2C_ACK
-	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
-	if (REG_GET(I2C_ACK_NACK, i2c_ack_get(device_data->device_id)))
-	    status = PI_ERR_I2C_NACK;
-#endif
-
 	return status;
 }
 
 void pi_i2c_read_async(struct pi_device *device, uint8_t *rx_buff, int length,
-		       pi_i2c_xfer_flags_e flags, pi_task_t *task)
+					   pi_i2c_xfer_flags_e flags, pi_task_t *task)
 {
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
 	udma_channel_e channel = RX_CHANNEL;
 	I2C_TRACE("I2C(%d) : transfer %d %lx %ld %lx, task %lx\n", device_data->device_id, channel,
-		  (uint32_t)rx_buff, length, flags, task);
+			  (uint32_t)rx_buff, length, flags, task);
 	__pi_i2c_copy(device_data, (uint32_t)rx_buff, length, flags, channel, task);
 }
 
@@ -245,32 +257,20 @@ int pi_i2c_write(struct pi_device *device, uint8_t *tx_data, int length, pi_i2c_
 {
 	int status = PI_OK;
 	pi_task_t task_block;
-#if MUTEX
 	pi_task_block(&task_block);
 	pi_i2c_write_async(device, tx_data, length, flags, &task_block);
 	pi_task_wait_on(&task_block);
 	pi_task_destroy(&task_block);
-#else
-	pi_task_block_no_mutex(&task_block);
-	pi_i2c_write_async(device, tx_data, length, flags, &task_block);
-	pi_task_wait_on_no_mutex(&task_block);
-#endif
-	/* only some udma i2c peripherals support ack detection */
-#ifdef CONFIG_UDMA_I2C_ACK
-	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
-	if (REG_GET(I2C_ACK_NACK, i2c_ack_get(device_data->device_id)))
-	    status = PI_ERR_I2C_NACK;
-#endif
 	return status;
 }
 
 void pi_i2c_write_async(struct pi_device *device, uint8_t *tx_data, int length,
-			pi_i2c_xfer_flags_e flags, pi_task_t *task)
+						pi_i2c_xfer_flags_e flags, pi_task_t *task)
 {
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
 	udma_channel_e channel = TX_CHANNEL;
 	I2C_TRACE("I2C(%d) : transfer %d %lx %ld %lx, task %lx\n", device_data->device_id, channel,
-		  (uint32_t)tx_data, length, flags, task);
+			  (uint32_t)tx_data, length, flags, task);
 	__pi_i2c_copy(device_data, (uint32_t)tx_data, length, flags, channel, task);
 }
 
@@ -302,7 +302,8 @@ static void __pi_i2c_handle_pending_transfer(struct i2c_itf_data_s *driver_data)
 	pending->pending_repeat_size -= pending->pending_repeat;
 	pending->pending_size = pending->pending_repeat;
 
-	if (pending->pending_repeat_size <= pending->pending_repeat) {
+	if (pending->pending_repeat_size <= pending->pending_repeat)
+	{
 		pending->pending_repeat = 0;
 		pending->pending_size = pending->pending_repeat_size;
 		/* Stop bit at the end? */
@@ -324,20 +325,14 @@ static void __pi_i2c_send_stop_cmd(struct i2c_itf_data_s *driver_data)
 {
 	driver_data->i2c_stop_send = 0;
 	driver_data->i2c_eot_send = 0;
-	hal_i2c_enqueue(driver_data->device_id, TX_CHANNEL, (uint32_t)driver_data->i2c_stop_seq,
-			(uint32_t)__PI_I2C_STOP_CMD_SIZE, UDMA_CORE_TX_CFG_EN(1));
-}
-
-static void __pi_i2c_send_only_eot_cmd(struct i2c_itf_data_s *driver_data)
-{
-	driver_data->i2c_eot_send = 0;
-	hal_i2c_enqueue(driver_data->device_id, TX_CHANNEL, (uint32_t)driver_data->i2c_only_eot_seq,
-			(uint32_t)__PI_I2C_ONLY_EOT_CMD_SIZE, UDMA_CORE_TX_CFG_EN(1));
+	plp_udma_enqueue(UDMA_I2C_CMD_ADDR(driver_data->device_id), (uint32_t)driver_data->i2c_stop_seq,
+					 (uint32_t)__PI_I2C_STOP_CMD_SIZE, (UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
 }
 
 static inline void __pi_irq_handle_end_of_task(pi_task_t *task)
 {
-	switch (task->id) {
+	switch (task->id)
+	{
 	case PI_TASK_NONE_ID:
 		pi_task_release(task);
 		break;
@@ -351,79 +346,48 @@ static inline void __pi_irq_handle_end_of_task(pi_task_t *task)
 	}
 }
 
-static void __pi_i2c_rx_handler(void *arg)
+void __pi_i2c_rx_handler(int event, void *arg)
 {
+	printf("__pi_i2c_rx_handler\n");
 }
 
-static void __pi_i2c_tx_handler(void *arg)
+void __pi_i2c_tx_handler(int event, void *arg)
 {
-	uint32_t event = (uint32_t)arg;
-	uint32_t periph_id = (event >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - UDMA_I2C_ID(0);
+	printf("__pi_i2c_tx_handler\n");
+	uint32_t evt = (uint32_t)event;
+	uint32_t periph_id = (0);
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
-	/*
-	 * In case of a read command sequence, TX ends first then wait on RX.
-	 * Until then, no other transaction should occur.
-	 */
-	/* Pending transfer. */
-	if (driver_data->pending->pending_repeat) {
-		/* FIXME: not implemented */
-		__pi_i2c_handle_pending_transfer(driver_data);
-	} else if (driver_data->i2c_stop_send) {
+
+	if (driver_data->i2c_stop_send)
+	{
 		__pi_i2c_send_stop_cmd(driver_data);
-#ifdef CONFIG_UDMA_I2C_EOT
-	} else if (driver_data->i2c_eot_send){
-		__pi_i2c_send_only_eot_cmd(driver_data);
-#else
-	} else {
+	}
+	else
+	{
 		struct pi_task *task = __pi_i2c_cb_buf_pop(driver_data);
 		if (task)
-			__pi_irq_handle_end_of_task(task);
+			pos_task_push_locked(task);
 
 		task = __pi_i2c_task_fifo_pop(driver_data);
-		if (task) {
+		if (task)
+		{
 			/* Enqueue transfer in HW fifo. */
-			if (task->data[3] == RX_CHANNEL) {
+			if (task->data[3] == RX_CHANNEL)
+			{
 				__pi_i2c_copy_exec_read(driver_data, task);
-			} else {
+			}
+			else
+			{
 				__pi_i2c_copy_exec_write(driver_data, task);
 			}
 		}
-#endif
 	}
 }
-
-#ifdef CONFIG_UDMA_I2C_EOT
-/* Some UDMA v2 peripherals support end of transfer signalling. In that case we
- * signal the callback that we are done when we get this EOT information. The
- * regular UDMA v2 says its done when its udma fifos are empty but this might
- * not coincide with when the i2c signalling has finished. This is important
- * when you try to detect slave ACK/NACKs. */
-static void __pi_i2c_eot_handler(void *arg)
-{
-	uint32_t event = (uint32_t)arg;
-	uint32_t periph_id = (event >> UDMA_CHANNEL_NB_EVENTS_LOG2) - UDMA_I2C_ID(0);
-	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
-
-	struct pi_task *task = __pi_i2c_cb_buf_pop(driver_data);
-	if (task)
-		__pi_irq_handle_end_of_task(task);
-
-	task = __pi_i2c_task_fifo_pop(driver_data);
-	if (task) {
-		/* Enqueue transfer in HW fifo. */
-		if (task->data[3] == RX_CHANNEL) {
-			__pi_i2c_copy_exec_read(driver_data, task);
-		} else {
-			__pi_i2c_copy_exec_write(driver_data, task);
-		}
-	}
-}
-#endif
 
 static int32_t __pi_i2c_cb_buf_empty(struct i2c_itf_data_s *driver_data)
 {
-	return  driver_data->buf[0] == NULL;
+	return driver_data->buf[0] == NULL;
 }
 
 static void __pi_i2c_cb_buf_enqueue(struct i2c_itf_data_s *driver_data, struct pi_task *task)
@@ -448,9 +412,12 @@ static void __pi_i2c_task_fifo_enqueue(struct i2c_itf_data_s *driver_data, struc
 {
 	uint32_t irq = hal_irq_disable();
 	/* Enqueue transfer in SW fifo. */
-	if (driver_data->fifo_head == NULL) {
+	if (driver_data->fifo_head == NULL)
+	{
 		driver_data->fifo_head = task;
-	} else {
+	}
+	else
+	{
 		driver_data->fifo_tail->next = task;
 	}
 	driver_data->fifo_tail = task;
@@ -461,7 +428,8 @@ static struct pi_task *__pi_i2c_task_fifo_pop(struct i2c_itf_data_s *driver_data
 {
 	struct pi_task *task_to_return = NULL;
 	uint32_t irq = hal_irq_disable();
-	if (driver_data->fifo_head != NULL) {
+	if (driver_data->fifo_head != NULL)
+	{
 		task_to_return = driver_data->fifo_head;
 		driver_data->fifo_head = driver_data->fifo_head->next;
 	}
@@ -476,14 +444,18 @@ static uint32_t __pi_i2c_clk_div_get(uint32_t i2c_freq)
 	uint32_t periph_freq = pi_freq_get(PI_FREQ_DOMAIN_PERIPH);
 	uint32_t div = (periph_freq + freq - 1) / freq;
 	/* Clock divider counts from 0 to clk_div value included. */
-	if (div <= 1) {
+	if (div <= 1)
+	{
 		div = 0;
-	} else {
+	}
+	else
+	{
 		div -= 1;
 	}
-	if (div > 0xFFFF) {
+	if (div > 0xFFFF)
+	{
 		I2C_TRACE_ERR("Error computing clock divier : Fsoc=%ld, Fi2c=%ld\n", periph_freq,
-			      i2c_freq);
+					  i2c_freq);
 		return 0xFFFFFFFF;
 	}
 	return div;
@@ -510,7 +482,8 @@ static void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct p
 	driver_data->i2c_cmd_seq[index++] = (cs_data->cs | ADDRESS_READ);
 
 	struct i2c_pending_transfer_s *pending = driver_data->pending;
-	if (size > (uint32_t)MAX_SIZE) {
+	if (size > (uint32_t)MAX_SIZE)
+	{
 		pending->pending_buffer = buffer;
 		pending->pending_repeat = (uint32_t)MAX_SIZE;
 		pending->pending_repeat_size = size;
@@ -518,14 +491,17 @@ static void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct p
 		pending->flags = flags;
 		pending->channel = channel;
 		size = (uint32_t)MAX_SIZE;
-	} else {
+	}
+	else
+	{
 		pending->pending_repeat = 0;
 		/* Stop bit at then end? */
 		driver_data->i2c_stop_send = (flags & PI_I2C_XFER_NO_STOP) ? 0 : 1;
 		driver_data->i2c_eot_send = 1;
 	}
 	/* Data. */
-	if (size > 1) {
+	if (size > 1)
+	{
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_RPT;
 		driver_data->i2c_cmd_seq[index++] = size - 1;
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_RD_ACK;
@@ -536,11 +512,9 @@ static void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct p
 	__pi_i2c_cb_buf_enqueue(driver_data, task);
 
 	/* Open RX channel to receive data. */
-	hal_i2c_enqueue(driver_data->device_id, RX_CHANNEL, buffer, size,
-			UDMA_CORE_RX_CFG_EN(1));
+	plp_udma_enqueue(UDMA_I2C_DATA_ADDR(driver_data->device_id), (uint32_t)buffer, size, (UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
 	/* Transfer command. */
-	hal_i2c_enqueue(driver_data->device_id, TX_CHANNEL,
-			(uint32_t)driver_data->i2c_cmd_seq, index, UDMA_CORE_TX_CFG_EN(1));
+	plp_udma_enqueue(UDMA_I2C_CMD_ADDR(driver_data->device_id), (uint32_t)driver_data->i2c_cmd_seq, index, (UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
 }
 
 static void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct pi_task *task)
@@ -557,13 +531,15 @@ static void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct 
 	driver_data->i2c_cmd_seq[index++] = I2C_CMD_CFG;
 	driver_data->i2c_cmd_seq[index++] = ((cs_data->clk_div >> 8) & 0xFF);
 	driver_data->i2c_cmd_seq[index++] = (cs_data->clk_div & 0xFF);
-	if (!start_bit) {
+	if (!start_bit)
+	{
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_START;
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_WR;
 		driver_data->i2c_cmd_seq[index++] = (cs_data->cs | ADDRESS_WRITE);
 	}
 	struct i2c_pending_transfer_s *pending = driver_data->pending;
-	if (size > (uint32_t)MAX_SIZE) {
+	if (size > (uint32_t)MAX_SIZE)
+	{
 		pending->pending_buffer = buffer;
 		pending->pending_repeat = (uint32_t)MAX_SIZE;
 		pending->pending_repeat_size = size;
@@ -571,14 +547,17 @@ static void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct 
 		pending->flags = flags;
 		pending->channel = channel;
 		size = (uint32_t)MAX_SIZE;
-	} else {
+	}
+	else
+	{
 		pending->pending_repeat = 0;
 		/* Stop bit at the end? */
 		driver_data->i2c_stop_send = (flags & PI_I2C_XFER_NO_STOP) ? 0 : 1;
 		driver_data->i2c_eot_send = 1;
 	}
 	/* Data. */
-	if (size > 0) {
+	if (size > 0)
+	{
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_RPT;
 		driver_data->i2c_cmd_seq[index++] = size;
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_WR;
@@ -588,34 +567,35 @@ static void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct 
 	__pi_i2c_cb_buf_enqueue(driver_data, task);
 
 	/* Transfer header. */
-	hal_i2c_enqueue(driver_data->device_id, TX_CHANNEL,
-			(uint32_t)driver_data->i2c_cmd_seq, index, UDMA_CORE_TX_CFG_EN(1));
+	plp_udma_enqueue(UDMA_I2C_CMD_ADDR(driver_data->device_id), (uint32_t)driver_data->i2c_cmd_seq, index, (UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
 	/* Transfer data. */
 	if (size > 0)
-		hal_i2c_enqueue(driver_data->device_id, TX_CHANNEL, buffer, size,
-				UDMA_CORE_TX_CFG_EN(1));
+		plp_udma_enqueue(UDMA_I2C_CMD_ADDR(driver_data->device_id), (uint32_t)buffer, size, (UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
 }
 
 static void __pi_i2c_cs_data_add(struct i2c_itf_data_s *driver_data, struct i2c_cs_data_s *cs_data)
 {
 	struct i2c_cs_data_s *head = driver_data->cs_list;
-	while (head != NULL) {
+	while (head != NULL)
+	{
 		head = head->next;
 	}
 	head->next = cs_data;
 }
 
 static void __pi_i2c_cs_data_remove(struct i2c_itf_data_s *driver_data,
-				    struct i2c_cs_data_s *cs_data)
+									struct i2c_cs_data_s *cs_data)
 {
 	struct i2c_cs_data_s *head = driver_data->cs_list;
 	struct i2c_cs_data_s *prev = driver_data->cs_list;
-	while ((head != NULL) && (head != cs_data)) {
+	while ((head != NULL) && (head != cs_data))
+	{
 		prev = head;
 		hal_compiler_barrier();
 		head = head->next;
 	}
-	if (head != NULL) {
+	if (head != NULL)
+	{
 		prev->next = head->next;
 	}
 }
@@ -628,11 +608,12 @@ static void __pi_i2c_freq_cb(void *args)
 	struct i2c_cs_data_s *cs_data = driver_data->cs_list;
 
 	/* Wait until current transfer is done. */
-	while (hal_i2c_busy_get(device_id))
-		;
+	while (plp_udma_busy(UDMA_I2C_DATA_ADDR(driver_data->device_id)));
+	while (plp_udma_busy(UDMA_I2C_CMD_ADDR(driver_data->device_id)));
 
 	/* Update all clock div. */
-	while (cs_data != NULL) {
+	while (cs_data != NULL)
+	{
 		cs_data->clk_div = __pi_i2c_clk_div_get(cs_data->max_baudrate);
 		cs_data = cs_data->next;
 	}
@@ -643,7 +624,8 @@ static int32_t __pi_i2c_baudrate_set(struct i2c_cs_data_s *cs_data, uint32_t new
 {
 	cs_data->max_baudrate = new_baudrate;
 	uint32_t clk_div = __pi_i2c_clk_div_get(cs_data->max_baudrate);
-	if (clk_div == 0xFFFFFFFF) {
+	if (clk_div == 0xFFFFFFFF)
+	{
 		I2C_TRACE_ERR("I2C(%d) : error computing clock divider !\n", cs_data->device_id);
 		return -14;
 	}
@@ -662,20 +644,53 @@ void __pi_i2c_conf_init(pi_i2c_conf_t *conf)
 	conf->ts_evt_id = 0;
 }
 
+void pos_i2c_handle_copy(int event, void *arg)
+{
+	printf("pos_i2c_handle_copy");
+	pos_udma_channel_t *channel = arg;
+	pi_task_t *pending_0 = channel->pendings[0];
+	uint8_t type_channel = pending_0->data[3];
+	if (type_channel == RX_CHANNEL)
+	{
+		__pi_i2c_rx_handler(event, &arg);
+	}
+	else if (type_channel == TX_CHANNEL)
+	{
+		__pi_i2c_tx_handler(event, &arg);
+	}
+	else
+	{
+		printf("error pos_spi_handle_copy");
+		exit(0);
+	}
+}
+
+void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event)
+{
+	pos_soc_event_register_callback(soc_event, pos_i2c_handle_copy, (void *)channel);
+	channel->pendings[0] = NULL;
+	channel->pendings[1] = NULL;
+	channel->waitings_first = NULL;
+	channel->base = 0;
+}
+
 int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_data)
 {
-	if ((uint8_t)ARCHI_UDMA_NB_I2C < conf->itf) {
+	if ((uint8_t)ARCHI_UDMA_NB_I2C < conf->itf)
+	{
 		I2C_TRACE_ERR("Error : wrong interface ID, itf=%d !\n", conf->itf);
 		return -11;
 	}
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[conf->itf];
-    unsigned char i2c_id = conf->itf;
+	unsigned char i2c_id = conf->itf;
 	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
-	if (driver_data == NULL) {
+	if (driver_data == NULL)
+	{
 		/* Allocate driver data. */
 		driver_data = (struct i2c_itf_data_s *)pi_l2_malloc(sizeof(struct i2c_itf_data_s));
-		if (driver_data == NULL) {
+		if (driver_data == NULL)
+		{
 			I2C_TRACE_ERR("Driver data alloc failed !\n");
 			return -12;
 		}
@@ -686,7 +701,8 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		driver_data->nb_open = 0;
 		driver_data->i2c_cmd_index = 0;
 		driver_data->cs_list = NULL;
-		for (uint32_t i = 0; i < (uint32_t)__PI_I2C_CMD_BUFF_SIZE; i++) {
+		for (uint32_t i = 0; i < (uint32_t)__PI_I2C_CMD_BUFF_SIZE; i++)
+		{
 			driver_data->i2c_cmd_seq[i] = 0;
 		}
 		driver_data->i2c_stop_send = 0;
@@ -695,10 +711,7 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		driver_data->i2c_stop_seq[0] = I2C_CMD_STOP;
 		driver_data->i2c_stop_seq[1] = I2C_CMD_WAIT;
 		driver_data->i2c_stop_seq[2] = conf->wait_cycles > 0xff ? 0xff : conf->wait_cycles;
-#ifdef CONFIG_UDMA_I2C_EOT
-		driver_data->i2c_stop_seq[3] = I2C_CMD_EOT;
-		driver_data->i2c_only_eot_seq = &driver_data->i2c_stop_seq[1];
-#endif
+
 		driver_data->nb_events = 0;
 		driver_data->device_id = conf->itf;
 		/* TODO: Attach freq callback. */
@@ -709,32 +722,36 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 
 		/* Set handlers. */
 		/* Enable SOC events propagation to FC. */
-#ifdef CONFIG_UDMA_I2C_EOT
-		pi_fc_event_handler_set(SOC_EVENT_UDMA_I2C_EOT(conf->itf), __pi_i2c_eot_handler);
-		hal_soc_eu_set_fc_mask(SOC_EVENT_UDMA_I2C_EOT(conf->itf));
-#endif
-		pi_fc_event_handler_set(SOC_EVENT_UDMA_I2C_RX(conf->itf), __pi_i2c_rx_handler);
-		pi_fc_event_handler_set(SOC_EVENT_UDMA_I2C_TX(conf->itf), __pi_i2c_tx_handler);
-		hal_soc_eu_set_fc_mask(SOC_EVENT_UDMA_I2C_RX(conf->itf));
-		hal_soc_eu_set_fc_mask(SOC_EVENT_UDMA_I2C_TX(conf->itf));
+		if (driver_data->nb_open == 0)
+		{
+			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
+			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
+			driver_data->rx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
+			driver_data->tx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
+		}
 
-        plp_udma_cg_set(plp_udma_cg_get() | (1 << periph_id));
+		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
+		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
 
-		I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
+		plp_udma_cg_set(plp_udma_cg_get() | (1 << periph_id));
 	}
+
+	I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
 
 	struct i2c_cs_data_s *cs_data =
 		(struct i2c_cs_data_s *)pi_l2_malloc(sizeof(struct i2c_cs_data_s));
-	if (cs_data == NULL) {
+	if (cs_data == NULL)
+	{
 		I2C_TRACE_ERR("I2C(%ld) : cs=%d, cs_data alloc failed !\n", driver_data->device_id,
-			      conf->cs);
+					  conf->cs);
 		return -13;
 	}
 	cs_data->device_id = conf->itf;
 	cs_data->cs = conf->cs;
 	cs_data->max_baudrate = conf->max_baudrate;
 	uint32_t clk_div = __pi_i2c_clk_div_get(cs_data->max_baudrate);
-	if (clk_div == 0xFFFFFFFF) {
+	if (clk_div == 0xFFFFFFFF)
+	{
 		pi_l2_free(cs_data, sizeof(struct i2c_cs_data_s));
 		I2C_TRACE_ERR("I2C(%d) : error computing clock divider !\n", conf->itf);
 		return -14;
@@ -751,13 +768,14 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 {
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[device_data->device_id];
-	__pi_i2c_cs_data_remove(driver_data, device_data);
-    unsigned char i2c_id = conf->itf;
+	unsigned char i2c_id = device_data->device_id;
 	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
+	__pi_i2c_cs_data_remove(driver_data, device_data);
 	driver_data->nb_open--;
 	I2C_TRACE("I2C(%d) : number of opened devices %ld.\n", driver_data->device_id,
-		  driver_data->nb_open);
-	if (driver_data->nb_open == 0) {
+			  driver_data->nb_open);
+	if (driver_data->nb_open == 0)
+	{
 		I2C_TRACE("I2C(%d) : closing interface.\n", driver_data->device_id);
 
 		/* TODO:  Remove freq callback. */
@@ -769,15 +787,8 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 
 		/* Clear handlers. */
 		/* Disable SOC events propagation to FC. */
-#ifdef CONFIG_UDMA_I2C_EOT
-		pi_fc_event_handler_clear(SOC_EVENT_UDMA_I2C_EOT(driver_data->device_id));
-		hal_soc_eu_clear_fc_mask(SOC_EVENT_UDMA_I2C_EOT(driver_data->device_id));
-#endif
-		pi_fc_event_handler_clear(SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
-		pi_fc_event_handler_clear(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
-
-		hal_soc_eu_clear_fc_mask(SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
-		hal_soc_eu_clear_fc_mask(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
+		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
+		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
 
 		/* Enable UDMA CG. */
 		plp_udma_cg_set(plp_udma_cg_get() & ~(1 << periph_id));
@@ -791,7 +802,8 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 
 void __pi_i2c_ioctl(struct i2c_cs_data_s *device_data, uint32_t cmd, void *arg)
 {
-	switch (cmd) {
+	switch (cmd)
+	{
 	case PI_I2C_CTRL_SET_MAX_BAUDRATE:
 		__pi_i2c_baudrate_set(device_data, (uint32_t)arg);
 		break;
@@ -803,7 +815,7 @@ void __pi_i2c_ioctl(struct i2c_cs_data_s *device_data, uint32_t cmd, void *arg)
 }
 
 void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t length,
-		   pi_i2c_xfer_flags_e flags, udma_channel_e channel, struct pi_task *task)
+				   pi_i2c_xfer_flags_e flags, udma_channel_e channel, struct pi_task *task)
 {
 	uint32_t irq = hal_irq_disable();
 	task->data[0] = l2_buff;
@@ -817,18 +829,26 @@ void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t len
 	/* Both slots should be empty to start a new read transfer. When enqueueing
 	 * a new read transfer, RX should be opened first then TX. So if RX is already
 	 * in use, then wait for it to finish. */
-	if (slot_rxtx == 0) {
+	if (slot_rxtx == 0)
+	{
 		/* Enqueue transfer in SW fifo. */
 		I2C_TRACE("I2C(%d) : enqueue transfer in SW fifo : channel %d task %lx.\n",
-			  driver_data->device_id, task->data[3], task);
+				  driver_data->device_id, task->data[3], task);
 		__pi_i2c_task_fifo_enqueue(driver_data, task);
-	} else {
+	}
+	else
+	{
 		/* Enqueue transfer in HW fifo. */
 		I2C_TRACE("I2C(%d) : enqueue transfer in HW fifo : channel %d task %lx.\n",
-			  driver_data->device_id, task->data[3], task);
-		if (task->data[3] == RX_CHANNEL) {
+				  driver_data->device_id, task->data[3], task);
+		if (task->data[3] == RX_CHANNEL)
+		{
+			driver_data->rx_channel->pendings[0] = task;
 			__pi_i2c_copy_exec_read(driver_data, task);
-		} else {
+		}
+		else
+		{
+			driver_data->tx_channel->pendings[0] = task;
 			__pi_i2c_copy_exec_write(driver_data, task);
 		}
 	}
@@ -836,18 +856,20 @@ void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t len
 }
 
 int32_t __pi_i2c_detect(struct i2c_cs_data_s *cs_data, struct pi_i2c_conf *conf, uint8_t *rx_data,
-			struct pi_task *task)
+						struct pi_task *task)
 {
 	uint32_t irq = hal_irq_disable();
-	if (cs_data->device_id != conf->itf) {
+	if (cs_data->device_id != conf->itf)
+	{
 		I2C_TRACE_ERR("I2C(%d) : error wrong interfaces %d - %d !\n", cs_data->device_id,
-			      conf->itf);
+					  conf->itf);
 		hal_irq_restore(irq);
 		return -11;
 	}
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[cs_data->device_id];
 	uint32_t clk_div = __pi_i2c_clk_div_get(conf->max_baudrate);
-	if (clk_div == 0xFFFFFFFF) {
+	if (clk_div == 0xFFFFFFFF)
+	{
 		I2C_TRACE_ERR("I2C(%d) : error computing clock divider !\n", conf->itf);
 		hal_irq_restore(irq);
 		return -12;
@@ -880,10 +902,12 @@ int32_t __pi_i2c_detect(struct i2c_cs_data_s *cs_data, struct pi_i2c_conf *conf,
 	__pi_i2c_cb_buf_enqueue(driver_data, task);
 
 	/* Open RX channel to receive data. */
-	hal_i2c_enqueue(driver_data->device_id, RX_CHANNEL, buffer, size, UDMA_CORE_RX_CFG_EN(1));
+	plp_udma_enqueue(UDMA_I2C_DATA_ADDR(driver_data->device_id), (uint32_t)buffer, size, 
+	(UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
 	/* Transfer command. */
-	hal_i2c_enqueue(driver_data->device_id, TX_CHANNEL, (uint32_t)driver_data->i2c_cmd_seq,
-			index, UDMA_CORE_TX_CFG_EN(1));
+	plp_udma_enqueue(UDMA_I2C_CMD_ADDR(driver_data->device_id), (uint32_t)driver_data->i2c_cmd_seq, 
+	index, (UDMA_CHANNEL_CFG_EN | UDMA_CHANNEL_CFG_SIZE_8));
+
 	hal_irq_restore(irq);
 	return 0;
 }
