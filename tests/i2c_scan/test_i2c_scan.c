@@ -56,9 +56,11 @@ static uint8_t i2c_write(uint8_t *buf, uint16_t size)
 {
 	int res = pi_i2c_write(&i2c, buf, size,
 			       PI_I2C_XFER_START | PI_I2C_XFER_STOP);
+                   /**
 #ifndef CONFIG_UDMA_I2C_ACK
 	#error "This test requires the I2C ACK feature support in the udma"
 #endif
+*/
 	if (res == PI_OK) {
 		/* we received an ACK */
 		return 1;
