@@ -660,6 +660,7 @@ void __pi_i2c_conf_init(pi_i2c_conf_t *conf)
 
 void pos_i2c_handle_copy(int event, void *arg)
 {
+	printf("pos_i2c_handle_copy");
 	pos_udma_channel_t *channel = arg;
 	pi_task_t *pending_0 = channel->pendings[0];
 	uint8_t type_channel = pending_0->data[3];
@@ -682,7 +683,7 @@ void pos_i2c_handle_copy(int event, void *arg)
 
 void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event)
 {
-	pos_soc_event_register_callback(soc_event, pos_i2c_handle_copy, (void *)channel);
+	//pos_soc_event_register_callback(soc_event, pos_i2c_handle_copy, (void *)channel);
 	channel->pendings[0] = NULL;
 	channel->pendings[1] = NULL;
 	channel->waitings_first = NULL;
