@@ -211,7 +211,7 @@ void pi_i2c_conf_set_slave_addr(struct pi_i2c_conf *conf, uint16_t slave_addr,
 
 int pi_i2c_open(struct pi_device *device)
 {
-	int32_t status = -1;
+	int32_t status = -100;
 	struct pi_i2c_conf *conf = (struct pi_i2c_conf *)device->config;
 	I2C_TRACE("Open device id=%d\n", conf->itf);
 	status = __pi_i2c_open(conf, (struct i2c_cs_data_s **)&(device->data));
@@ -683,7 +683,7 @@ void pos_i2c_handle_copy(int event, void *arg)
 
 void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event)
 {
-	//pos_soc_event_register_callback(soc_event, pos_i2c_handle_copy, (void *)channel);
+	pos_soc_event_register_callback(soc_event, pos_i2c_handle_copy, (void *)channel);
 	channel->pendings[0] = NULL;
 	channel->pendings[1] = NULL;
 	channel->waitings_first = NULL;
