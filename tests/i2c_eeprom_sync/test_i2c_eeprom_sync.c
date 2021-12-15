@@ -28,7 +28,7 @@
 /* I2C device/peripheral id */
 #define I2C_DEV_ID 0
 /* I2C address of the eeprom */
-#define I2C_EEPROM_ADDR 0x50
+#define I2C_EEPROM_ADDR 0xa0
 
 static struct pi_device i2c;
 
