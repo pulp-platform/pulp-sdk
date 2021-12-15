@@ -16,6 +16,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**================================================================================================
+ * *                                           INFO
+ *   pulp-sdk/rtos/pulpos/common/rules/pulpos/src.mk
+ *   pulp-sdk/rtos/pmsis/pmsis_bsp/rules/pulpos/src.mk
+ *   
+ *
+ *================================================================================================**/
+
 #include "pmsis.h"
 #include <soc.h>
 #include <string.h>
@@ -658,10 +666,12 @@ void pos_i2c_handle_copy(int event, void *arg)
 	if (event==8)
 	{
 		__pi_i2c_rx_handler(event, &arg);
+		pos_task_push_locked(pending_0);
 	}
 	else if (event == 9)
 	{
 		__pi_i2c_tx_handler(event, &arg);
+		pos_task_push_locked(pending_0);
 	}
 	else
 	{
