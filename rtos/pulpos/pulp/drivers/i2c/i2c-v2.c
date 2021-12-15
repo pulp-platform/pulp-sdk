@@ -20,7 +20,8 @@
  * *                                           INFO
  *   pulp-sdk/rtos/pulpos/common/rules/pulpos/src.mk
  *   pulp-sdk/rtos/pmsis/pmsis_bsp/rules/pulpos/src.mk
- *   
+ *	 pulp-sdk/rtos/pulpos/pulp_archi/include/archi/chips/pulp/properties.h
+ *	 pulp-sdk/rtos/pulpos/pulp_archi/include/archi/chips/pulp/memory_map.h   
  *
  *================================================================================================**/
 
@@ -697,16 +698,18 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		I2C_TRACE_ERR("Error : wrong interface ID, itf=%d !\n", conf->itf);
 		return -11;
 	}
-
+	printf("__pi_i2c_open 1");
 	for (int i = 0; i < ARCHI_NB_FLL; i++)
 	{
 		pos_fll_init(i);
 	}
 
+	printf("__pi_i2c_open 2");
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[conf->itf];
 	unsigned char i2c_id = conf->itf;
 	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
-	plp_udma_cg_set(plp_udma_cg_get() | (1 << periph_id));
+	plp_udma_cg_set(plp_udma_cg_get() | (0xffffffff));
+	printf("__pi_i2c_open 3");
 	if (driver_data == NULL)
 	{
 		/* Allocate driver data. */
@@ -746,14 +749,15 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		/* Enable SOC events propagation to FC. */
 		if (driver_data->nb_open == 0)
 		{
-			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), SOC_EVENT_UDMA_I2C_RX(i2c_id));
-			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id)+1, SOC_EVENT_UDMA_I2C_TX(i2c_id));
+			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), ARCHI_SOC_EVENT_I2C0_RX);
+			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id)+1, ARCHI_SOC_EVENT_I2C0_TX);
 			driver_data->rx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
 			driver_data->tx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
 		}
-		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
-		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
+		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_RX);
+		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_TX);
 	}
+	printf("__pi_i2c_open 4");
 
 	I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
 	struct i2c_cs_data_s *cs_data =
@@ -805,8 +809,8 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 
 		/* Clear handlers. */
 		/* Disable SOC events propagation to FC. */
-		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_RX(driver_data->device_id));
-		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_TX(driver_data->device_id));
+		soc_eu_fcEventMask_clearEvent(ARCHI_SOC_EVENT_I2C0_RX);
+		soc_eu_fcEventMask_clearEvent(ARCHI_SOC_EVENT_I2C0_TX);
 
 		/* Enable UDMA CG. */
 		plp_udma_cg_set(plp_udma_cg_get() & ~(1 << periph_id));
