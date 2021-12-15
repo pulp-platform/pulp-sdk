@@ -749,8 +749,8 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		/* Enable SOC events propagation to FC. */
 		if (driver_data->nb_open == 0)
 		{
-			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), ARCHI_SOC_EVENT_I2C0_RX);
-			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id)+1, ARCHI_SOC_EVENT_I2C0_TX);
+			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(i2c_id)), ARCHI_SOC_EVENT_I2C0_RX);
+			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(i2c_id))+1, ARCHI_SOC_EVENT_I2C0_TX);
 			driver_data->rx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
 			driver_data->tx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
 		}
