@@ -215,7 +215,7 @@ int pi_i2c_open(struct pi_device *device)
 	int32_t status = -100;
 	struct pi_i2c_conf *conf = (struct pi_i2c_conf *)device->config;
 	I2C_TRACE("Open device id=%d\n", conf->itf);
-	status = __pi_i2c_open(conf, (struct i2c_cs_data_s **)&(device->data));
+	status = __pi_i2c_open(conf, (struct i2c_cs_data_s **)(&device->data));
 	I2C_TRACE("Open status : %ld, driver data: %lx\n", status,
 			  (struct i2c_cs_data_s *)device->data);
 	return status;
