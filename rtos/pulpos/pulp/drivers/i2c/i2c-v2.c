@@ -82,6 +82,8 @@
 	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
 	 UDMA_EVENT_OFFSET_TX)
 
+#define SOC_EVENT_TX 3
+
 /**================================================================================================
  **                                         struct
  *================================================================================================**/
@@ -698,12 +700,12 @@ void pos_i2c_handle_copy(int event, void *arg)
 	pos_udma_channel_t *channel = arg;
 	pi_task_t *pending_0 = channel->pendings[0];
 	uint8_t type_channel = pending_0->data[3];
-	if (event == 8)
+	if (event == 2)
 	{
 		__pi_i2c_rx_handler(event, &arg);
 		pos_task_push_locked(pending_0);
 	}
-	else if (event == 9)
+	else if (event == 3)
 	{
 		__pi_i2c_tx_handler(event, &arg);
 		pos_task_push_locked(pending_0);
@@ -792,13 +794,13 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		if (driver_data->nb_open == 0)
 		{
 			pos_udma_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), SOC_EVENT_UDMA_I2C_RX(i2c_id));
-			pos_udma_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, SOC_EVENT_UDMA_I2C_TX(i2c_id));
+			pos_udma_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, SOC_EVENT_TX(i2c_id));
 			driver_data->rx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
 			driver_data->tx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
 		}
 
 		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_RX(i2c_id));
-		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_TX(i2c_id));
+		soc_eu_fcEventMask_setEvent(SOC_EVENT_TX(i2c_id));
 
 		I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
 	}
@@ -854,7 +856,7 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 		/* Clear handlers. */
 		/* Disable SOC events propagation to FC. */
 		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_RX(i2c_id));
-		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_TX(i2c_id));
+		soc_eu_fcEventMask_clearEvent(SOC_EVENT_TX(i2c_id));
 
 		/* Enable UDMA CG. */
 		plp_udma_cg_set(plp_udma_cg_get() & ~(1 << periph_id));
