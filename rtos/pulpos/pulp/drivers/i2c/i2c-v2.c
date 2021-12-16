@@ -131,6 +131,9 @@ struct i2c_itf_data_s
 	 UDMA_EVENT_OFFSET_TX)
 
 static struct i2c_itf_data_s *g_i2c_itf_data[ARCHI_UDMA_NB_I2C] = {NULL};
+static PI_L2 int i2c_channel;
+static PI_L2 pos_udma_channel_t i2c_tx_channel;
+static PI_L2 pos_udma_channel_t i2c_rx_channel;
 
 /* IRQ handler. */
 static void __pi_i2c_handler(void *arg);
@@ -197,7 +200,9 @@ void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t len
 /* Scan i2c bus to detect connected devices. */
 int32_t __pi_i2c_detect(struct i2c_cs_data_s *cs_data, struct pi_i2c_conf *conf, uint8_t *rx_data,
 						struct pi_task *task);
+void pos_i2c_handle_copy(int event, void *arg);
 void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event);
+
 
 void pi_i2c_conf_init(pi_i2c_conf_t *conf)
 {
@@ -209,110 +214,6 @@ void pi_i2c_conf_set_slave_addr(struct pi_i2c_conf *conf, uint16_t slave_addr,
 {
 	conf->cs = slave_addr;
 	conf->is_10_bits = is_10_bits;
-}
-
-int pi_i2c_open(struct pi_device *device)
-{
-	int32_t status = 0;
-	struct pi_i2c_conf *conf = (struct pi_i2c_conf *)device->config;
-	struct i2c_cs_data_s **cs_data_ = (struct i2c_cs_data_s **)(&device->data);
-	I2C_TRACE("Open device id=%d\n", conf->itf);
-	if ((uint8_t)ARCHI_UDMA_NB_I2C < conf->itf)
-	{
-		I2C_TRACE_ERR("Error : wrong interface ID, itf=%d !\n", conf->itf);
-		return -11;
-	}
-	printf("__pi_i2c_open 1");
-	/**
-	for (int i = 0; i < ARCHI_NB_FLL; i++)
-	{
-		pos_fll_init(i);
-	}
-	*/
-
-	printf("__pi_i2c_open 2");
-	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[conf->itf];
-	unsigned char i2c_id = conf->itf;
-	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
-	plp_udma_cg_set(plp_udma_cg_get() | (0xffffffff));
-	printf("__pi_i2c_open 3");
-	if (driver_data == NULL)
-	{
-		/* Allocate driver data. */
-		driver_data = (struct i2c_itf_data_s *)pi_l2_malloc(sizeof(struct i2c_itf_data_s));
-		if (driver_data == NULL)
-		{
-			I2C_TRACE_ERR("Driver data alloc failed !\n");
-			return -12;
-		}
-		driver_data->buf[0] = NULL;
-		driver_data->fifo_head = NULL;
-		driver_data->fifo_tail = NULL;
-		driver_data->pending = NULL;
-		driver_data->nb_open = 0;
-		driver_data->i2c_cmd_index = 0;
-		driver_data->cs_list = NULL;
-		for (uint32_t i = 0; i < (uint32_t)__PI_I2C_CMD_BUFF_SIZE; i++)
-		{
-			driver_data->i2c_cmd_seq[i] = 0;
-		}
-		driver_data->i2c_stop_send = 0;
-		driver_data->i2c_eot_send = 0;
-		/* Set up i2c cmd stop sequence. */
-		driver_data->i2c_stop_seq[0] = I2C_CMD_STOP;
-		driver_data->i2c_stop_seq[1] = I2C_CMD_WAIT;
-		driver_data->i2c_stop_seq[2] = conf->wait_cycles > 0xff ? 0xff : conf->wait_cycles;
-
-		driver_data->nb_events = 0;
-		driver_data->device_id = conf->itf;
-		/* TODO: Attach freq callback. */
-		/* pi_freq_callback_init(&(driver_data->i2c_freq_cb), __pi_i2c_freq_cb,
-		 * driver_data); */
-		/* pi_freq_callback_add(&(driver_data->i2c_freq_cb)); */
-		g_i2c_itf_data[conf->itf] = driver_data;
-
-		/* Set handlers. */
-		/* Enable SOC events propagation to FC. */
-		if (driver_data->nb_open == 0)
-		{
-			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(i2c_id)), ARCHI_SOC_EVENT_I2C0_RX);
-			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(i2c_id))+1, ARCHI_SOC_EVENT_I2C0_TX);
-			driver_data->rx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
-			driver_data->tx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
-		}
-		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_RX);
-		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_TX);
-	}
-	printf("__pi_i2c_open 4");
-
-
-	I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
-	struct i2c_cs_data_s *cs_data =
-		(struct i2c_cs_data_s *)pi_l2_malloc(sizeof(struct i2c_cs_data_s));
-		//*cs_data = __pi_i2c_get_cs_data(driver_data, conf->cs);
-	if (cs_data == NULL)
-	{
-		I2C_TRACE_ERR("I2C(%ld) : cs=%d, cs_data alloc failed !\n", driver_data->device_id,
-					  conf->cs);
-		return -13;
-	}
-	cs_data->device_id = conf->itf;
-	cs_data->cs = conf->cs;
-	cs_data->max_baudrate = conf->max_baudrate;
-	uint32_t clk_div = __pi_i2c_clk_div_get(cs_data->max_baudrate);
-	if (clk_div == 0xFFFFFFFF)
-	{
-		pi_l2_free(cs_data, sizeof(struct i2c_cs_data_s));
-		I2C_TRACE_ERR("I2C(%d) : error computing clock divider !\n", conf->itf);
-		return -14;
-	}
-	cs_data->clk_div = clk_div;
-	cs_data->next = NULL;
-	__pi_i2c_cs_data_add(driver_data, cs_data);
-	driver_data->nb_open++;
-	I2C_TRACE("I2C(%d) : opened %ld time(s).\n", driver_data->device_id, driver_data->nb_open);
-	*cs_data_ = cs_data;
-	return status;
 }
 
 void pi_i2c_close(struct pi_device *device)
@@ -611,6 +512,7 @@ static void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct p
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_RD_ACK;
 	}
 	driver_data->i2c_cmd_seq[index++] = I2C_CMD_RD_NACK;
+	driver_data->rx_channel->pendings[0] = task;
 
 	/* Enqueue in HW fifo. */
 	__pi_i2c_cb_buf_enqueue(driver_data, task);
@@ -666,6 +568,8 @@ static void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct 
 		driver_data->i2c_cmd_seq[index++] = size;
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_WR;
 	}
+
+	driver_data->tx_channel->pendings[0] = task;
 
 	/* Enqueue in HW fifo. */
 	__pi_i2c_cb_buf_enqueue(driver_data, task);
@@ -752,7 +656,7 @@ void __pi_i2c_conf_init(pi_i2c_conf_t *conf)
 	conf->ts_ch = 0;
 	conf->ts_evt_id = 0;
 }
-
+/**
 void pos_i2c_handle_copy(int event, void *arg)
 {
 	printf("pos_i2c_handle_copy");
@@ -775,6 +679,10 @@ void pos_i2c_handle_copy(int event, void *arg)
 		exit(0);
 	}
 }
+*/
+void pos_i2c_handle_copy(int event, void *arg)
+{
+}
 
 void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event)
 {
@@ -783,6 +691,115 @@ void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc
 	channel->pendings[1] = NULL;
 	channel->waitings_first = NULL;
 	channel->base = 0;
+}
+
+int pi_i2c_open(struct pi_device *device)
+{
+	int32_t status = 0;
+	struct pi_i2c_conf *conf = (struct pi_i2c_conf *)device->config;
+	struct i2c_cs_data_s **cs_data_ = (struct i2c_cs_data_s **)(&device->data);
+	I2C_TRACE("Open device id=%d\n", conf->itf);
+	if ((uint8_t)ARCHI_UDMA_NB_I2C < conf->itf)
+	{
+		I2C_TRACE_ERR("Error : wrong interface ID, itf=%d !\n", conf->itf);
+		return -11;
+	}
+	printf("__pi_i2c_open 1");
+	/**
+	for (int i = 0; i < ARCHI_NB_FLL; i++)
+	{
+		pos_fll_init(i);
+	}
+	*/
+
+	printf("__pi_i2c_open 2");
+	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[conf->itf];
+	unsigned char i2c_id = conf->itf;
+	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
+	plp_udma_cg_set(plp_udma_cg_get() | (0xffffffff));
+	printf("__pi_i2c_open 3");
+	if (driver_data == NULL)
+	{
+		/* Allocate driver data. */
+		driver_data = (struct i2c_itf_data_s *)pi_l2_malloc(sizeof(struct i2c_itf_data_s));
+		if (driver_data == NULL)
+		{
+			I2C_TRACE_ERR("Driver data alloc failed !\n");
+			return -12;
+		}
+		driver_data->buf[0] = NULL;
+		driver_data->fifo_head = NULL;
+		driver_data->fifo_tail = NULL;
+		driver_data->pending = NULL;
+		driver_data->nb_open = 0;
+		driver_data->i2c_cmd_index = 0;
+		driver_data->cs_list = NULL;
+		for (uint32_t i = 0; i < (uint32_t)__PI_I2C_CMD_BUFF_SIZE; i++)
+		{
+			driver_data->i2c_cmd_seq[i] = 0;
+		}
+		driver_data->i2c_stop_send = 0;
+		driver_data->i2c_eot_send = 0;
+		/* Set up i2c cmd stop sequence. */
+		driver_data->i2c_stop_seq[0] = I2C_CMD_STOP;
+		driver_data->i2c_stop_seq[1] = I2C_CMD_WAIT;
+		driver_data->i2c_stop_seq[2] = conf->wait_cycles > 0xff ? 0xff : conf->wait_cycles;
+
+		driver_data->nb_events = 0;
+		driver_data->device_id = conf->itf;
+		/* TODO: Attach freq callback. */
+		/* pi_freq_callback_init(&(driver_data->i2c_freq_cb), __pi_i2c_freq_cb,
+		 * driver_data); */
+		/* pi_freq_callback_add(&(driver_data->i2c_freq_cb)); */
+		g_i2c_itf_data[conf->itf] = driver_data;
+
+		/* Set handlers. */
+		/* Enable SOC events propagation to FC. */
+		
+	}
+	printf("__pi_i2c_open 4");
+
+	driver_data->rx_channel = &i2c_rx_channel;
+    driver_data->tx_channel = &i2c_tx_channel;
+
+	if (driver_data->nb_open == 0)
+		{
+			pos_i2c_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(i2c_id)), ARCHI_SOC_EVENT_I2C0_RX);
+			pos_i2c_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(i2c_id))+1, ARCHI_SOC_EVENT_I2C0_TX);
+			driver_data->rx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
+			driver_data->tx_channel->base = i2c_id; // way to save me the spi interface which is associated with the channel
+		}
+		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_RX);
+		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_TX);
+
+
+	I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
+	struct i2c_cs_data_s *cs_data =
+		(struct i2c_cs_data_s *)pi_l2_malloc(sizeof(struct i2c_cs_data_s));
+		//*cs_data = __pi_i2c_get_cs_data(driver_data, conf->cs);
+	if (cs_data == NULL)
+	{
+		I2C_TRACE_ERR("I2C(%ld) : cs=%d, cs_data alloc failed !\n", driver_data->device_id,
+					  conf->cs);
+		return -13;
+	}
+	cs_data->device_id = conf->itf;
+	cs_data->cs = conf->cs;
+	cs_data->max_baudrate = conf->max_baudrate;
+	uint32_t clk_div = __pi_i2c_clk_div_get(cs_data->max_baudrate);
+	if (clk_div == 0xFFFFFFFF)
+	{
+		pi_l2_free(cs_data, sizeof(struct i2c_cs_data_s));
+		I2C_TRACE_ERR("I2C(%d) : error computing clock divider !\n", conf->itf);
+		return -14;
+	}
+	cs_data->clk_div = clk_div;
+	cs_data->next = NULL;
+	__pi_i2c_cs_data_add(driver_data, cs_data);
+	driver_data->nb_open++;
+	I2C_TRACE("I2C(%d) : opened %ld time(s).\n", driver_data->device_id, driver_data->nb_open);
+	*cs_data_ = cs_data;
+	return status;
 }
 
 int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_data)
@@ -868,7 +885,6 @@ void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t len
 				  driver_data->device_id, task->data[3], task);
 		if (task->data[3] == RX_CHANNEL)
 		{
-			driver_data->rx_channel->pendings[0] = task;
 			__pi_i2c_copy_exec_read(driver_data, task);
 		}
 		else
