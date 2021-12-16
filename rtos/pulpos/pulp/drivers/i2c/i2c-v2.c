@@ -197,6 +197,7 @@ void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t len
 /* Scan i2c bus to detect connected devices. */
 int32_t __pi_i2c_detect(struct i2c_cs_data_s *cs_data, struct pi_i2c_conf *conf, uint8_t *rx_data,
 						struct pi_task *task);
+void pos_i2c_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event);
 
 void pi_i2c_conf_init(pi_i2c_conf_t *conf)
 {
@@ -208,19 +209,6 @@ void pi_i2c_conf_set_slave_addr(struct pi_i2c_conf *conf, uint16_t slave_addr,
 {
 	conf->cs = slave_addr;
 	conf->is_10_bits = is_10_bits;
-}
-
-static inline struct i2c_cs_data_s *__pi_i2c_get_cs_data(struct i2c_itf_data_s *drv_data, int cs)
-{
-	DBG_PRINTF("...start -> __pi_spim_get_cs_data...\n");
-	DBG_PRINTF("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-	struct spim_cs_data *cs_cur = drv_data->cs_list;
-	while (cs_cur != NULL && cs_cur->cs != cs)
-	{
-		cs_cur = cs_cur->next;
-	}
-	DBG_PRINTF("...end -> __pi_spim_get_cs_data...\n");
-	return cs_cur;
 }
 
 int pi_i2c_open(struct pi_device *device)
