@@ -368,6 +368,10 @@ static inline void __pi_irq_handle_end_of_task(pi_task_t *task)
 
 void __pi_i2c_rx_handler(int event, void *arg)
 {
+	uint32_t evt = (uint32_t)event;
+	uint32_t periph_id = (0);
+
+	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
 	struct pi_task *task = __pi_i2c_cb_buf_pop(driver_data);
 	if (task)
 		pos_task_push_locked(task);
