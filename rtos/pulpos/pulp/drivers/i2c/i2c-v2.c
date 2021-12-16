@@ -341,6 +341,7 @@ static void __pi_i2c_handle_pending_transfer(struct i2c_itf_data_s *driver_data)
 
 static void __pi_i2c_send_stop_cmd(struct i2c_itf_data_s *driver_data)
 {
+	printf("__pi_i2c_send_stop_cmd\n");
 	driver_data->i2c_stop_send = 0;
 	driver_data->i2c_eot_send = 0;
 	plp_udma_enqueue(UDMA_I2C_CMD_ADDR(driver_data->device_id), (uint32_t)driver_data->i2c_stop_seq,
@@ -349,6 +350,7 @@ static void __pi_i2c_send_stop_cmd(struct i2c_itf_data_s *driver_data)
 
 static inline void __pi_irq_handle_end_of_task(pi_task_t *task)
 {
+	printf("__pi_irq_handle_end_of_task\n");
 	switch (task->id)
 	{
 	case PI_TASK_NONE_ID:
@@ -366,7 +368,23 @@ static inline void __pi_irq_handle_end_of_task(pi_task_t *task)
 
 void __pi_i2c_rx_handler(int event, void *arg)
 {
-	printf("__pi_i2c_rx_handler\n");
+	struct pi_task *task = __pi_i2c_cb_buf_pop(driver_data);
+	if (task)
+		pos_task_push_locked(task);
+
+	task = __pi_i2c_task_fifo_pop(driver_data);
+	if (task)
+	{
+		/* Enqueue transfer in HW fifo. */
+		if (task->data[3] == RX_CHANNEL)
+		{
+			__pi_i2c_copy_exec_read(driver_data, task);
+		}
+		else
+		{
+			__pi_i2c_copy_exec_write(driver_data, task);
+		}
+	}
 }
 
 void __pi_i2c_tx_handler(int event, void *arg)
@@ -524,7 +542,7 @@ static void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct p
 		driver_data->i2c_cmd_seq[index++] = size - 1;
 		driver_data->i2c_cmd_seq[index++] = I2C_CMD_RD_ACK;
 	}
-	driver_data->i2c_cmd_seq[index++] = I2C_CMD_RD_NACK;
+	driver_data->i2c_cmd_seq[index++] = I2C_CMD_RD_NACK;	
 	driver_data->rx_channel->pendings[0] = task;
 
 	/* Enqueue in HW fifo. */
@@ -756,24 +774,24 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		/* pi_freq_callback_add(&(driver_data->i2c_freq_cb)); */
 		g_i2c_itf_data[conf->itf] = driver_data;
 
+		driver_data->rx_channel = &i2c_rx_channel;
+    	driver_data->tx_channel = &i2c_tx_channel;
+
+		/* Set handlers. */
+		/* Enable SOC events propagation to FC. */
+		if (driver_data->nb_open == 0)
+		{
+			pos_udma_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), ARCHI_SOC_EVENT_I2C0_RX);
+			pos_udma_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, ARCHI_SOC_EVENT_I2C0_TX);
+			driver_data->rx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
+			driver_data->tx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
+		}
+
+		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_RX);
+		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_TX);
+
 		I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
 	}
-
-    driver_data->rx_channel = &i2c_rx_channel;
-    driver_data->tx_channel = &i2c_tx_channel;
-
-    /* Set handlers. */
-		/* Enable SOC events propagation to FC. */
-        if (driver_data->nb_open == 0)
-        {
-            pos_udma_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), ARCHI_SOC_EVENT_I2C0_RX);
-            pos_udma_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, ARCHI_SOC_EVENT_I2C0_TX);
-            driver_data->rx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
-            driver_data->tx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
-        }
-
-	soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_RX);
-    soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_TX);
 
     driver_data->nb_open++;
 	struct i2c_cs_data_s *cs_data =
