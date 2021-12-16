@@ -77,7 +77,7 @@ void eeprom(void)
 
 	/* the address of our i2c eeprom is normally 0x50 if you want to
 	 * specifically test that */
-	printf("writing eeprom\n");
+	printf("writing eeprom\n"); /**
 	int res = 0;
 	res = pi_i2c_write(&i2c, tx, sizeof(tx),
 			       PI_I2C_XFER_START | PI_I2C_XFER_STOP);
@@ -85,7 +85,7 @@ void eeprom(void)
 		printf("pi_i2c_write failed\n");
 		exit(1);
 	}
-
+*/
 	/* Wait for write to finish. It takes 5 million ns = 5 ms to finish. */
 	for (volatile int i = 0; i < 100000; ++i)
 		i++;
