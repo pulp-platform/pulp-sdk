@@ -737,10 +737,16 @@ int pi_i2c_open(struct pi_device *device)
 
 int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_data)
 {
+	int irq = hal_irq_disable();
 	if ((uint8_t)ARCHI_UDMA_NB_I2C < conf->itf) {
 		I2C_TRACE_ERR("Error : wrong interface ID, itf=%d !\n", conf->itf);
 		return -11;
 	}
+	for (int i = 0; i < ARCHI_NB_FLL; i++)
+	{
+		pos_fll_init(i);
+	}
+
 
     unsigned char i2c_id = conf->itf;
 	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id); 
@@ -785,14 +791,14 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 		/* Enable SOC events propagation to FC. */
 		if (driver_data->nb_open == 0)
 		{
-			pos_udma_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), ARCHI_SOC_EVENT_I2C0_RX);
-			pos_udma_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, ARCHI_SOC_EVENT_I2C0_TX);
+			pos_udma_create_channel(driver_data->rx_channel, UDMA_CHANNEL_ID(periph_id), SOC_EVENT_UDMA_I2C_RX(i2c_id));
+			pos_udma_create_channel(driver_data->tx_channel, UDMA_CHANNEL_ID(periph_id) + 1, SOC_EVENT_UDMA_I2C_TX(i2c_id));
 			driver_data->rx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
 			driver_data->tx_channel->base=i2c_id; //way to save me the spi interface which is associated with the channel
 		}
 
-		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_RX);
-		soc_eu_fcEventMask_setEvent(ARCHI_SOC_EVENT_I2C0_TX);
+		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_RX(i2c_id));
+		soc_eu_fcEventMask_setEvent(SOC_EVENT_UDMA_I2C_TX(i2c_id));
 
 		I2C_TRACE("I2C(%d) : driver data init done.\n", driver_data->device_id);
 	}
@@ -820,11 +826,13 @@ int32_t __pi_i2c_open(struct pi_i2c_conf *conf, struct i2c_cs_data_s **device_da
 	__pi_i2c_cs_data_add(driver_data, cs_data);
 	I2C_TRACE("I2C(%d) : opened %ld time(s).\n", driver_data->device_id, driver_data->nb_open);
 	*device_data = cs_data;
+	hal_irq_restore(irq);
 	return 0;
 }
 
 void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 {
+	int irq = hal_irq_disable();
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[device_data->device_id];
 	unsigned char i2c_id = device_data->device_id;
 	int periph_id = ARCHI_UDMA_I2C_ID(i2c_id);
@@ -845,8 +853,8 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 
 		/* Clear handlers. */
 		/* Disable SOC events propagation to FC. */
-		soc_eu_fcEventMask_clearEvent(ARCHI_SOC_EVENT_I2C0_RX);
-		soc_eu_fcEventMask_clearEvent(ARCHI_SOC_EVENT_I2C0_TX);
+		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_RX(i2c_id));
+		soc_eu_fcEventMask_clearEvent(SOC_EVENT_UDMA_I2C_TX(i2c_id));
 
 		/* Enable UDMA CG. */
 		plp_udma_cg_set(plp_udma_cg_get() & ~(1 << periph_id));
@@ -856,6 +864,7 @@ void __pi_i2c_close(struct i2c_cs_data_s *device_data)
 		g_i2c_itf_data[device_data->device_id] = NULL;
 	}
 	pi_l2_free(device_data, sizeof(struct i2c_cs_data_s));
+	hal_irq_restore(irq);
 }
 
 void __pi_i2c_ioctl(struct i2c_cs_data_s *device_data, uint32_t cmd, void *arg)
