@@ -34,11 +34,21 @@
  **                                         FUNCTION
  *================================================================================================**/
 uint32_t deactive_irq(void){
+#ifdef USE_PULPOS
     return hal_irq_disable();
+#ifdef USE_FREERTOS
+    return __disable_irq();
+#endif
+#endif
 }
 
 void active_irq(uint32_t irq){
-    hal_irq_restore(irq);
+#ifdef USE_PULPOS 
+	hal_irq_restore(irq);
+#ifdef USE_FREERTOS
+    __restore_irq(irq);
+#endif 
+#endif  
 }
 
 uint32_t __pi_spi_get_config(struct spim_cs_data *cs_data)
