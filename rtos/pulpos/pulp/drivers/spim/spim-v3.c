@@ -50,6 +50,7 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+
 /**================================================================================================
  **                                         DEFINE
  *================================================================================================**/
@@ -95,11 +96,6 @@ typedef void (*pi_fc_event_handler_t)(void *arg);
 /**================================================================================================
  **                                         STRUCT
  *================================================================================================**/
-struct spim_drv_fifo
-{
-	pi_task_t *fifo_head;
-	pi_task_t *fifo_tail;
-};
 
 /* Structure holding infos for each chip selects (itf, cs, polarity etc...) */
 struct spim_cs_data
@@ -116,6 +112,13 @@ struct spim_cs_data
 	uint8_t big_endian;
 };
 
+struct spim_drv_fifo
+{
+	pi_task_t *fifo_head;
+	pi_task_t *fifo_tail;
+};
+
+
 /* Structure holding info for each interfaces
  * most notably the fifo of enqueued transfers and meta to know whether
  * interface is free or not */
@@ -130,6 +133,8 @@ struct spim_driver_data
 	pos_udma_channel_t *rx_channel;
 	pos_udma_channel_t *tx_channel;
 };
+
+
 
 struct spim_transfer
 {
@@ -146,7 +151,7 @@ struct spim_transfer
  *================================================================================================**/
 void __spim_execute_callback(void *arg);
 int __pi_spi_open(struct spim_cs_data **cs_data, struct pi_spi_conf *conf);
-int __pi_spi_close(struct spim_cs_data *cs_data);
+void __pi_spi_close(struct spim_cs_data *cs_data, struct pi_spi_conf *conf);
 static int32_t __pi_spim_drv_fifo_enqueue(struct spim_cs_data *data, struct spim_transfer *transfer, pi_task_t *end_task);
 static inline pi_task_t *__pi_spim_drv_fifo_pop(struct spim_driver_data *data);
 /* static inline void __pi_spim_exec_transfer(pi_task_t *task); */
@@ -159,6 +164,7 @@ void system_core_clock_update(void);
 uint32_t system_core_clock_get(void);
 void pos_spi_handle_copy(int event, void *arg);
 void pos_spi_create_channel(pos_udma_channel_t *channel, int channel_id, int soc_event);
+
 /**================================================================================================
  **                                         GLOBAL VARIABLE
  *================================================================================================**/
@@ -182,6 +188,14 @@ uint32_t system_core_clock_get(void)
 	return system_core_clock;
 }
 
+uint32_t deactive_irq(void){
+	return hal_irq_disable();
+}
+
+void active_irq(uint32_t irq){
+	hal_irq_restore(irq);
+}
+
 static inline uint32_t __pi_spi_get_config(struct spim_cs_data *cs_data)
 {
 	return cs_data->cfg;
@@ -194,7 +208,7 @@ static inline int32_t __pi_spim_drv_fifo_enqueue(struct spim_cs_data *cs_data,
 {
 	DBG_PRINTF("%s:%s:%d: ...start -> __pi_spim_drv_fifo_enqueue...\n", __FILE__, __func__, __LINE__);
 	DBG_PRINTF("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-	uint32_t irq = hal_irq_disable();
+	uint32_t irq = deactive_irq();
 	struct spim_driver_data *drv_data = cs_data->drv_data;
 	/* Callback args. */
 	end_task->data[0] = (uintptr_t)cs_data;
@@ -218,7 +232,7 @@ static inline int32_t __pi_spim_drv_fifo_enqueue(struct spim_cs_data *cs_data,
 		drv_data->drv_fifo->fifo_tail =
 			drv_data->drv_fifo->fifo_tail->next;
 	}
-	hal_irq_restore(irq);
+	active_irq(irq);
 	DBG_PRINTF("%s:%s:%d: ...end -> __pi_spim_drv_fifo_enqueue...\n", __FILE__, __func__, __LINE__);
 	return 0;
 }
@@ -236,7 +250,7 @@ static inline pi_task_t *__pi_spim_drv_fifo_pop(struct spim_driver_data *data)
 	asm volatile("csrr %0, 0x300"
 				 : "=r"(check_300));
 	DBG_PRINTF("%s:%s:%d Value of register 0x300: 0x%x\n", __FILE__, __func__, __LINE__, check_300);
-	uint32_t irq = hal_irq_disable();
+	uint32_t irq = deactive_irq();
 	DBG_PRINTF("%s:%s:%d: ...irq = %u...\n", __FILE__, __func__, __LINE__, irq);
 	if (data->drv_fifo->fifo_head != NULL)
 	{
@@ -248,7 +262,7 @@ static inline pi_task_t *__pi_spim_drv_fifo_pop(struct spim_driver_data *data)
 		}
 	}
 	// write in the 0x300 register
-	hal_irq_restore(irq);
+	active_irq(irq);
 	DBG_PRINTF("%s:%s:%d: ...end -> __pi_spim_drv_fifo_pop...\n", __FILE__, __func__, __LINE__);
 	return task_return;
 }
@@ -410,7 +424,7 @@ void __pi_spi_receive_async(struct spim_cs_data *cs_data, void *data,
 
 	DBG_PRINTF("%s:%s:%d: udma_cmd = %p\n", __FILE__, __func__, __LINE__,
 			   &(cs_data->udma_cmd[0]));
-	uint32_t irq = hal_irq_disable();
+	uint32_t irq = deactive_irq();
 
 	uint8_t bitsword = 0;
 	uint8_t UDMA_CORE_CFG = 0;
@@ -476,7 +490,7 @@ void __pi_spi_receive_async(struct spim_cs_data *cs_data, void *data,
 			__pi_spim_drv_fifo_enqueue(cs_data, &transfer, task);
 		}
 	}
-	hal_irq_restore(irq);
+	active_irq(irq);
 	DBG_PRINTF("...end -> __pi_spi_receive_async...\n");
 }
 
@@ -503,7 +517,7 @@ void __pi_spi_receive_async_with_ucode(struct spim_cs_data *cs_data, void *data,
 
     int cmd_id = 0;
 
-    uint32_t irq = hal_irq_disable();
+    uint32_t irq = deactive_irq();
     if(!drv_data->end_of_transfer)
     {
         if(cs_mode != PI_SPI_CS_AUTO)
@@ -541,7 +555,7 @@ void __pi_spi_receive_async_with_ucode(struct spim_cs_data *cs_data, void *data,
         __pi_spim_drv_fifo_enqueue(cs_data, &transfer, task);
 #endif
     }
-    hal_irq_restore(irq);
+    active_irq(irq);
 #endif
 }
 
@@ -568,7 +582,7 @@ void __pi_spi_send_async_with_ucode(struct spim_cs_data *cs_data, void *data,
 
     int cmd_id = 0;
 
-    uint32_t irq = hal_irq_disable();
+    uint32_t irq = deactive_irq();
     if(!drv_data->end_of_transfer)
     {
         if(cs_mode != PI_SPI_CS_AUTO)
@@ -612,7 +626,7 @@ void __pi_spi_send_async_with_ucode(struct spim_cs_data *cs_data, void *data,
         __pi_spim_drv_fifo_enqueue(cs_data, &transfer, task);
 #endif
     }
-    hal_irq_restore(irq);
+    active_irq(irq);
 #endif
 }
 
@@ -649,7 +663,7 @@ void __pi_spi_send_async(struct spim_cs_data *cs_data, void *data, size_t len,
 	// Address of the command buffer to be sent to the uDMA
 	DBG_PRINTF("%s:%s:%d: udma_cmd = %p\n", __FILE__, __func__, __LINE__,
 			   &(cs_data->udma_cmd[0]));
-	uint32_t irq = hal_irq_disable();
+	uint32_t irq = deactive_irq();
 
 	uint8_t bitsword = 0;
 	uint8_t UDMA_CORE_CFG = 0;
@@ -716,7 +730,7 @@ void __pi_spi_send_async(struct spim_cs_data *cs_data, void *data, size_t len,
 			__pi_spim_drv_fifo_enqueue(cs_data, &transfer, task);
 		}
 	}
-	hal_irq_restore(irq);
+	active_irq(irq);
 
 	DBG_PRINTF("...end -> __pi_spi_send_async...\n");
 }
@@ -743,7 +757,7 @@ void __pi_spi_xfer_async(struct spim_cs_data *cs_data, void *tx_data,
 
     int cmd_id = 0;
 
-    uint32_t irq = hal_irq_disable();
+    uint32_t irq = deactive_irq();
     if(!drv_data->end_of_transfer)
     {
         cs_data->udma_cmd[0] = cfg;
@@ -807,7 +821,7 @@ void __pi_spi_xfer_async(struct spim_cs_data *cs_data, void *tx_data,
         transfer.is_send = (uint32_t) tx_data; // sending a pointer means xfer
         __pi_spim_drv_fifo_enqueue(cs_data, &transfer, task);
     }
-    hal_irq_restore(irq);
+    active_irq(irq);
 #endif
 }
 
@@ -842,20 +856,27 @@ void pos_spi_create_channel(pos_udma_channel_t *channel, int channel_id, int soc
 
 int pi_spi_open(struct pi_device *device)
 {
-	int irq = hal_irq_disable();
+	int status = -1;
+	status = __pi_spi_open((struct spim_cs_data **)(&device->data), (struct pi_spi_conf *)device->config);
+	return status;
+}
+
+int __pi_spi_open(struct spim_cs_data **cs_data, struct pi_spi_conf *conf)
+{
+	int irq = deactive_irq();
 	for (int i = 0; i < ARCHI_NB_FLL; i++)
 	{
 		pos_fll_init(i);
 	}
 
-	struct pi_spi_conf *conf = (struct pi_spi_conf *)device->config;
+	//struct pi_spi_conf *conf = (struct pi_spi_conf *)device->config;
 
 	unsigned char spi_id = conf->itf;
 	int periph_id = ARCHI_UDMA_SPIM_ID(spi_id); 
 	spi_channel = UDMA_EVENT_ID(periph_id);
 	int cs = conf->cs;
 	int status = 0;
-	struct spim_cs_data **cs_data = (struct spim_cs_data **)(&device->data);
+	//struct spim_cs_data **cs_data = (struct spim_cs_data **)(&device->data);
 	plp_udma_cg_set(plp_udma_cg_get() | (1 << periph_id));
 
 	struct spim_driver_data *drv_data;
@@ -874,7 +895,7 @@ int pi_spi_open(struct pi_device *device)
 		// controllo che il puntatore sia = 0
 		if (!drv_data->drv_fifo)
 		{
-			hal_irq_restore(irq);
+			active_irq(irq);
 			return -1;
 		}
 		drv_data->device_id = conf->itf; 
@@ -902,7 +923,7 @@ int pi_spi_open(struct pi_device *device)
 		if (_cs_data == NULL)
 		{
 			DBG_PRINTF("[%s] _cs_data alloc failed\n", __func__);
-			hal_irq_restore(irq);
+			active_irq(irq);
 			return -2;
 		}
 		if (clk_div > 0xFF)
@@ -910,7 +931,7 @@ int pi_spi_open(struct pi_device *device)
 			DBG_PRINTF(
 				"[%s] clk_div, %" PRIu32 ", does not fit into 8 bits. SoC frequency too high.\n",
 				__func__, clk_div);
-			hal_irq_restore(irq);
+			active_irq(irq);
 			return -3;
 		}
 
@@ -928,22 +949,27 @@ int pi_spi_open(struct pi_device *device)
 		__pi_spim_cs_data_add(drv_data, _cs_data);
 	}
 
-	hal_irq_restore(irq);
+	active_irq(irq);
 
 	return status;
 }
 
 void pi_spi_close(struct pi_device *device)
 {
+	__pi_spi_close((struct spim_cs_data *)(device->data), (struct pi_spi_conf *)device->config);
+}
+
+void __pi_spi_close(struct spim_cs_data *cs_data, struct pi_spi_conf *conf)
+{
 	DBG_PRINTF("...start -> pi_spi_close...\n");
 
-	struct pi_spi_conf *conf = (struct pi_spi_conf *)device->config;
-	uint32_t irq = hal_irq_disable();
+	//struct pi_spi_conf *conf = (struct pi_spi_conf *)device->config;
+	uint32_t irq = deactive_irq();
 	unsigned char spi_id = conf->itf;
 	int periph_id = ARCHI_UDMA_SPIM_ID(spi_id);
 	int spi_channel = UDMA_EVENT_ID(periph_id);
 	/* TODO: paste beg */
-	struct spim_cs_data *cs_data = device->data;
+	//struct spim_cs_data *cs_data = device->data;
 	struct spim_driver_data *drv_data = cs_data->drv_data;
 	__pi_spim_cs_data_del(drv_data, cs_data->cs);
 	/*
@@ -965,14 +991,14 @@ void pi_spi_close(struct pi_device *device)
 		pi_default_free(drv_data->drv_fifo, sizeof(drv_data->drv_fifo));
 		pi_default_free(drv_data, sizeof(drv_data));
 
-		hal_irq_restore(irq);
+		active_irq(irq);
 		return;
 	}
 	pi_data_free(cs_data, sizeof(cs_data));
 	/* TODO: moved to end return drv_data->nb_open; */
 	/* TODO: paste end */
 
-	hal_irq_restore(irq);
+	active_irq(irq);
 	DBG_PRINTF("...end -> pi_spi_close...\n");
 	return;
 }
