@@ -13,6 +13,9 @@ endif
 APP_CFLAGS += -Os -g
 APP_LDFLAGS += -Os -g
 
+APP_CFLAGS += -DUSE_PULPOS
+#
+
 CONFIG_SPIM = 1
 
 include $(RULES_DIR)/pmsis_rules.mk
