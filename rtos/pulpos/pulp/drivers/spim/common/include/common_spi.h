@@ -63,6 +63,7 @@ struct spim_cs_data
 	uint8_t big_endian;
 };
 
+#ifdef USE_PULPOS
 /* Structure holding info for each interfaces
  * most notably the fifo of enqueued transfers and meta to know whether
  * interface is free or not */
@@ -77,7 +78,20 @@ struct spim_driver_data
 	pos_udma_channel_t *rx_channel;
 	pos_udma_channel_t *tx_channel;
 };
-
+#ifdef USE_FREERTOS
+/* Structure holding info for each interfaces
+ * most notably the fifo of enqueued transfers and meta to know whether
+ * interface is free or not */
+struct spim_driver_data {
+	struct spim_drv_fifo *drv_fifo; // does the same task as Dolphine with true and false
+	struct spim_cs_data *cs_list;	// list of devices connected to the spi interface
+	pi_task_t *repeat_transfer;
+	pi_task_t *end_of_transfer; // gli associo un task per sapere se un trasferimento ha finito?
+	uint32_t nb_open;
+	uint8_t device_id;
+};
+#endif
+#endif
 
 struct spim_transfer
 {
