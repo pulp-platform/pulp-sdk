@@ -18,16 +18,17 @@
 
 /**-----------------------------------------------------------------------------------------------------------------------
  * ?                                                     ABOUT
- * @author         :  Orlando Nico
- * @email          :  nico.orlando@studio.unibo.it
+ * @author         :  Orlando Nico, GreenWaves Technologies, Robert Balas 
+ * @email          :  nico.orlando@studio.unibo.it, balasr@iis.ee.ethz.ch
  * @repo           :  pulp-sdk/rtos/pulpos/pulp/drivers/spim/common
- * @createdOn      :  11/11/2021
- * @description    :  
+ * @createdOn      :  28/12/2021
+ * @description    :  Common File for Abstraction Layer SPI for PulpOS and FreeRTOS
  *-----------------------------------------------------------------------------------------------------------------------**/
 
 /**================================================================================================
  **                                         INCLUDE
  *================================================================================================**/
+#ifdef USE_PULPOS
 #include "pmsis.h"
 #include <soc.h>
 #include <string.h>
@@ -38,6 +39,34 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
+#endif
+
+#ifdef USE_FREERTOS
+#include "pmsis_types.h"
+#include "pmsis_task.h"
+#include "implementation_specific_defines.h"
+#include "system.h"
+#include "fc_event.h"
+#include "udma.h"
+#include "fll.h"
+#include "events.h"
+#include "properties.h"
+#include "spi_periph.h"
+#include "spi.h"
+#include "udma_spim.h"
+#include "udma_ctrl.h"
+#endif
+
+/**================================================================================================
+ **                                         DEFINE
+ *================================================================================================**/
+#ifdef DEBUG
+#define DEBUG_PRINTF printf
+#define DBG_PRINTF   printf
+#else
+#define DEBUG_PRINTF(...) ((void)0)
+#define DBG_PRINTF(...)	  ((void)0)
+#endif /* DEBUG */
 
 /**================================================================================================
  **                                         STRUCT
@@ -78,6 +107,7 @@ struct spim_driver_data
 	pos_udma_channel_t *rx_channel;
 	pos_udma_channel_t *tx_channel;
 };
+#endif
 #ifdef USE_FREERTOS
 /* Structure holding info for each interfaces
  * most notably the fifo of enqueued transfers and meta to know whether
@@ -91,7 +121,7 @@ struct spim_driver_data {
 	uint8_t device_id;
 };
 #endif
-#endif
+
 
 struct spim_transfer
 {
