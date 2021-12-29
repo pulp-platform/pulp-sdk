@@ -50,11 +50,15 @@ ifdef PULPOS_PLATFORM
 platform=$(PULPOS_PLATFORM)
 endif
 
+ifdef USE_PULPOS
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/include/
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/src/abstraction_layer_spi.c
-
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/include/
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/src/common_spi.c
+endif
+
+ifdef USE_FREERTOS
+endif
 #
 
 ifndef platform
