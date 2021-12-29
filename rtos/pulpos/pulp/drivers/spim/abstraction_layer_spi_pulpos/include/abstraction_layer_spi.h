@@ -18,11 +18,11 @@
 
 /**-----------------------------------------------------------------------------------------------------------------------
  * ?                                                     ABOUT
- * @author         :  Orlando Nico
- * @email          :  nico.orlando@studio.unibo.it
+ * @author         :  Orlando Nico, GreenWaves Technologies, Robert Balas 
+ * @email          :  nico.orlando@studio.unibo.it, balasr@iis.ee.ethz.ch
  * @repo           :  pulp-sdk/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi
- * @createdOn      :  11/11/2021
- * @description    :  
+ * @createdOn      :  28/12/2021
+ * @description    :  Abstraction Layer SPI for PulpOS
  *-----------------------------------------------------------------------------------------------------------------------**/
 
 /**================================================================================================
@@ -35,39 +35,20 @@
  *================================================================================================**/
 #define DEBUG_PRINTF(...) ((void)0)
 #define DBG_PRINTF(...) ((void)0)
-
-/* TODO: remove this glue */
-
 #define SPIM_CS_DATA_GET_DRV_DATA(cs_data) (cs_data->drv_data)
-
 #define NB_SOC_EVENTS (ARCHI_SOC_EVENT_NB_TOTAL)
-
-typedef void (*pi_fc_event_handler_t)(void *arg);
-
-// va bene per Control-Pulp
-/*
-** #define pi_default_malloc(x)  malloc(x)
-** #define pi_default_free(x,y)  free(x)
-** #define pi_data_malloc(x)     malloc(x)
-** #define pi_data_free(x,y)     free(x)
-*/
-
-// Pulp-Open
 #define pi_default_malloc(x) pi_l2_malloc(x)
 #define pi_default_free(x, y) pi_l2_free(x, y)
 #define pi_data_malloc(x) pi_l2_malloc(x)
 #define pi_data_free(x, y) pi_l2_free(x, y)
-
 #define UDMA_EVENT_OFFSET_SPI_EOT 3
 #define SOC_EVENT_UDMA_SPIM_EOT(id)                                            \
     ((ARCHI_UDMA_SPIM_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) +                   \
      UDMA_EVENT_OFFSET_SPI_EOT)
-
+typedef void (*pi_fc_event_handler_t)(void *arg);
 /**================================================================================================
  **                                         STRUCT
  *================================================================================================**/
-
-
 
 /**================================================================================================
  **                                         PROTOTYPE FUNCTION
