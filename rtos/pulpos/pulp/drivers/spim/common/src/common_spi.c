@@ -18,11 +18,11 @@
 
 /**-----------------------------------------------------------------------------------------------------------------------
  * ?                                                     ABOUT
- * @author         :  Orlando Nico
- * @email          :  nico.orlando@studio.unibo.it
+ * @author         :  Orlando Nico, GreenWaves Technologies, Robert Balas 
+ * @email          :  nico.orlando@studio.unibo.it, balasr@iis.ee.ethz.ch
  * @repo           :  pulp-sdk/rtos/pulpos/pulp/drivers/spim/common
- * @createdOn      :  11/11/2021
- * @description    :  
+ * @createdOn      :  28/12/2021
+ * @description    :  Common File for Abstraction Layer SPI for PulpOS and FreeRTOS
  *-----------------------------------------------------------------------------------------------------------------------**/
 
 /**================================================================================================
@@ -36,19 +36,20 @@
 uint32_t deactive_irq(void){
 #ifdef USE_PULPOS
     return hal_irq_disable();
+#endif
 #ifdef USE_FREERTOS
     return __disable_irq();
-#endif
 #endif
 }
 
 void active_irq(uint32_t irq){
 #ifdef USE_PULPOS 
 	hal_irq_restore(irq);
+#endif 
 #ifdef USE_FREERTOS
     __restore_irq(irq);
 #endif 
-#endif  
+ 
 }
 
 uint32_t __pi_spi_get_config(struct spim_cs_data *cs_data)
