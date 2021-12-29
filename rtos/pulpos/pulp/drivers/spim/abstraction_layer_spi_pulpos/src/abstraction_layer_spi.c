@@ -18,11 +18,11 @@
 
 /**-----------------------------------------------------------------------------------------------------------------------
  * ?                                                     ABOUT
- * @author         :  Orlando Nico
- * @email          :  nico.orlando@studio.unibo.it
+ * @author         :  Orlando Nico, GreenWaves Technologies, Robert Balas 
+ * @email          :  nico.orlando@studio.unibo.it, balasr@iis.ee.ethz.ch
  * @repo           :  pulp-sdk/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi
- * @createdOn      :  11/11/2021
- * @description    :  
+ * @createdOn      :  28/12/2021
+ * @description    :  Abstraction Layer SPI for PulpOS
  *-----------------------------------------------------------------------------------------------------------------------**/
 
 /**================================================================================================
@@ -53,7 +53,6 @@ uint32_t system_core_clock_get(void)
     system_core_clock_update();
     return system_core_clock;
 }
-
 
 // TODO: prepare pseudo exec for delegate
 void __pi_spim_execute_callback(void *arg)
@@ -553,7 +552,6 @@ void pos_spi_create_channel(pos_udma_channel_t *channel, int channel_id, int soc
     channel->waitings_first = NULL;
     channel->base = 0;
 }
-
 
 int __pi_spi_open(struct spim_cs_data **cs_data, struct pi_spi_conf *conf)
 {
