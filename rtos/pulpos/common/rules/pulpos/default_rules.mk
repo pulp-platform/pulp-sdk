@@ -43,11 +43,11 @@ ifeq '$(CONFIG_LIBC_MINIMAL)' '1'
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/lib/libc/minimal/include
 endif
 
-ifdef DUSE_PULPOS_TEST
+ifdef USE_PULPOS_TEST
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/include -I$(PULPOS_HOME)/kernel -I$(PULPOS_ARCHI)/include -I$(PULPOS_HAL)/include -I$(PMSIS_API)/include
 endif
 
-ifdef USE_FREERTOS
+ifdef USE_FREERTOS_TEST
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/include
 # ***come faccio a compilare una cartella con file c***
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/clkconst.c
@@ -83,7 +83,7 @@ ifdef PULPOS_PLATFORM
 platform=$(PULPOS_PLATFORM)
 endif
 
-ifdef DUSE_PULPOS_TEST
+ifdef USE_PULPOS_TEST
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/include/
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/src/abstraction_layer_spi.c
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/include/
@@ -91,7 +91,7 @@ PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/src/commo
 endif
 
 
-ifdef USE_FREERTOS
+ifdef USE_FREERTOS_TEST
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_freertos/include/
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_freertos/src/abstraction_layer_spi.c
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/include/
