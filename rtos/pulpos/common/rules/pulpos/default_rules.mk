@@ -58,6 +58,22 @@ PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/src/commo
 endif
 
 ifdef USE_FREERTOS
+PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/tests/spim_flash_async/FreeRTOSConfig.h
+PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/include
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/croutine.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/event_groups.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/list.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/os.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/pmsis_task.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/queue.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/stream_buffer.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/tasks.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/timers.c
+
+PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/include/
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/src/abstraction_layer_spi.c
+PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/include/
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/src/common_spi.c
 endif
 #
 
