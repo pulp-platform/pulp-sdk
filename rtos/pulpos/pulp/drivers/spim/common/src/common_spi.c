@@ -34,19 +34,19 @@
  **                                         FUNCTION
  *================================================================================================**/
 uint32_t deactive_irq(void){
-#ifdef USE_PULPOS
+#ifdef USE_PULPOS_TEST
     return hal_irq_disable();
 #endif
-#ifdef USE_FREERTOS
+#ifdef USE_FREERTOS_TEST
     return __disable_irq();
 #endif
 }
 
 void active_irq(uint32_t irq){
-#ifdef USE_PULPOS 
+#ifdef USE_PULPOS_TEST 
 	hal_irq_restore(irq);
 #endif 
-#ifdef USE_FREERTOS
+#ifdef USE_FREERTOS_TEST
     __restore_irq(irq);
 #endif 
  

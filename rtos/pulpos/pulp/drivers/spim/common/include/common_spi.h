@@ -28,7 +28,7 @@
 /**================================================================================================
  **                                         INCLUDE
  *================================================================================================**/
-#ifdef USE_PULPOS
+#ifdef USE_PULPOS_TEST
 #include "pmsis.h"
 #include <soc.h>
 #include <string.h>
@@ -41,7 +41,7 @@
 #include <stdint.h>
 #endif
 
-#ifdef USE_FREERTOS
+#ifdef USE_FREERTOS_TEST
 #include "pmsis_types.h"
 #include "pmsis_task.h"
 #include "implementation_specific_defines.h"
@@ -92,7 +92,7 @@ struct spim_cs_data
 	uint8_t big_endian;
 };
 
-#ifdef USE_PULPOS
+#ifdef USE_PULPOS_TEST
 /* Structure holding info for each interfaces
  * most notably the fifo of enqueued transfers and meta to know whether
  * interface is free or not */
@@ -108,7 +108,7 @@ struct spim_driver_data
 	pos_udma_channel_t *tx_channel;
 };
 #endif
-#ifdef USE_FREERTOS
+#ifdef USE_FREERTOS_TEST
 /* Structure holding info for each interfaces
  * most notably the fifo of enqueued transfers and meta to know whether
  * interface is free or not */

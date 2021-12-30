@@ -43,7 +43,7 @@ ifeq '$(CONFIG_LIBC_MINIMAL)' '1'
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/lib/libc/minimal/include
 endif
 
-ifdef USE_PULPOS
+ifdef DUSE_PULPOS_TEST
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/include -I$(PULPOS_HOME)/kernel -I$(PULPOS_ARCHI)/include -I$(PULPOS_HAL)/include -I$(PMSIS_API)/include
 endif
 
@@ -83,7 +83,7 @@ ifdef PULPOS_PLATFORM
 platform=$(PULPOS_PLATFORM)
 endif
 
-ifdef USE_PULPOS
+ifdef DUSE_PULPOS_TEST
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/include/
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/src/abstraction_layer_spi.c
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/include/
