@@ -42,7 +42,40 @@ PULP_CFLAGS += -fno-jump-tables -fno-tree-loop-distribute-patterns
 ifeq '$(CONFIG_LIBC_MINIMAL)' '1'
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/lib/libc/minimal/include
 endif
+
+ifdef USE_PULPOS
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/include -I$(PULPOS_HOME)/kernel -I$(PULPOS_ARCHI)/include -I$(PULPOS_HAL)/include -I$(PMSIS_API)/include
+endif
+
+ifdef USE_FREERTOS
+PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/include
+# ***come faccio a compilare una cartella con file c***
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/clkconst.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/clkdiv.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/croutine.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/device.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/event_groups.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/fc_event.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/fll.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/gpio.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/irq.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/list.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/os.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/pinmux.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/pmsis_task.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/queue.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/soc_eu.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/stream_buffer.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/system_metal.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/system.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/task.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/timer_irq.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/scr/timers.c
+
+PULP_APP_CFLAGS += -I$(PULPOS_ARCHI)/include 
+PULP_APP_CFLAGS += -I$(PULPOS_HAL)/include 
+PULP_APP_CFLAGS += -I$(PMSIS_API)/include
+endif
 
 PULP_APP_CFLAGS += $(foreach inc,$(PULPOS_MODULES),-I$(inc)/include)
 
@@ -57,21 +90,10 @@ PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/inclu
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/src/common_spi.c
 endif
 
-ifdef USE_FREERTOS
-PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/tests/spim_flash_async/FreeRTOSConfig.h
-PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/include
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/croutine.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/event_groups.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/list.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/os.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/pmsis_task.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/queue.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/stream_buffer.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/tasks.c
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/freertos/abstraction_layer_freertos/src/timers.c
 
-PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/include/
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_pulpos/src/abstraction_layer_spi.c
+ifdef USE_FREERTOS
+PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_freertos/include/
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/abstraction_layer_spi_freertos/src/abstraction_layer_spi.c
 PULP_APP_CFLAGS += -I$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/include/
 PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/common/src/common_spi.c
 endif

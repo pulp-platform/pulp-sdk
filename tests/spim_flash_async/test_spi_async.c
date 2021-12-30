@@ -25,6 +25,9 @@
 
 #include "pmsis.h"
 #include <bsp/bsp.h>
+#ifdef USE_FREERTOS
+	#include "system.h"
+#endif
 
 #if !defined(SYNC_CS_AUTO) && !defined(ASYNC_CS_AUTO) && \
 	!defined(SYNC_CS_KEEP) && !defined(ASYNC_CS_KEEP)
@@ -237,6 +240,9 @@ static void test_kickoff(void *arg)
 /* Program Entry. */
 int main(void)
 {
+#ifdef USE_FREERTOS
+	system_init();
+#endif
 	printf("\n\n\t *** Pulp-SDK Hello World *** \n\n");
 	return pmsis_kickoff((void *)test_kickoff);
 }
