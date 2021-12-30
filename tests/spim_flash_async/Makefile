@@ -21,3 +21,4 @@ USE_FREERTOS_TEST=1
 CONFIG_SPIM = 1
 
 include $(RULES_DIR)/pmsis_rules.mk
+
