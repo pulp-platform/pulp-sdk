@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <os.h>
 
 pi_task_t *__pi_task_block(pi_task_t *callback_task)
 {
