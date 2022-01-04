@@ -1,0 +1,225 @@
+# source /scratch/norlando/pulp-open/sim/tcl_files/config/run_and_exit.tcl
+# source /scratch/norlando/pulp-open/sim/tcl_files/run.tcl
+# vsim -c -quiet vopt_tb -L models_lib -L vip_lib -t ps "+nowarnTRAN" "+nowarnTSCALE" "+nowarnTFMPC" "+TB_PATH=/scratch/norlando/pulp-open/sim/../../fe/tb/" "+UVM_NO_RELNOTES" "+ENTRY_POINT=0x1c000880" -dpicpppath g++ -permit_unmatched_virtual_intf "+VSIM_PATH=/scratch/norlando/pulp-open/sim" -gUSE_SDVT_SPI=0 -gUSE_SDVT_CPI=0 -gBAUDRATE=115200 -gENABLE_DEV_DPI=0 -gCONFIG_FILE=NONE -gLOAD_L2=JTAG -gUSE_SDVT_I2S=0 
+# Start time: 13:26:52 on Jan 04,2022
+# ** Error (suppressible): (vsim-7076) The gcc/g++ path 'g++' via -dpicpppath switch is not qualified and is ignored.
+# //  Questa Sim-64
+# //  Version 10.7b_1 linux_x86_64 Jul 26 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  QuestaSim and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# ** Error: (vsim-191) Questa has encountered an unexpected internal error: ../../src/vsim/vsimfunc.c(1989). 
+# Please contact Questa support at http://supportnet.mentor.com
+# ** Error: (vsim-191) Questa has encountered an unexpected internal error: ../../src/vsim/vsimfunc.c(1989). 
+# Please contact Questa support at http://supportnet.mentor.com
+# ** Error: (vsim-191) Questa has encountered an unexpected internal error: ../../src/vsim/vsimfunc.c(1989). 
+# Please contact Questa support at http://supportnet.mentor.com
+# ** Error: (vsim-191) Questa has encountered an unexpected internal error: ../../src/vsim/vsimfunc.c(1989). 
+# Please contact Questa support at http://supportnet.mentor.com
+# ** Warning: (vsim-3015) [PCDPC] - Port size (43) does not match connection size (32) for port 'gpio_in_i'. The port definition is at: /scratch/norlando/pulp-open/sim/../ips/pulp_soc/rtl/pulp_soc/pulp_soc.sv(143).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i File: /scratch/norlando/pulp-open/sim/../rtl/pulp/soc_domain.sv Line: 230
+# ** Warning: (vsim-3015) [PCDPC] - Port size (43) does not match connection size (32) for port 'gpio_out_o'. The port definition is at: /scratch/norlando/pulp-open/sim/../ips/pulp_soc/rtl/pulp_soc/pulp_soc.sv(144).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i File: /scratch/norlando/pulp-open/sim/../rtl/pulp/soc_domain.sv Line: 230
+# ** Warning: (vsim-3015) [PCDPC] - Port size (43) does not match connection size (32) for port 'gpio_dir_o'. The port definition is at: /scratch/norlando/pulp-open/sim/../ips/pulp_soc/rtl/pulp_soc/pulp_soc.sv(145).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i File: /scratch/norlando/pulp-open/sim/../rtl/pulp/soc_domain.sv Line: 230
+# ** Warning: (vsim-3015) [PCDPC] - Port size (256) does not match connection size (384) for port 'pad_cfg_o'. The port definition is at: /scratch/norlando/pulp-open/sim/../ips/pulp_soc/rtl/pulp_soc/soc_peripherals.sv(88).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/soc_peripherals_i File: /scratch/norlando/pulp-open/sim/../ips/pulp_soc/rtl/pulp_soc/pulp_soc.sv Line: 587
+# ** Warning: (vsim-3015) [PCDPC] - Port size (43) does not match connection size (32) for port 'gpio_in_sync'. The port definition is at: /scratch/norlando/pulp-open/sim/../ips/apb/apb_gpio/./rtl/apb_gpio.sv(61).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/soc_peripherals_i/i_apb_gpio File: /scratch/norlando/pulp-open/sim/../ips/pulp_soc/rtl/pulp_soc/soc_peripherals.sv Line: 365
+# ** Warning: (vsim-3770) Failed to find user specified function 'jtag_tick' in DPI C/C++ source files.
+#    Time: 0 ps  Iteration: 0  Region: /SimJTAG_sv_unit File: /scratch/norlando/pulp-open/sim/../rtl/tb/SimJTAG.sv
+# ** Warning: (vsim-8683) Uninitialized out port /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/i_clk_rst_gen/i_fll_soc/i_FLL_digital/TQ has no driver.
+# This port will contribute value (U) to the signal network.
+# ** Warning: (vsim-8683) Uninitialized out port /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/i_clk_rst_gen/i_fll_soc/i_FLL_digital/JTQ has no driver.
+# This port will contribute value (U) to the signal network.
+# ** Warning: (vsim-8683) Uninitialized out port /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/i_clk_rst_gen/i_fll_per/i_FLL_digital/TQ has no driver.
+# This port will contribute value (U) to the signal network.
+# ** Warning: (vsim-8683) Uninitialized out port /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/i_clk_rst_gen/i_fll_per/i_FLL_digital/JTQ has no driver.
+# This port will contribute value (U) to the signal network.
+# ** Warning: (vsim-8683) Uninitialized out port /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/i_clk_rst_gen/i_fll_cluster/i_FLL_digital/TQ has no driver.
+# This port will contribute value (U) to the signal network.
+# ** Warning: (vsim-8683) Uninitialized out port /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/i_clk_rst_gen/i_fll_cluster/i_FLL_digital/JTQ has no driver.
+# This port will contribute value (U) to the signal network.
+# ** Warning: (vsim-3040) Command line generic/parameter "USE_SDVT_I2S" not found in design.
+# ** Warning: (vsim-3040) Command line generic/parameter "USE_SDVT_SPI" not found in design.
+#  run_and_exit
+# ** Warning: (vsim-7) Failed to open readmem file "i2s_buffer_0.hex" in read mode.
+# No such file or directory. (errno = ENOENT)    : /scratch/norlando/pulp-open/sim/../rtl/vip/i2s/i2s_vip_channel.sv(167)
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/genblk8/genblk2/i_i2s_vip_ch0/i2s_vip_channel_i
+# ** Warning: (vsim-7) Failed to open readmem file "i2s_buffer_1.hex" in read mode.
+# No such file or directory. (errno = ENOENT)    : /scratch/norlando/pulp-open/sim/../rtl/vip/i2s/i2s_vip_channel.sv(167)
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/genblk8/genblk2/i_i2s_vip_ch1/i2s_vip_channel_i
+# ** Warning: (vsim-7) Failed to open readmem file "i2s_buffer_2.hex" in read mode.
+# No such file or directory. (errno = ENOENT)    : /scratch/norlando/pulp-open/sim/../rtl/vip/i2s/i2s_vip_channel.sv(167)
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/genblk8/genblk2/i_i2s_CAM_MASTER_SLAVE/i2s_vip_channel_i
+# ** Warning: (vsim-7) Failed to open readmem file "i2s_buffer_3.hex" in read mode.
+# No such file or directory. (errno = ENOENT)    : /scratch/norlando/pulp-open/sim/../rtl/vip/i2s/i2s_vip_channel.sv(167)
+#    Time: 0 ps  Iteration: 0  Instance: /tb_pulp/genblk8/genblk2/i_i2s_CAM_SLAVE/i2s_vip_channel_i
+# [CORE] Core settings: PULP_SECURE =           1, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [CORE] Core settings: PULP_SECURE =           0, N_PMP_ENTRIES =          16, N_PMP_CFG           4
+# [TB]       0ns - Entry point is set to 0x1c000880
+# [TB]       0ns - Asserting hard reset
+# ** Warning: (vsim-8315) No condition is true in the unique/priority if/case statement.
+#    Time: 0 ps  Iteration: 0  Process: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/fc_subsystem_i/FC_CORE/lFC_CORE/RISCY_PMP/pmp_unit_i/#ALWAYS#673 File: /scratch/norlando/pulp-open/sim/../ips/riscv/./rtl/riscv_pmp.sv Line: 677
+# ** Warning: (vsim-8315) No condition is true in the unique/priority if/case statement.
+#    Time: 0 ps  Iteration: 1  Process: /tb_pulp/i_dut/soc_domain_i/pulp_soc_i/fc_subsystem_i/FC_CORE/lFC_CORE/RISCY_PMP/pmp_unit_i/#ALWAYS#673 File: /scratch/norlando/pulp-open/sim/../ips/riscv/./rtl/riscv_pmp.sv Line: 677
+# [TB]       1ns - Using FLL
+# [TB]       1ns - Not using CAM SDVT
+# Loading default stimuli
+# [JTAG] SoftReset Done(    701ns)
+# [JTAG] Bypass Test Passed (  33301ns)
+# [JTAG] Tap ID: 249511c3 (  43701ns)
+# [JTAG] Tap ID Test PASSED (  43701ns)
+# [test_mode_if]   50301ns - Init
+# [TB]   50301ns - Enabling clock out via jtag
+# [test_mode_if]   51801ns - Setting confreg to value 002.
+# [TB]   51801ns - jtag_conf_reg set to 002
+# [TB]   51801ns - Releasing hard reset
+# [TB]   53401ns - Init PULP TAP
+# [pulp_tap_if] WRITE32 burst @1c000880 for           4 bytes.
+# [TB]   67501ns - Write32 PULP TAP
+# [JTAG] R/W test of L2 succeeded
+# [TB]  177701ns - Halting the Core
+# [TB]  236501ns - Writing the boot address into dpc
+# [TB]  280601ns - Loading L2
+# [JTAG] Loading L2 with pulp tap jtag interface
+# [pulp_tap_if] WRITE32 burst @1c000000 for          16 bytes.
+# [pulp_tap_if] WRITE32 burst @1c000800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c000c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c001000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c001400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c001800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c001c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c002000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c002400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c002800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c002c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c003000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c003400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c003800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c003c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c004000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c004400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c004800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c004c00 for         512 bytes.
+# [pulp_tap_if] WRITE32 burst @1c008000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c008400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c008800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c008c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c009000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c009400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c009800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c009c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00a000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00a400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00a800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00ac00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00b000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00b400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00b800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00bc00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00c000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00c400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00c800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00cc00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00d000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00d400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00d800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00dc00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00e000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00e400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00e800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00ec00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00f000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00f400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00f800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c00fc00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c010000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c010400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c010800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c010c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c011000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c011400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c011800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c011c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c012000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c012400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c012800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c012c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c013000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c013400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c013800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c013c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c014000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c014400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c014800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c014c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c015000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c015400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c015800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c015c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c016000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c016400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c016800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c016c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c017000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c017400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c017800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c017c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c018000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c018400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c018800 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c018c00 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c019000 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c019400 for        1024 bytes.
+# [pulp_tap_if] WRITE32 burst @1c019800 for         448 bytes.
+# [pulp_tap_if] WRITE32 burst @1c0199c8 for           8 bytes.
+# [TB] 73333301ns - Resuming the CORE
+# [TB] 73906801ns retrying debug reg access
+# [TB] 73936101ns retrying debug reg access
+# [TB] 73965401ns retrying debug reg access
+# [TB] 73994701ns retrying debug reg access
+# [TB] 74024001ns retrying debug reg access
+# [TB] 74053301ns retrying debug reg access
+# [TB] 74082601ns retrying debug reg access
+# [TB] 74111901ns retrying debug reg access
+# [TB] 74141201ns retrying debug reg access
+# [TB] 74170501ns retrying debug reg access
+# [TB] 74199801ns retrying debug reg access
+# [TB] 74243801ns - Waiting for end of computation
+# [STDOUT-CL31_PE0] 
+# [STDOUT-CL31_PE0] 
+# [STDOUT-CL31_PE0] 	 *** FreeRTOS Hello World *** 
+# [STDOUT-CL31_PE0] 
+# [STDOUT-CL31_PE0] malloc tx buffer
+# [STDOUT-CL31_PE0] malloc rx buffer 1
+# [STDOUT-CL31_PE0] malloc rx buffer 2
+# [STDOUT-CL31_PE0] tx buffer init
+# [STDOUT-CL31_PE0] async cs auto
+# [STDOUT-CL31_PE0] WIP Register: 3
+# [STDOUT-CL31_PE0] WIP Register: 0
+# [STDOUT-CL31_PE0] starting error check
+# [STDOUT-CL31_PE0] Test success
+# [TB] 77207901ns - Received status core: 0x00000000
+# ** Note: $stop    : /scratch/norlando/pulp-open/sim/../rtl/tb/tb_pulp.sv(960)
+#    Time: 77207901 ns  Iteration: 0  Instance: /tb_pulp
+# Break in Module tb_pulp at /scratch/norlando/pulp-open/sim/../rtl/tb/tb_pulp.sv line 960
+# Stopped at /scratch/norlando/pulp-open/sim/../rtl/tb/tb_pulp.sv line 960
+# End time: 14:04:17 on Jan 04,2022, Elapsed time: 0:37:25
+# Errors: 5, Warnings: 20
