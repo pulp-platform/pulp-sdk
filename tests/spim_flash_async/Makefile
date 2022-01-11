@@ -25,7 +25,7 @@ APP_SRCS += test_spi_async.c
 PROJ_ROOT = $(shell git rev-parse --show-toplevel)
 
 # good defaults for many environment variables
-include $(PROJ_ROOT)/rtos/freertos/default_flags.mk
+include $(PROJ_ROOT)/../freertos/default_flags.mk
 
 # manually set CFLAGS to disable some warnings (-Wconversion)
 CFLAGS += \
@@ -48,7 +48,7 @@ DPI_CONFIG=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))rtl_config.json
 CONFIG_CLUSTER=n
 
 # rtos, pulp and pmsis ources
-include $(PROJ_ROOT)/rtos/freertos/default_srcs.mk
+include $(PROJ_ROOT)/../freertos/default_srcs.mk
 
 # application name
 PROG = test_flash_async
@@ -66,6 +66,6 @@ CPPFLAGS += -DportasmHANDLE_INTERRUPT=vSystemIrqHandler
 #CPPFLAGS += -DportasmSKIP_ADDITIONAL_REGISTERS
 
 # compile, simulation and analysis targets
-include $(PROJ_ROOT)/rtos/freertos/default_targets.mk
+include $(PROJ_ROOT)/../freertos/default_targets.mk
 endif
 

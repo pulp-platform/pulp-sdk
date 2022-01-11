@@ -18,12 +18,12 @@ ifeq '$(CONFIG_LIBC_MINIMAL)' '1'
 PULP_SRCS += lib/libc/minimal/io.c lib/libc/minimal/fprintf.c lib/libc/minimal/prf.c lib/libc/minimal/sprintf.c lib/libc/minimal/semihost.c
 endif
 
-ifdef USE_PULPOS_TEST
 ifdef CONFIG_KERNEL
 PULP_SRCS += kernel/init.c kernel/kernel.c kernel/device.c kernel/task.c kernel/alloc.c \
 	kernel/alloc_pool.c kernel/irq.c kernel/soc_event.c kernel/log.c kernel/time.c
+
 PULP_ASM_SRCS += kernel/irq_asm.S kernel/task_asm.S kernel/time_asm.S
-endif
+
 endif
 
 # SOC EVENT
