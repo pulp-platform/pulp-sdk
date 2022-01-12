@@ -78,7 +78,7 @@ void eeprom(void)
 	printf("writing eeprom\n");
 
 	pi_task_t task_write_buffer;	
-	printf(" task_write_buffer\n");
+	//printf(" task_write_buffer\n");
 	pi_i2c_write_async(&i2c, tx, sizeof(tx), PI_I2C_XFER_START | PI_I2C_XFER_STOP, pi_task_block(&task_write_buffer));
 	pi_task_wait_on(&task_write_buffer);
 	/* Wait for write to finish. It takes 5 million ns = 5 ms to finish. */
@@ -92,11 +92,8 @@ void eeprom(void)
 	};
 
 	pi_task_t task_write_addr;
-	printf(" task_write_addr\n");
 	pi_i2c_write_async(&i2c, eeprom_addr, sizeof(eeprom_addr), PI_I2C_XFER_START | PI_I2C_XFER_NO_STOP, pi_task_block(&task_write_addr));	
-	//pi_i2c_write(&i2c, eeprom_addr, sizeof(eeprom_addr), PI_I2C_XFER_START | PI_I2C_XFER_NO_STOP);	
 	pi_task_t task_read_buffer;
-	printf(" task_read_buffer\n");
 	pi_i2c_read_async(&i2c, rx, sizeof(rx), PI_I2C_XFER_START | PI_I2C_XFER_STOP, pi_task_block(&task_read_buffer));
 	pi_task_wait_on(&task_write_addr);
 	pi_task_wait_on(&task_read_buffer);
@@ -116,14 +113,17 @@ void eeprom(void)
 			printf("rx[%d]=0x%0x ok\n", i, rx[i]);
 		}
 	}
-	if (error != 0)
+	if (error != 0){
+    	printf("Test NO success\n");
 		exit(1);
+	}
+	printf("Test success\n");
 	exit(0);
 }
 
 /* Program Entry. */
 int main(void)
 {
-	printf("\n\n\t *** Pulp-SDK Hello World *** \n\n");
+	printf("\n\n\t *** Pulp-SDK Test I2C async *** \n\n");
 	return pmsis_kickoff((void *)eeprom);
 }
