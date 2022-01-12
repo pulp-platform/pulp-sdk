@@ -40,15 +40,12 @@ void eeprom(void)
 	printf("opening eeprom on i2c bus %d\n", I2C_DEV_ID);
 
 	pi_i2c_conf_init(&i2c_conf);
-	printf("pi_i2c_conf_init\n");
 	i2c_conf.itf = I2C_DEV_ID;
 	i2c_conf.max_baudrate = 100000;
 	pi_i2c_conf_set_slave_addr(&i2c_conf, I2C_EEPROM_ADDR << 1, 0);
-	printf("pi_i2c_conf_set_slave_addr\n");
 	/* pi_i2c_conf_set_wait_cycles(conf, 2048); */
 
 	pi_open_from_conf(&i2c, &i2c_conf);
-	printf("pi_open_from_conf\n");
 	if (pi_i2c_open(&i2c)) {
 		printf("i2c open failed\n");
 		exit(1);
@@ -120,14 +117,17 @@ void eeprom(void)
 			printf("rx[%d]=0x%0x ok\n", i, rx[i]);
 		}
 	}
-	if (error != 0)
+	if (error != 0){
+    	printf("Test NO success\n");
 		exit(1);
+	}
+	printf("Test success\n");
 	exit(0);
 }
 
 /* Program Entry. */
 int main(void)
 {
-	printf("\n\n\t *** Pulp-SDK Hello World *** \n\n");
+	printf("\n\n\t *** Pulp-SDK Test I2C sync *** \n\n");
 	return pmsis_kickoff((void *)eeprom);
 }

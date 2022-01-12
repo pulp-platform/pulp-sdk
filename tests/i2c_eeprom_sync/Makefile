@@ -10,9 +10,11 @@ APP_CFLAGS += -DNUM_CORES=1
 endif
 endif
 
-APP_CFLAGS += -Os -g
+APP_CFLAGS += -Os -g -DUSE_PULPOS
+APP_CFLAGS += -DDEGUB
 APP_LDFLAGS += -Os -g
 
 CONFIG_I2C = 1
+HAS_I2C = 1
 
 include $(RULES_DIR)/pmsis_rules.mk
