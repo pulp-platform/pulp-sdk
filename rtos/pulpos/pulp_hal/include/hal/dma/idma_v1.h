@@ -29,6 +29,9 @@
 #define DMA_MAX_NUM_STREAMS 4
 #define IDMA_EVENT 8 // all iDMA tx_cplt events are broadcast
 
+#define IDMA_DEFAULT_CONFIG 0x1
+#define IDMA_DEFAULT_CONFIG_2D 0x9
+
 typedef unsigned int dma_ext_t;
 typedef unsigned int dma_loc_t;
 
@@ -248,7 +251,7 @@ static inline unsigned int pulp_idma_memcpy(unsigned int const dst_addr, unsigne
   DMA_WRITE(src_addr, PULPOPEN_IDMA_SRC_ADDR_REG_OFFSET);
   DMA_WRITE(dst_addr, PULPOPEN_IDMA_DST_ADDR_REG_OFFSET);
   DMA_WRITE(num_bytes, PULPOPEN_IDMA_NUM_BYTES_REG_OFFSET);
-  DMA_WRITE(0, PULPOPEN_IDMA_CONF_REG_OFFSET);
+  DMA_WRITE(IDMA_DEFAULT_CONFIG, PULPOPEN_IDMA_CONF_REG_OFFSET);
   asm volatile("" : : : "memory");
 
   // Launch TX
@@ -261,7 +264,7 @@ static inline unsigned int pulp_idma_memcpy_2d(unsigned int const dst_addr, unsi
   DMA_WRITE(src_addr, PULPOPEN_IDMA_SRC_ADDR_REG_OFFSET);
   DMA_WRITE(dst_addr, PULPOPEN_IDMA_DST_ADDR_REG_OFFSET);
   DMA_WRITE(num_bytes, PULPOPEN_IDMA_NUM_BYTES_REG_OFFSET);
-  DMA_WRITE(1<<PULPOPEN_IDMA_CONF_TWOD_BIT, PULPOPEN_IDMA_CONF_REG_OFFSET);
+  DMA_WRITE(IDMA_DEFAULT_CONFIG_2D, PULPOPEN_IDMA_CONF_REG_OFFSET);
   DMA_WRITE(src_stride, PULPOPEN_IDMA_STRIDE_SRC_REG_OFFSET);
   DMA_WRITE(dst_stride, PULPOPEN_IDMA_STRIDE_DST_REG_OFFSET);
   DMA_WRITE(num_reps,   PULPOPEN_IDMA_NUM_REPETITIONS_REG_OFFSET);
