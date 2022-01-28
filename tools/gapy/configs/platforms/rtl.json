@@ -12,7 +12,7 @@
             "rtl": {
                 "commands": {
                     "shell": {
-                        "executable": "vsim",
+                        "executable": "${VSIM:-vsim}",
                         "args_eval": [
                             "\"-64\"",
                             "\"-c\"",
@@ -21,7 +21,7 @@
                         ]
                     },
                     "gui": {
-                        "executable": "vsim",
+                        "executable": "${VSIM:-vsim}",
                         "args_eval": [
                             "\"-64\"",
                             "\"-do 'source \" + os.environ.get(\"VSIM_PATH\") +  \"/tcl_files/config/run_and_exit.tcl'\"",
