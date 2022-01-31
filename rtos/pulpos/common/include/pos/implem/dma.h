@@ -24,7 +24,7 @@
 
 struct pi_cl_dma_cmd_s
 {
-  int id;
+  uint32_t id;
   struct pi_cl_dma_cmd_s *next;
 };
 
