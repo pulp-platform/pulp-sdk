@@ -85,6 +85,12 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
   plp_dma_cmd_push(cmd, loc, ext);
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
+  if (merge) {
+    // Naive implementation -> wait for previous transfer in chain to complete
+    int counter = copy->id;
+
+    plp_dma_wait(counter);
+  }
   copy->id = plp_dma_memcpy(ext, loc, size, dir);
 #else
 #error DMA Version not specified
@@ -106,6 +112,12 @@ static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsi
   plp_dma_cmd_push(cmd, loc, ext);
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
+  if (merge) {
+    // Naive implementation -> wait for previous transfer in chain to complete
+    int counter = copy->id;
+
+    plp_dma_wait(counter);
+  }
   copy->id = plp_dma_memcpy(ext, loc, size, dir);
 #else
 #error DMA Version not specified
@@ -161,6 +173,12 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
   if (!merge) copy->id = id;
 
 #elif IDMA_VERSION == 1
+  if (merge) {
+    // Naive implementation -> wait for previous transfer in chain to complete
+    int counter = copy->id;
+
+    plp_dma_wait(counter);
+  }
   copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
 #else
 #error DMA Version not specified
@@ -182,6 +200,12 @@ static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, u
   plp_dma_cmd_push_2d(cmd, loc, ext, stride, length);
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
+  if (merge) {
+    // Naive implementation -> wait for previous transfer in chain to complete
+    int counter = copy->id;
+
+    plp_dma_wait(counter);
+  }
   copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
 #else
 #error DMA Version not specified
