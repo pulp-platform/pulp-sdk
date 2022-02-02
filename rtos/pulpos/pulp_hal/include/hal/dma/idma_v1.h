@@ -23,24 +23,23 @@
 #define PLP_DMA_LOC2EXT 0
 #define PLP_DMA_EXT2LOC 1
 
-// 2D not yet supported
 #define PLP_DMA_1D 0
-// #define PLP_DMA_2D 1
+#define PLP_DMA_2D 1
 
 #define DMA_MAX_NUM_STREAMS 4
+#define IDMA_EVENT 8 // all iDMA tx_cplt events are broadcast
 
 typedef unsigned int dma_ext_t;
 typedef unsigned int dma_loc_t;
 
 /** @name High-level DMA memory copy functions
  * The following functions can be used to trigger DMA transfers to copy data between the cluster memory (L1) and another memory outside the cluster (another cluster L1 or L2).
- * Note that they cannot be used from L2 to L2 or from a cluster memory to the same cluster memory. The DMA supports the following features:
- *   - Transfers can be either event-based or irq-based. With event-based transfers the core can call a wait function to block execution until the transfer is done. With irq-based transfers, the completion of the transfer will 
- *     trigger the DMA interrupt. This interrupt cannot be managed with this HAL, but must be managed as any other IRQ.
+ * The DMA supports the following features:
+ *   - Transfers are event-based. With event-based transfers the core can call a wait function to block execution until the transfer is done.
  *   - The DMA supports 2D transfers which allows transfering a 2D tile in one command. Additional information must then be given to specify the width of the tile and the number of bytes between 2 lines of the tile.
- *   - The event or irq sent at the end of the transfer can be either sent to the core which enqueued the transfer or broadcasted to all cluster cores.
- *   - To identify specific transfers, the DMA provides a counter allocator. All transfers enqueued with the same counter are gathered into a group, on which the core can be stalled until the whole group of transfers is finished.
- *   - All transfers are enqueued into a global FIFO which can stall the core enqueueing the transfer in case it is full. The size of the FIFO depends on the chip but is typically 16 commands.
+ *   - The event sent at the end of the transfer is broadcasted to all cluster cores.
+ *   - To identify specific transfers, the DMA provides a transfer identifier.
+ *   - Multiple transfers can be launched simultaneously, with them being executed 2-4 in parallel, with more waiting in a queue.
  */
 /**@{*/
 
@@ -72,33 +71,39 @@ static inline int plp_dma_l1ToExt(dma_ext_t ext, unsigned int loc, unsigned shor
   */
 static inline int plp_dma_extToL1(unsigned int loc, dma_ext_t ext, unsigned short size);
 
-/** Memory transfer with irq-based completion. 
+/** 2-dimensional memory transfer with event-based completion. 
  * 
-  \param   ext     Address in the external memory where to access the data. There is no restriction on memory alignment.
-  \param   loc     Address in the cluster memory where to access the data. There is no restriction on memory alignment.
-  \param   size    Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
+  \param   ext    Address in the external memory where to access the data. There is no restriction on memory alignment.
+  \param   loc    Address in the cluster memory where to access the data. There is no restriction on memory alignment.
+  \param   size   Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
+  \param   stride 2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536.
+  \param   length 2D length, which is the number of transfered bytes after which the DMA will switch to the next line. Must fit 16 bits, i.e. must be inferior to 65536.
   \param   ext2loc If 1, the transfer is loading data from external memory and storing to cluster memory. If 0, it is the contrary
-  \return          The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
+  \return         The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
   */
-static inline int plp_dma_memcpy_irq(dma_ext_t ext, unsigned int loc, unsigned short size, int ext2loc);
+static inline int plp_dma_memcpy_2d(dma_ext_t ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned int length, int ext2loc);
 
-/** Cluster memory to external memory transfer with irq-based completion. 
+/** Cluster memory to external memory 2-dimensional transfer with event-based completion. 
  * 
-  \param   ext  Address in the external memory where to store the data. There is no restriction on memory alignment.
-  \param   loc  Address in the cluster memory where to load the data. There is no restriction on memory alignment.
-  \param   size Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
-  \return       The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
+  \param   ext    Address in the external memory where to store the data. There is no restriction on memory alignment.
+  \param   loc    Address in the cluster memory where to load the data. There is no restriction on memory alignment.
+  \param   size   Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
+  \param   stride 2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536. This applies only to the external memory.
+  \param   length 2D length, which is the number of transfered bytes after which the DMA will switch to the next line. Must fit 16 bits, i.e. must be inferior to 65536. This applies only to the external memory.
+  \return         The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
   */
-static inline int plp_dma_l1ToExt_irq(dma_ext_t ext, unsigned int loc, unsigned short size);
+static inline int plp_dma_l1ToExt_2d(dma_ext_t ext, unsigned int loc, unsigned short size, unsigned short stride, unsigned short length);
 
-/** External memory to cluster memory transfer with irq-based completion. 
+/** External memory to cluster memory 2-dimensional transfer with event-based completion. 
  * 
-  \param   loc  Address in the cluster memory where to store the data. There is no restriction on memory alignment.
-  \param   ext  Address in the external memory where to load the data. There is no restriction on memory alignment.
-  \param   size Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
-  \return       The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
+  \param   loc    Address in the cluster memory where to store the data. There is no restriction on memory alignment.
+  \param   ext    Address in the external memory where to load the data. There is no restriction on memory alignment.
+  \param   size   Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
+  \param   stride 2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536. This applies only to the external memory.
+  \param   length 2D length, which is the number of transfered bytes after which the DMA will switch to the next line. Must fit 16 bits, i.e. must be inferior to 65536. This applies only to the external memory.
+  \return         The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer
   */
-static inline int plp_dma_extToL1_irq(unsigned int loc, dma_ext_t ext, unsigned short size);
+static inline int plp_dma_extToL1_2d(unsigned int loc, dma_ext_t ext, unsigned short size, unsigned short stride, unsigned short length);
 
 //!@}
 
@@ -113,7 +118,7 @@ static inline void plp_dma_barrier();
 /** DMA wait.
   * This blocks the core until the specified transfer is finished. 
   *
-  \param   counter  The counter ID identifying the transfer. This has either been allocated explicitly or returned from an enqueued transfer (e.g. plp_dma_extToL1_2d_irq)
+  \param   counter  The counter ID identifying the transfer. This has been returned from an enqueued transfer (e.g. plp_dma_extToL1_2d)
  */
 static inline void plp_dma_wait(unsigned int dma_tx_id);
 
@@ -135,9 +140,10 @@ static inline void plp_dma_wait(unsigned int dma_tx_id);
   \param  serialize  if set, the DMA will only send AX belonging to a given Arbitrary 1D burst request
                      at a time. This is default behavior to prevent deadlocks. Setting `serialize` to
                      zero violates the AXI4+ATOP specification.
+  \param  twod       if set, the DMA will execute a 2D transfer.
   \return            The generated configuration
   */
-static inline unsigned int pulp_idma_get_conf(unsigned int decouple, unsigned int deburst, unsigned int serialize);
+static inline unsigned int pulp_idma_get_conf(unsigned int decouple, unsigned int deburst, unsigned int serialize, unsigned int twod);
 
 /**
  * iDMA transfer status
@@ -159,6 +165,21 @@ static inline unsigned int pulp_idma_tx_cplt(unsigned int dma_tx_id);
 static inline unsigned int pulp_idma_memcpy(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes);
 
 /**
+ * iDMA 2D memory transfer
+ * Launches a standard 2D memory transfer
+ *
+  \param  dst_addr   The destination address
+  \param  src_addr   The source address
+  \param  num_bytes  The number bytes (per stride)
+  \param  dst_stride The stride at the destination
+  \param  src_stride The stride at the source
+  \param  num_reps   The number of repetitions
+  \return            The dma transfer identifier
+  */
+static inline unsigned int pulp_idma_memcpy_2d(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes, unsigned int dst_stride, unsigned int src_stride, unsigned int num_reps);
+
+
+/**
  * iDMA advanced memory transfer
  * Launches a 1D memory transfer with special configuration options
  *
@@ -172,9 +193,13 @@ static inline unsigned int pulp_idma_memcpy(unsigned int const dst_addr, unsigne
   \param  serialize  if set, the DMA will only send AX belonging to a given Arbitrary 1D burst request
                      at a time. This is default behavior to prevent deadlocks. Setting `serialize` to
                      zero violates the AXI4+ATOP specification.
+  \param  twod       if set, the DMA will execute a 2D transfer
+  \param  dst_stride if 2D, the stride at the destination
+  \param  src_stride if 2D, the stride at the source
+  \param  num_reps   if 2D, the number of repetitions
   \return            The dma trasfer identifier
   */
-static inline unsigned int pulp_idma_memcpy_advanced(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes, unsigned int decouple, unsigned int deburst, unsigned int serialize);
+static inline unsigned int pulp_idma_memcpy_advanced(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes, unsigned int decouple, unsigned int deburst, unsigned int serialize, unsigned int twod, unsigned int dst_stride, unsigned int src_stride, unsigned int num_reps);
 
 /** Return the DMA status.
  * 
@@ -201,57 +226,80 @@ static inline unsigned int plp_dma_status();
 #define DMA_READ(offset) pulp_read32(DMA_ADDR + (offset))
 #endif
 
-static inline unsigned int pulp_idma_get_conf(unsigned int decouple, unsigned int deburst, unsigned int serialize) {
+static inline unsigned int pulp_idma_get_conf(unsigned int decouple, unsigned int deburst, unsigned int serialize, unsigned int twod) {
   unsigned int conf;
 #if defined(__riscv__)
-  conf = __builtin_bitinsert(0,    decouple,  1, CLUSTER_DMA_FRONTEND_CONF_DECOUPLE_BIT);
-  conf = __builtin_bitinsert(conf, deburst,   1, CLUSTER_DMA_FRONTEND_CONF_DEBURST_BIT);
-  conf = __builtin_bitinsert(conf, serialize, 1, CLUSTER_DMA_FRONTEND_CONF_SERIALIZE_BIT);
+  conf = __builtin_bitinsert(0,    decouple,  1, PULPOPEN_IDMA_CONF_DECOUPLE_BIT);
+  conf = __builtin_bitinsert(conf, deburst,   1, PULPOPEN_IDMA_CONF_DEBURST_BIT);
+  conf = __builtin_bitinsert(conf, serialize, 1, PULPOPEN_IDMA_CONF_SERIALIZE_BIT);
+  conf = __builtin_bitinsert(conf, twod,      1, PULPOPEN_IDMA_CONF_TWOD_BIT);
 #else
-  conf = (((decouple & 0x1)<<CLUSTER_DMA_FRONTEND_CONF_DECOUPLE_BIT) | ((deburst & 0x1)<<CLUSTER_DMA_FRONTEND_CONF_DEBURST_BIT) | ((serialize & 0x1)<<CLUSTER_DMA_FRONTEND_CONF_SERIALIZE_BIT));
+  conf = (((decouple & 0x1)<<PULPOPEN_IDMA_CONF_DECOUPLE_BIT) | ((deburst & 0x1)<<PULPOPEN_IDMA_CONF_DEBURST_BIT) | ((serialize & 0x1)<<PULPOPEN_IDMA_CONF_SERIALIZE_BIT) | ((twod & 0x1)<<PULPOPEN_IDMA_CONF_TWOD_BIT));
 #endif
   return conf;
 }
 
 static inline unsigned int pulp_idma_tx_cplt(unsigned int dma_tx_id) {
-  return (dma_tx_id & 0x0fffffff) <= DMA_READ(CLUSTER_DMA_FRONTEND_DONE_REG_OFFSET + ((dma_tx_id & 0xf0000000) >> 26));
+  return (dma_tx_id & 0x0fffffff) <= DMA_READ(PULPOPEN_IDMA_DONE_REG_OFFSET + ((dma_tx_id & 0xf0000000) >> 26));
 }
 
 
 static inline unsigned int pulp_idma_memcpy(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes) {
-  DMA_WRITE(src_addr, CLUSTER_DMA_FRONTEND_SRC_ADDR_REG_OFFSET);
-  DMA_WRITE(dst_addr, CLUSTER_DMA_FRONTEND_DST_ADDR_REG_OFFSET);
-  DMA_WRITE(num_bytes, CLUSTER_DMA_FRONTEND_NUM_BYTES_REG_OFFSET);
-  DMA_WRITE(0, CLUSTER_DMA_FRONTEND_CONF_REG_OFFSET);
+  DMA_WRITE(src_addr, PULPOPEN_IDMA_SRC_ADDR_REG_OFFSET);
+  DMA_WRITE(dst_addr, PULPOPEN_IDMA_DST_ADDR_REG_OFFSET);
+  DMA_WRITE(num_bytes, PULPOPEN_IDMA_NUM_BYTES_REG_OFFSET);
+  DMA_WRITE(0, PULPOPEN_IDMA_CONF_REG_OFFSET);
   asm volatile("" : : : "memory");
 
   // Launch TX
-  unsigned int dma_tx_id = DMA_READ(CLUSTER_DMA_FRONTEND_NEXT_ID_REG_OFFSET);
+  unsigned int dma_tx_id = DMA_READ(PULPOPEN_IDMA_NEXT_ID_REG_OFFSET);
 
   return dma_tx_id;
 }
 
-static inline unsigned int pulp_idma_memcpy_advanced(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes, unsigned int decouple, unsigned int deburst, unsigned int serialize) {
-  DMA_WRITE(src_addr, CLUSTER_DMA_FRONTEND_SRC_ADDR_REG_OFFSET);
-  DMA_WRITE(dst_addr, CLUSTER_DMA_FRONTEND_DST_ADDR_REG_OFFSET);
-  DMA_WRITE(num_bytes, CLUSTER_DMA_FRONTEND_NUM_BYTES_REG_OFFSET);
-  unsigned int conf = pulp_idma_get_conf(decouple, deburst, serialize);
-  DMA_WRITE(conf, CLUSTER_DMA_FRONTEND_CONF_REG_OFFSET);
+static inline unsigned int pulp_idma_memcpy_2d(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes, unsigned int dst_stride, unsigned int src_stride, unsigned int num_reps) {
+  DMA_WRITE(src_addr, PULPOPEN_IDMA_SRC_ADDR_REG_OFFSET);
+  DMA_WRITE(dst_addr, PULPOPEN_IDMA_DST_ADDR_REG_OFFSET);
+  DMA_WRITE(num_bytes, PULPOPEN_IDMA_NUM_BYTES_REG_OFFSET);
+  DMA_WRITE(1<<PULPOPEN_IDMA_CONF_TWOD_BIT, PULPOPEN_IDMA_CONF_REG_OFFSET);
+  DMA_WRITE(src_stride, PULPOPEN_IDMA_STRIDE_SRC_REG_OFFSET);
+  DMA_WRITE(dst_stride, PULPOPEN_IDMA_STRIDE_DST_REG_OFFSET);
+  DMA_WRITE(num_reps,   PULPOPEN_IDMA_NUM_REPETITIONS_REG_OFFSET);
   asm volatile("" : : : "memory");
 
   // Launch TX
-  unsigned int dma_tx_id = DMA_READ(CLUSTER_DMA_FRONTEND_NEXT_ID_REG_OFFSET);
+  unsigned int dma_tx_id = DMA_READ(PULPOPEN_IDMA_NEXT_ID_REG_OFFSET);
+
+  return dma_tx_id;
+}
+
+
+static inline unsigned int pulp_idma_memcpy_advanced(unsigned int const dst_addr, unsigned int const src_addr, unsigned int num_bytes, unsigned int decouple, unsigned int deburst, unsigned int serialize, unsigned int twod, unsigned int dst_stride, unsigned int src_stride, unsigned int num_reps) {
+  DMA_WRITE(src_addr, PULPOPEN_IDMA_SRC_ADDR_REG_OFFSET);
+  DMA_WRITE(dst_addr, PULPOPEN_IDMA_DST_ADDR_REG_OFFSET);
+  DMA_WRITE(num_bytes, PULPOPEN_IDMA_NUM_BYTES_REG_OFFSET);
+  unsigned int conf = pulp_idma_get_conf(decouple, deburst, serialize, twod);
+  DMA_WRITE(conf, PULPOPEN_IDMA_CONF_REG_OFFSET);
+  if (twod) {
+    DMA_WRITE(src_stride, PULPOPEN_IDMA_STRIDE_SRC_REG_OFFSET);
+    DMA_WRITE(dst_stride, PULPOPEN_IDMA_STRIDE_DST_REG_OFFSET);
+    DMA_WRITE(num_reps, PULPOPEN_IDMA_NUM_REPETITIONS_REG_OFFSET);
+  }
+  asm volatile("" : : : "memory");
+
+  // Launch TX
+  unsigned int dma_tx_id = DMA_READ(PULPOPEN_IDMA_NEXT_ID_REG_OFFSET);
 
   return dma_tx_id;
 }
 
 static inline unsigned int plp_dma_status() {
-  return DMA_READ(CLUSTER_DMA_FRONTEND_STATUS_REG_OFFSET);
+  return DMA_READ(PULPOPEN_IDMA_STATUS_REG_OFFSET);
 }
 
 static inline void plp_dma_wait(unsigned int dma_tx_id) {
   while(!pulp_idma_tx_cplt(dma_tx_id)) {
-    eu_evt_maskWaitAndClr(1 << ARCHI_CL_EVT_DMA0);
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
   }
   return;
 }
@@ -272,25 +320,25 @@ static inline int plp_dma_extToL1(unsigned int loc, dma_ext_t ext, unsigned shor
   return pulp_idma_memcpy(loc, ext, size);
 }
 
-static inline int plp_dma_memcpy_irq(dma_ext_t ext, unsigned int loc, unsigned short size, int ext2loc) {
+static inline int plp_dma_memcpy_2d(dma_ext_t ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned int length, int ext2loc) {
   if (ext2loc) {
-    return pulp_idma_memcpy(loc, ext, size);
+    return pulp_idma_memcpy_2d(loc, ext, length, length, stride, size/length);
   } else {
-    return pulp_idma_memcpy(ext, loc, size);
+    return pulp_idma_memcpy_2d(ext, loc, length, stride, length, size/length);
   }
 }
 
-static inline int plp_dma_l1ToExt_irq(dma_ext_t ext, unsigned int loc, unsigned short size) {
-  return pulp_idma_memcpy(ext, loc, size);
+static inline int plp_dma_l1ToExt_2d(dma_ext_t ext, unsigned int loc, unsigned short size, unsigned short stride, unsigned short length) {
+    return pulp_idma_memcpy_2d(ext, loc, length, stride, length, size/length);
 }
 
-static inline int plp_dma_extToL1_irq(unsigned int loc, dma_ext_t ext, unsigned short size) {
-  return pulp_idma_memcpy(loc, ext, size);
+static inline int plp_dma_extToL1_2d(unsigned int loc, dma_ext_t ext, unsigned short size, unsigned short stride, unsigned short length) {
+    return pulp_idma_memcpy_2d(loc, ext, length, length, stride, size/length);
 }
 
 static inline void plp_dma_barrier() {
   while(plp_dma_status()) {
-    eu_evt_maskWaitAndClr(1 << ARCHI_CL_EVT_DMA0);
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
   }
 }
 

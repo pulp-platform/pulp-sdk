@@ -52,7 +52,7 @@ static inline void __cl_dma_wait(pi_cl_dma_cmd_t *copy)
 
 #if MCHAN_VERSION == 7
   while(DMA_READ(MCHAN_STATUS_OFFSET) & (1 << counter)) {
-#elif IDMA_VERSION ==1
+#elif IDMA_VERSION == 1
   while(!pulp_idma_tx_cplt(counter)) {
 #endif
     eu_mutex_unlock_from_id(0);
@@ -155,7 +155,7 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
   if (!merge) copy->id = id;
 
 #elif IDMA_VERSION == 1
-  // 2d currently not supported
+  copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
 #endif
 
   eu_mutex_unlock_from_id(0);
@@ -163,6 +163,7 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
 
 static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned short length, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
 {  
+#if MCHAN_VERSION == 7
   int id = copy->id;
   if (!merge) id = plp_dma_counter_alloc();
 
@@ -172,6 +173,9 @@ static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, u
   __asm__ __volatile__ ("" : : : "memory");
   plp_dma_cmd_push_2d(cmd, loc, ext, stride, length);
   if (!merge) copy->id = id;
+#elif IDMA_VERSION == 1
+  copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
+#endif
 }
 
 
