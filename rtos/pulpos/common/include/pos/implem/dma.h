@@ -39,11 +39,7 @@ static inline void __cl_dma_wait_safe(pi_cl_dma_cmd_t *copy)
 {
   int counter = copy->id;
 
-  while(DMA_READ(MCHAN_STATUS_OFFSET) & (1 << counter)) {
-    eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
-  }
-
-  plp_dma_counter_free(counter);
+  plp_dma_wait(counter);
   copy->id = -1;
 }
 
@@ -54,13 +50,19 @@ static inline void __cl_dma_wait(pi_cl_dma_cmd_t *copy)
 
   eu_mutex_lock_from_id(0);
 
+#if MCHAN_VERSION == 7
   while(DMA_READ(MCHAN_STATUS_OFFSET) & (1 << counter)) {
+#elif IDMA_VERSION ==1
+  while(!pulp_idma_tx_cplt(counter)) {
+#endif
     eu_mutex_unlock_from_id(0);
     eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
     eu_mutex_lock_from_id(0);
   }
 
+#if MCHAN_VERSION == 7
   plp_dma_counter_free(counter);
+#endif
   copy->id = -1;
 
   eu_mutex_unlock_from_id(0);
@@ -71,6 +73,7 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
 {
   eu_mutex_lock_from_id(0);
   
+#if MCHAN_VERSION == 7
   int id = copy->id;
   if (!merge) id = plp_dma_counter_alloc();
   unsigned int cmd = plp_dma_getCmd(dir, size, PLP_DMA_1D, PLP_DMA_TRIG_EVT, PLP_DMA_NO_TRIG_IRQ, PLP_DMA_SHARED);
@@ -79,6 +82,9 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
   __asm__ __volatile__ ("" : : : "memory");
   plp_dma_cmd_push(cmd, loc, ext);
   if (!merge) copy->id = id;
+#elif IDMA_VERSION == 1
+  copy->id = plp_dma_memcpy(ext, loc, size, dir);
+#endif
 
   eu_mutex_unlock_from_id(0);
 }
@@ -86,6 +92,7 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
 
 static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
 {
+#if MCHAN_VERSION == 7
   int id = copy->id;
   if (!merge) id = plp_dma_counter_alloc();
   unsigned int cmd = plp_dma_getCmd(dir, size, PLP_DMA_1D, PLP_DMA_TRIG_EVT, PLP_DMA_NO_TRIG_IRQ, PLP_DMA_SHARED);
@@ -94,6 +101,9 @@ static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsi
   __asm__ __volatile__ ("" : : : "memory");
   plp_dma_cmd_push(cmd, loc, ext);
   if (!merge) copy->id = id;
+#elif IDMA_VERSION == 1
+  copy->id = plp_dma_memcpy(ext, loc, size, dir);
+#endif
 }
 
 
@@ -132,7 +142,8 @@ static inline void __cl_dma_memcpy_irq(unsigned int ext, unsigned int loc, unsig
 static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned short length, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
 {
   eu_mutex_lock_from_id(0);
-  
+
+#if MCHAN_VERSION == 7
   int id = copy->id;
   if (!merge) id = plp_dma_counter_alloc();
 
@@ -142,6 +153,10 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
   __asm__ __volatile__ ("" : : : "memory");
   plp_dma_cmd_push_2d(cmd, loc, ext, stride, length);
   if (!merge) copy->id = id;
+
+#elif IDMA_VERSION == 1
+  // 2d currently not supported
+#endif
 
   eu_mutex_unlock_from_id(0);
 }

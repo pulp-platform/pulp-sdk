@@ -35,6 +35,9 @@
 #if MCHAN_VERSION == 7
 #include "archi/dma/mchan_v7.h"
 #endif
+#if IDMA_VERSION == 1
+#include "archi/dma/idma_v1.h"
+#endif
 #include "archi/ima/ima_v1.h"
 
 #include "archi/udma/cpi/udma_cpi_v1.h"
