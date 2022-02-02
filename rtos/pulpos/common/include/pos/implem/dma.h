@@ -54,6 +54,8 @@ static inline void __cl_dma_wait(pi_cl_dma_cmd_t *copy)
   while(DMA_READ(MCHAN_STATUS_OFFSET) & (1 << counter)) {
 #elif IDMA_VERSION == 1
   while(!pulp_idma_tx_cplt(counter)) {
+#else
+#error DMA Version not specified
 #endif
     eu_mutex_unlock_from_id(0);
     eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
@@ -84,6 +86,8 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
   copy->id = plp_dma_memcpy(ext, loc, size, dir);
+#else
+#error DMA Version not specified
 #endif
 
   eu_mutex_unlock_from_id(0);
@@ -103,6 +107,8 @@ static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsi
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
   copy->id = plp_dma_memcpy(ext, loc, size, dir);
+#else
+#error DMA Version not specified
 #endif
 }
 
@@ -156,6 +162,8 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
 
 #elif IDMA_VERSION == 1
   copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
+#else
+#error DMA Version not specified
 #endif
 
   eu_mutex_unlock_from_id(0);
@@ -175,6 +183,8 @@ static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, u
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
   copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
+#else
+#error DMA Version not specified
 #endif
 }
 
