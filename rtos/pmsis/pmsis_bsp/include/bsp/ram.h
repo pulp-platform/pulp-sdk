@@ -851,6 +851,7 @@ static inline int pi_ram_ctl_status_regs(struct pi_device *device, uint32_t cmd,
   return api->status_regs(device, cmd, arg);
 }
 
+#ifdef ARCHI_HAS_CLUSTER
 static inline void pi_cl_ram_read_2d(struct pi_device *device,
                                   uint32_t pi_ram_addr, void *addr, uint32_t size, uint32_t stride, uint32_t length, pi_cl_ram_req_t *req)
 {
@@ -899,7 +900,7 @@ static inline int32_t pi_cl_ram_free_wait(pi_cl_ram_free_req_t *req)
 
     return req->error;
 }
-
+#endif
 /// @endcond
 
 

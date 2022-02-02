@@ -49,6 +49,7 @@ static inline uint32_t pi_cluster_id()
     return hal_cluster_id();
 }
 
+#ifdef ARCHI_HAS_CLUSTER
 static inline int pi_cl_cluster_nb_cores()
 {
 #ifdef ARCHI_HAS_CC
@@ -62,6 +63,7 @@ static inline uint32_t pi_cl_cluster_nb_pe_cores()
 {
     return ARCHI_CLUSTER_NB_PE;
 }
+#endif
 
 static inline uint32_t pi_is_fc()
 {
@@ -119,12 +121,13 @@ static inline void pmsis_exit(int err)
 #include "soc.h"
 #include "freq.h"
 #include "perf.h"
+#include "kernel.h"
+#ifdef ARCHI_HAS_CLUSTER
 #include "cluster.h"
 #include "pe.h"
-#include "kernel.h"
 #include "dma.h"
 #include "lock.h"
-
+#endif
 // #ifdef ARCHI_UDMA_HAS_HYPER
 // #include "pos/implem/hyperbus-v2.h"
 // #include "pos/implem/octospi-v2.h"
@@ -142,7 +145,7 @@ static inline void pmsis_exit(int err)
 #include "pos/implem/uart-v2.h"
 #endif
 
-
+#ifdef ARCHI_HAS_CLUSTER
 static inline void *pos_cluster_tiny_addr(int cid, void *data)
 {
   // TODO due to a compiler bug, we have to cast the tiny data to avoid the propagation of the tiny attribute
@@ -157,6 +160,7 @@ static inline void cl_wait_task(unsigned char *done)
         eu_evt_maskWaitAndClr(1<<POS_CL_WAIT_TASK_EVT);
     }
 }
+#endif
 
 static inline void pi_yield()
 {

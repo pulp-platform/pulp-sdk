@@ -152,7 +152,7 @@ int32_t pi_fs_seek(pi_fs_file_t *file, unsigned int offset)
   return file->api->seek(file, offset);
 }
 
-
+#ifdef ARCHI_HAS_CLUSTER
 void __pi_cl_fs_req_exec(void *req);
 
 void __pi_cl_fs_req_done(void *_req)
@@ -438,3 +438,4 @@ void pi_cl_fs_copy_2d(pi_fs_file_t *file, uint32_t index, void *buffer,
     pi_callback_init(&(req->callback), __pi_cl_fs_copy_req, (void *) req);
     pi_cl_send_callback_to_fc(&(req->callback));
 }
+#endif

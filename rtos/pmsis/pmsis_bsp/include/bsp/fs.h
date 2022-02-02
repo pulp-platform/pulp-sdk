@@ -636,12 +636,13 @@ typedef struct pi_cl_fs_req_s
   };
 } pi_cl_fs_req_t;
 
+#ifdef ARCHI_HAS_CLUSTER
 static inline __attribute__((always_inline)) int32_t pi_cl_fs_wait(pi_cl_fs_req_t *req)
 {
     cl_wait_task(&(req->rw.done));
     return req->rw.result;
 }
-
+#endif
 /// @endcond
 
 #endif

@@ -4,7 +4,7 @@
 
   "board": {
     "devices": {
-      "spiflash": {
+      "flash": {
         "@includes@": ["devices/spiflash.json"],
         "interface": "spim0",
         "cs": 0

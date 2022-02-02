@@ -75,7 +75,7 @@ static inline void pos_irq_mask_clr(unsigned int mask)
 #endif
 }
 
-
+#ifdef ARCHI_HAS_CLUSTER
 static inline void pos_irq_cl_mask_set(unsigned int mask)
 {
     eu_irq_maskSet(mask);
@@ -86,7 +86,7 @@ static inline void pos_irq_cl_mask_clr(unsigned int mask)
 {
     eu_irq_maskClr(mask);
 }
-
+#endif
 
 
 static inline void pos_irq_clr(unsigned int mask)

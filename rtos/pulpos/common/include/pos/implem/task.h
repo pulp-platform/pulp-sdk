@@ -101,7 +101,7 @@ static inline pi_callback_t *pi_callback(pi_callback_t *callback,
   return callback;
 }
 
-
+#ifdef ARCHI_HAS_CLUSTER
 static inline void pos_task_cluster_notif_req_done(int cid)
 {
   eu_evt_trig(eu_evt_trig_cluster_addr(cid, POS_CL_WAIT_TASK_EVT), 0);
@@ -118,6 +118,6 @@ static inline void cl_notify_task_done(uint8_t *done, uint8_t cluster_id)
 static inline void pos_task_init_from_cluster(pi_task_t *task)
 {
 }
-
+#endif
 
 #endif

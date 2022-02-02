@@ -14,30 +14,18 @@
  * limitations under the License.
  */
 
-/* 
- * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
- */
+#ifndef __BSP__GAP9_V2_H__
+#define __BSP__GAP9_V2_H__
 
-#ifndef __POS_IMPLEM_KERNEL_H__
-#define __POS_IMPLEM_KERNEL_H__
+#define CONFIG_HYPERFLASH
+#define CONFIG_HYPERRAM
 
-typedef enum
-{
-  POS_CBSYS_START,
-  POS_CBSYS_STOP,
-  POS_CBSYS_POWEROFF,
-  POS_CBSYS_POWERON,
-  POS_CBSYS_PERIPH_SETFREQ_BEFORE,
-  POS_CBSYS_PERIPH_SETFREQ_AFTER,
-  POS_CBSYS_NB
-} pos_cbsys_e;
+#define CONFIG_HYPERFLASH_HYPER_ITF 0
+#define CONFIG_HYPERFLASH_HYPER_CS  1
 
-void pos_cbsys_del(pos_cbsys_t *cbsys);
-
-void pos_cbsys_add(pos_cbsys_t *cbsys, pos_cbsys_e cbsys_id, int (*cb)(void *), void *cb_arg);
-
-int pos_cbsys_exec(pos_cbsys_e cbsys_id);
-
-void pos_kernel_init();
+#define CONFIG_HYPERRAM_HYPER_ITF 0
+#define CONFIG_HYPERRAM_HYPER_CS  0
+#define CONFIG_HYPERRAM_START     0
+#define CONFIG_HYPERRAM_SIZE     (8<<20)
 
 #endif

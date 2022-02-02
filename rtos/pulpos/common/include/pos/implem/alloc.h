@@ -35,6 +35,7 @@ void *pos_alloc_align(pos_alloc_t *a, int size, int align);
 
 void __attribute__((noinline)) pos_free(pos_alloc_t *a, void *_chunk, int size);
 
+#ifdef ARCHI_HAS_CLUSTER
 static inline void *pi_cl_l2_malloc_wait(pi_cl_alloc_req_t *req)
 {
   while((*(volatile char *)&req->done) == 0)
@@ -51,5 +52,6 @@ static inline void pi_cl_l2_free_wait(pi_cl_free_req_t *req)
     eu_evt_maskWaitAndClr(1<<POS_EVENT_CLUSTER_CALL_EVT);
   }
 }
+#endif
 
 #endif

@@ -30,6 +30,7 @@
  */ 
 
 #define ARCHI_HAS_L2                   1
+#define ARCHI_HAS_L2_MULTI             1
 
 #define ARCHI_L2_PRIV0_ADDR  0x1c000000
 #define ARCHI_L2_PRIV0_SIZE  0x00008000
@@ -73,8 +74,11 @@
  */
 
 #define ARCHI_FC_CID        31
-
-
+#define ARCHI_HAS_FC_ITC    1
+#define ARCHI_HAS_FC        1
+#ifndef ARCHI_HAS_CLUSTER
+#define ARCHI_NB_CLUSTER    0
+#endif
 
 /*
  * CLOCKS

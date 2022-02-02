@@ -6,5 +6,6 @@ ifdef VERBOSE_PERF
 APP_CFLAGS += -DSTATS
 endif
 
+PULP_ARCH_CFLAGS = -march=rv32imfcxpulpv2 -mFC=1
 
 include $(RULES_DIR)/pmsis_rules.mk

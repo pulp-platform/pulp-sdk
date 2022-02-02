@@ -1,0 +1,25 @@
+{
+    "@include@": "common.json",
+
+    "gvsoc": {
+        "runner_module": "gv.chips.pulpissimo"
+    },
+
+    "rtl": {
+        "runner_module": "runner.rtl.chips.pulpissimo"
+    },
+
+    "target": {
+        "@includes@": [ "chips/pulpissimo/pulpissimo.json" ]
+    },
+
+    "runner": {
+        "flash_devices": [
+          "target/board/devices/flash"
+        ],
+        "boot": {
+            "mode": "flash",
+            "device": "target/board/devices/flash"
+        }
+    }
+}
