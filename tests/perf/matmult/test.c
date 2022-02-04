@@ -82,7 +82,7 @@ int main()
     uint32_t instr_cnt = pi_perf_read(PI_PERF_INSTR);
     uint32_t cycles_cnt = pi_perf_read(PI_PERF_CYCLES);
 
-    printf("Number of Instructions: %d\nClock Cycles: %d\nCPI: %f\n", 
+    printf("Number of Instructions: %d\nClock Cycles: %d\nCPI: %f%f\n", 
         instr_cnt, cycles_cnt, (float) cycles_cnt/instr_cnt);
 #else
     STOP_STATS();

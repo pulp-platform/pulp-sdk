@@ -3,11 +3,10 @@ OUTPUT_ARCH(riscv)
 ENTRY( _start )
 MEMORY
 {
-  L2           : ORIGIN = 0x1c000004, LENGTH = 0x0007fffc
+  L2           : ORIGIN = 0x1c000004, LENGTH = 0x001ffffc
   L2_aliased   : ORIGIN = 0x00000004, LENGTH = 0x00003ffc
-  L1                 : ORIGIN = 0x10000004, LENGTH = 0x0000fffc
-  L1_aliased         : ORIGIN = 0x00000004, LENGTH = 0x0000fffc
-}
+  L2_priv2     : ORIGIN = 0x1b000000, LENGTH = 0x00008000
+} 
 
 /*
  * This linker script try to put FC data in L2 private bank0 and FC code 
@@ -15,9 +14,6 @@ MEMORY
  * as FC has no instruction cache and is so often accessing L2 to
  * get instructions. Everything can be shifted in case one bank is full.
  *
- * Cluster code and initialized data are put in shared banks to not polute
- * private banks which are quite small, and also avoid contentions between
- * cluster cache refill and FC.
  */
 
 
@@ -183,8 +179,6 @@ SECTIONS
   __l2_priv0_end = ALIGN(4);
 
 
-
-
   /*
    * L2 PRIVATE BANK1
    *
@@ -218,17 +212,12 @@ SECTIONS
   /*
    * L2 SHARED BANKS
    *
-   * Contains other data such as peripheral data and cluster code and data
+   * Contains other data such as peripheral data
    */
 
   .l2_data MAX(0x1c010000,ALIGN(4)) :
   {
     . = ALIGN(4);
-    __cluster_text_start = .;
-    *(.cluster.text)
-    *(.cluster.text.*)
-    . = ALIGN(4);
-    __cluster_text_end = .;
     *(.l2_data)
     *(.l2_data.*)
     *(.data_fc_shared)
@@ -236,54 +225,22 @@ SECTIONS
     . = ALIGN(4);
   } > L2
 
-  /* Following sections are keeping the cluster data
-   * in L2 until the cluster is powered up */
+  __l2_shared_end = LOADADDR(.l2_data) + SIZEOF(.l2_data);
 
-  _l1_preload_start_inL2 = ALIGN(4);
 
-  .data_tiny_l1 :
-  {
+  /*
+   * L2 PRIVATE BANK2
+   *
+   * Contains FC priv data
+   */
+
+  .data_priv2 : {
     . = ALIGN(4);
-    _l1_preload_start = .;
-    *(.data_tiny_l1)
-    *(.data_tiny_l1.*)
-    *(.data_alias_l1)
-    *(.data_alias_l1.*)
-  } > L1_aliased AT> L2
-
-  .l1cluster_g (ORIGIN(L1) + SIZEOF(.data_tiny_l1)): {
+    _start_data_priv2 = .;
+    *(.data_priv2);
     . = ALIGN(4);
-    *(.heapsram)
-    *(.heapsram.*)
-    *(.l1cluster_g)
-    *(.l1cluster_g.*)
-    *(.data_l1)
-    *(.data_l1.*)
-    . = ALIGN(4);
-    _libgomp_start = .;
-    *(.libgomp)
-    *(.libgomp.*)
-    . = ALIGN(4);
-  } > L1 AT> L2
+    _end_data_priv2 = .;
+  } > L2_priv2
 
-  .bss_l1 (ORIGIN(L1) + SIZEOF(.data_tiny_l1) + SIZEOF(.l1cluster_g)) : {
-    . = ALIGN(4);
-    *(.bss_l1)
-    *(.bss_l1.*)
-    . = ALIGN(4);
-  } > L1 AT> L2
-
-  __l1_end = ALIGN(4);
-
-  __l2_shared_end = LOADADDR(.bss_l1) + SIZEOF(.bss_l1);
-
-
-
-
-  _l1_preload_size = SIZEOF(.data_tiny_l1) + SIZEOF(.l1cluster_g);
-
-  __cluster_text_size = __cluster_text_end - __cluster_text_start;
-
-  __l1_heap_start = ALIGN(4);
-  __l1_heap_size = LENGTH(L1) - __l1_heap_start + ORIGIN(L1);
+  __l2_priv2_end = ALIGN(4);
 }

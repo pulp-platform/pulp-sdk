@@ -43,6 +43,7 @@ extern char _l1_preload_size[];
 extern unsigned char __l2_priv0_end;
 extern unsigned char __l2_priv1_end;
 extern unsigned char __l2_shared_end;
+extern unsigned char __l2_priv2_end;
 
 static inline void *pos_l2_priv0_base() {
   if ((int)&__l2_priv0_end >= ARCHI_L2_PRIV1_ADDR)
@@ -79,6 +80,16 @@ static inline void *pos_l2_shared_base() {
 static inline int pos_l2_shared_size() {
   return ARCHI_L2_SHARED_ADDR + ARCHI_L2_SHARED_SIZE - (int)&__l2_shared_end;
 }
+
+#if defined(ARCHI_HAS_L2_PRIV2)
+static inline void *pos_l2_priv2_base() {
+  return (void *)&__l2_priv2_end;
+}
+
+static inline int pos_l2_priv2_size() {
+  return ARCHI_L2_PRIV2_ADDR + ARCHI_L2_PRIV2_SIZE - (int)&__l2_priv2_end;
+}
+#endif
 
 #else
 
