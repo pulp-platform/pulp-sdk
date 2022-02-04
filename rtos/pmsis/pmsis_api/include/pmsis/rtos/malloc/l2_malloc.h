@@ -102,6 +102,9 @@ void pi_l2_malloc_dump();
  * @} MemAlloc
  */
 
+void *pi_priv2_malloc(int size);
+void pi_priv2_free(void *_chunk, int size);
+
 #endif  /* __L2_MALLOC_NATIVE__ */
 
 #endif  /* __PMSIS_RTOS_MALLOC_L2_MALLOC_H__ */

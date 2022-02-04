@@ -87,6 +87,11 @@ void pos_allocs_init()
 #endif
 #endif
 
+#if defined(ARCHI_HAS_L2_PRIV2)
+    INIT_TRACE(POS_LOG_INFO, "Initializing L2 priv2 bank allocator (base: 0x%8x, size: 0x%8x)\n", (int)pos_l2_priv2_base(), pos_l2_priv2_size());
+    pos_alloc_init(&pos_alloc_l2[2], pos_l2_priv2_base(), pos_l2_priv2_size());
+#endif
+
 #if defined(ARCHI_HAS_FC_TCDM)
   //pos_trace(//pos_trace_INIT, "Initializing FC TCDM allocator (base: 0x%8x, size: 0x%8x)\n", (int)pos_fc_tcdm_base(), pos_fc_tcdm_size());
     pos_alloc_init(&pos_alloc_fc_tcdm, pos_fc_tcdm_base(), pos_fc_tcdm_size());
@@ -188,6 +193,20 @@ void pi_l2_free(void *_chunk, int size)
 {
     return pos_free(&pos_alloc_l2[1], _chunk, size);
 }
+
+#if defined(ARCHI_HAS_L2_PRIV2)
+
+void *pi_priv2_malloc(int size)
+{
+    return pos_alloc(&pos_alloc_l2[2], size);
+}
+
+void pi_priv2_free(void *_chunk, int size)
+{
+    return pos_free(&pos_alloc_l2[2], _chunk, size);
+}
+
+#endif
 
 #if defined(ARCHI_HAS_FC_TCDM)
 

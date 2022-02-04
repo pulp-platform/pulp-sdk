@@ -62,6 +62,7 @@
 #define PI_CL_L1 __attribute__((section(".data_l1")))
 #define PI_L1 PI_CL_L1
 
+#define PI_L2_DATA_PRIV __attribute__((section(".data_priv2")))
 
 struct pi_task_implem
 {
@@ -128,7 +129,11 @@ typedef struct pi_cluster_pe_task_s
 
 #if defined(ARCHI_HAS_L2)
 #ifdef ARCHI_HAS_L2_MULTI
+#ifdef ARCHI_HAS_L2_PRIV2
+#define POS_NB_ALLOC_L2 3
+#else
 #define POS_NB_ALLOC_L2 2
+#endif
 #else
 #define POS_NB_ALLOC_L2 1
 #endif
