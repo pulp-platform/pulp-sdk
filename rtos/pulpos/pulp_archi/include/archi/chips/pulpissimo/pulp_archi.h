@@ -41,4 +41,6 @@
 #include "archi/itc/itc_v1.h"
 #include "archi/stdout/stdout_v3.h"
 
+#include "archi/wide_alu/wide_alu_v1.h"
+
 #endif

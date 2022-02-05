@@ -73,6 +73,11 @@
 #define HWME_VERSION        1
 #define PADS_VERSION        2
 
+#define ARCHI_HAS_WIDE_ALU  1
+
+#if defined(ARCHI_HAS_WIDE_ALU)
+#define WIDE_ALU_VERSION    1
+#endif
 
 /*
  * CORE IDS

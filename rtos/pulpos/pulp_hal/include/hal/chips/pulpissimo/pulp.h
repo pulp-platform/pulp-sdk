@@ -33,4 +33,6 @@
 #include "hal/udma/spim/udma_spim_v3.h"
 #include "hal/udma/uart/udma_uart_v1.h"
 
+#include "hal/wide_alu/wide_alu_v1.h"
+
 #endif
