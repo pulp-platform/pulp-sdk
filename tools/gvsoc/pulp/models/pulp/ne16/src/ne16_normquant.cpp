@@ -21,8 +21,9 @@
 #include <ne16.hpp>
 
 void Ne16::normquant_shift_setup() {
+  // std::cout<<"normquant_shift_setup begin"<<std::endl;
   // set up streamer to address input activations (byte-based)
-  auto tp = this->depthwise ? this->TP_IN : this->TP_OUT;
+  auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
   auto base_addr_nqs = this->scale_shift_ptr + this->k_out_major*tp;
 
   this->vld_nqs = Ne16VectorLoad<uint8_t>(
@@ -36,17 +37,21 @@ void Ne16::normquant_shift_setup() {
     0, // block_stride
     false
   );  
+  // std::cout<<"normquant_shift_setup end"<<std::endl;
 }
 
 int  Ne16::normquant_shift_cycle() {
+  // std::cout<<"normquant_shift_cycle begin"<<std::endl;
   int64_t cycles = 0;
   xt::view(this->nqs, xt::all()) = this->vld_nqs.ex(this->TP_OUT, cycles);
+  // std::cout<<"normquant_shift_cycle end"<<std::endl;
   return (int) cycles;
 }
 
 void Ne16::normquant_mult_setup() {
+  // std::cout<<"normquant_mult_setup begin"<<std::endl;
   // set up streamer to address input activations (byte-based)
-  auto tp = this->depthwise ? this->TP_IN : this->TP_OUT;
+  auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
   auto base_addr_nq = this->scale_ptr + this->k_out_major*tp*(this->normalization_bits/8);
 
   this->vld_nq = Ne16VectorLoad<uint8_t>(
@@ -68,9 +73,11 @@ void Ne16::normquant_mult_setup() {
                                                     this->subtile_rem_ko / 4 + (this->subtile_rem_ko % 4 ? 1 : 0) ;
   }
   this->nq_iter = 0;
+  // std::cout<<"normquant_mult_setup end"<<std::endl;
 }
 
 int  Ne16::normquant_mult_cycle() {
+  // std::cout<<"normquant_mult_cycle begin"<<std::endl;
   int64_t cycles = 0;
   xt::xarray<uint8_t> nq = this->vld_nq.ex(4, cycles);
   // FIXME casting --> 1) load NQS; 2) load NQ and compute MULT; 3) load NQB and compute shift+bias
@@ -100,14 +107,18 @@ int  Ne16::normquant_mult_cycle() {
       xt::view(this->accum, this->nq_iter, col) = xt::view(this->accum, this->nq_iter, col) * xt::view(nq32, 0);
     }
   }
+  // std::cout<<"normquant_mult_cycle end"<<std::endl;
   return (int) cycles;
 }
 
 bool Ne16::normquant_mult_exit_idx() {
+  // std::cout<<"normquant_mult_exit_idx begin"<<std::endl;
   if(this->nq_iter == this->nq_lim-1) {
+    // std::cout<<"normquant_mult_exit_idx end"<<std::endl;
     return true;
   }
   else {
+    // std::cout<<"normquant_mult_exit_idx end"<<std::endl;
     return false;
   }
 }
@@ -117,16 +128,17 @@ void Ne16::normquant_mult_update_idx() {
 }
 
 void Ne16::normquant_bias_setup() {
+  // std::cout<<"normquant_bias_setup begin"<<std::endl;
   // set up streamer to address input activations (byte-based)
-  auto tp = this->depthwise ? this->TP_IN : this->TP_OUT;
+  auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
   auto base_addr_nqb = this->scale_bias_ptr + this->k_out_major*tp*4;
 
   this->vld_nqb = Ne16VectorLoad<uint8_t>(
     this,
     base_addr_nqb, // base_addr
-    tp/8, // word_length
+    (this->TP_OUT)/8, // word_length
     32, // word_stride
-    tp/8, // line_length
+    (this->TP_OUT)/8, // line_length
     0, // line_stride
     1, // block_length
     0, // block_stride
@@ -134,13 +146,15 @@ void Ne16::normquant_bias_setup() {
   );
 
   this->nqb_lim = this->normalization_bits;
-  if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != this->TP_OUT && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
+  if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != tp && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
     this->nqb_lim = this->subtile_rem_ko;
   }
   this->nqb_iter = 0;
+  // std::cout<<"normquant_bias_setup end"<<std::endl;
 }
 
 int  Ne16::normquant_bias_cycle() {
+  // std::cout<<"normquant_bias_cycle begin"<<std::endl;
   int64_t cycles = 0;
   xt::xarray<int32_t> nqb32 = xt::zeros<int32_t>({8});
   if(this->norm_option_bias) {
@@ -174,6 +188,7 @@ int  Ne16::normquant_bias_cycle() {
       }
     }
   }
+  // std::cout<<"normquant_bias_cycle end"<<std::endl;
   return (int) cycles;
 }
 

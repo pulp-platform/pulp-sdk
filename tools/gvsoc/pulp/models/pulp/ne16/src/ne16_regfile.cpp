@@ -184,6 +184,7 @@ void Ne16::regfile_cxt() {
         this->padding_bottom = (value >> 20) & 0xf;
         this->padding_left   = (value >> 16) & 0xf;
         this->padding_value  = value & 0xffff;
+        // std::cout<<"Padding value from the register "<<this->padding_top<<","<<this->padding_right<<","<<this->padding_bottom<<","<<this->padding_left<<","<<this->padding_value<<std::endl;
         break;
 
       case NE16_REG_WEIGHT_OFFSET:
@@ -191,10 +192,11 @@ void Ne16::regfile_cxt() {
         break;
 
       case NE16_REG_FILTER_MASK:
-        this->filter_mask_top    = (value >> 24) & 0xff;
-        this->filter_mask_right  = (value >> 16) & 0xff;
-        this->filter_mask_bottom = (value >> 8) & 0xff;
-        this->filter_mask_left   = value & 0xff;
+        // this->filter_mask_config = value;
+        this->filter_mask_top    = (value) & 0x1ff;//<----------FIX ME
+        // this->filter_mask_right  = (value >> 16) & 0xff;
+        // this->filter_mask_bottom = (value >> 8) & 0xff;
+        // this->filter_mask_left   = value & 0xff;
         break;
 
       case NE16_REG_CONFIG0:
@@ -297,10 +299,7 @@ void Ne16::printout() {
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) quantization_right_shift=%d\n", this->quantization_right_shift); //int
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) use_relu=%s\n", this->use_relu ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) streamin=%s\n", this->streamin ? "true" : "false"); //bool
-  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) filter_mask_top=%d\n", this->filter_mask_top); //int
-  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) filter_mask_right=%d\n", this->filter_mask_right); //int
-  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) filter_mask_bottom=%d\n", this->filter_mask_bottom); //int
-  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) filter_mask_left=%d\n", this->filter_mask_left); //int
+  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) filter_mask_value=%d\n", this->filter_mask_top); //int
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) mode16=%s\n", this->mode16 ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) mode_linear=%s\n", this->mode_linear ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) strided2x2=%s\n", this->strided2x2 ? "true" : "false"); //bool

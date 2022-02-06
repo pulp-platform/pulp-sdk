@@ -23,18 +23,27 @@
 void Ne16::load_setup() {
   // set up streamer to address input activations (byte-based)
 
-  this->h_size_in  = (this->i_major < this->subtile_nb_ho-1) || (this->subtile_rem_hi==0) ? (this->fs == 1 ? 3 : 5) : this->subtile_rem_hi;
-  this->w_size_in  = (this->j_major < this->subtile_nb_wo-1) || (this->subtile_rem_wi==0) ? (this->fs == 1 ? 3 : 5) : this->subtile_rem_wi;
-  this->h_size_out = (this->i_major < this->subtile_nb_ho-1) || (this->subtile_rem_ho==0) ? 3 : this->subtile_rem_ho;
-  this->w_size_out = (this->j_major < this->subtile_nb_wo-1) || (this->subtile_rem_wo==0) ? 3 : this->subtile_rem_wo;
+  this->h_size_in  = (this->i_major < this->subtile_nb_ho-1) || (this->subtile_rem_hi==0) ? (this->fs == 1 ? this->H_SIZE : this->H_SIZE+this->FILTER_SIZE-1) : this->subtile_rem_hi;
+  this->w_size_in  = (this->j_major < this->subtile_nb_wo-1) || (this->subtile_rem_wi==0) ? (this->fs == 1 ? this->W_SIZE : this->W_SIZE+this->FILTER_SIZE-1) : this->subtile_rem_wi;
+  this->h_size_out = (this->i_major < this->subtile_nb_ho-1) || (this->subtile_rem_ho==0) ? this->H_SIZE : this->subtile_rem_ho;
+  this->w_size_out = (this->j_major < this->subtile_nb_wo-1) || (this->subtile_rem_wo==0) ? this->W_SIZE : this->subtile_rem_wo;
 
   this->h_size_in_X_w_size_in = this->h_size_in * this->w_size_in;
   this->h_size_out_X_w_size_out = this->h_size_out * this->w_size_out;
 
-  this->h_size_in_hw = (this->i_major<this->subtile_nb_ho-1 || this->subtile_rem_hi==0) ? (this->fs == 3 ? this->F_BUFFER_SIZE : this->FILTER_SIZE) : this->subtile_rem_hi;
-  this->w_size_in_hw = (this->j_major<this->subtile_nb_wo-1 || this->subtile_rem_wi==0) ? (this->fs == 3 ? this->F_BUFFER_SIZE : this->FILTER_SIZE) : this->subtile_rem_wi;
+  this->h_size_in_hw = (this->i_major<this->subtile_nb_ho-1 || this->subtile_rem_hi==0) ? (this->fs == 3 ? this->F_BUFFER_SIZE : this->H_SIZE) : this->subtile_rem_hi;
+  this->w_size_in_hw = (this->j_major<this->subtile_nb_wo-1 || this->subtile_rem_wi==0) ? (this->fs == 3 ? this->F_BUFFER_SIZE : this->W_SIZE) : this->subtile_rem_wi;
  
   auto k_in_major = this->depthwise ? this->k_out_major : this->k_in_major_iter;
+  
+  // std::cout<<"h_size_in="<<this->h_size_in<<std::endl;
+  // std::cout<<"w_size_in="<<this->w_size_in<<std::endl;
+  // std::cout<<"h_size_out="<<this->h_size_out<<std::endl;
+  // std::cout<<"w_size_out="<<this->w_size_out<<std::endl;
+  // std::cout<<"h_size_in_X_w_size_in="<<this->h_size_in_X_w_size_in<<std::endl;
+  // std::cout<<"h_size_in_X_w_size_out="<<this->h_size_out_X_w_size_out<<std::endl;
+  // std::cout<<"h_size_in_hw="<<this->h_size_in_hw<<std::endl;
+  // std::cout<<"w_size_in_hw="<<this->w_size_in_hw<<std::endl;
 
   if(this->trace_level == L3_ALL) {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   h_size_in=%d\n", this->h_size_in);
@@ -48,11 +57,11 @@ void Ne16::load_setup() {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   w_size_in_hw=%d\n", this->w_size_in_hw);
   }
 
-  auto infeat_hom_iter = this->FILTER_SIZE * this->infeat_d1_stride;
-  auto infeat_wom_iter = this->FILTER_SIZE * this->infeat_d0_stride;
+  auto infeat_hom_iter = this->H_SIZE * this->infeat_d1_stride;
+  auto infeat_wom_iter = this->W_SIZE * this->infeat_d0_stride;
 
-  auto base_addr_x = !this->mode_linear ? this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN :
-                                          this->infeat_ptr + k_in_major*this->TP_IN*8 * (this->mode16 ? 2 : 2);
+  auto base_addr_x = !this->mode_linear ? (this->fs==1) ? this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN : this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN_S :
+                                          this->infeat_ptr + k_in_major*this->TP_IN_S*8 * (this->mode16 ? 2 : 2);
 
   this->vld_x = Ne16VectorLoad<uint8_t>(
     this,
@@ -74,10 +83,12 @@ void Ne16::load_setup() {
     this->load_k_in_lim = this->TP_IN;
     this->load_padding = {0, 0}; // std::vector<uint32_t>
 
+    // std::cout<<"Starting load"<<std::endl;
     if(k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN) { // last k_in tile, only if it requires padding
       this->load_k_in_lim = this->subtile_rem_ki;
       this->load_padding = {0, static_cast<uint32_t>(this->TP_IN-this->subtile_rem_ki)};
     }
+    // std::cout<<"Ending load"<<std::endl;
     this->load_i_fbuf = 0;
     this->load_j_fbuf = 0;
   }
@@ -101,6 +112,7 @@ void Ne16::load_setup() {
 int Ne16::load_cycle() { // not linear
   int64_t cycles = 0;
   xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, xt::all()) = xt::pad(this->vld_x.ex(this->load_k_in_lim, cycles), this->load_padding);
+  // std::cout<<"Load x_buffer (load_i_fbuf="<<load_i_fbuf<<", load_j_fbuf="<<load_j_fbuf<<")"<<xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, 0)<<std::endl;
   return (int) cycles;
 }
 
@@ -114,8 +126,10 @@ int Ne16::load_cycle_linear() {
 void Ne16::load_do_padding() { // not linear
 
   // add explicit padding
-  auto right_lim  = (5-this->padding_right  > this->w_size_in_hw) ? this->w_size_in_hw : 5-this->padding_right;
-  auto bottom_lim = (5-this->padding_bottom > this->h_size_in_hw) ? this->h_size_in_hw : 5-this->padding_bottom;
+  auto right_lim  = (this->F_BUFFER_SIZE-this->padding_right  > this->w_size_in_hw) ? this->w_size_in_hw : this->F_BUFFER_SIZE-this->padding_right;
+  auto bottom_lim = (this->F_BUFFER_SIZE-this->padding_bottom > this->h_size_in_hw) ? this->h_size_in_hw : this->F_BUFFER_SIZE-this->padding_bottom;
+
+  // std::cout<<"right_lim="<<right_lim<<", bottom_lim"<<bottom_lim<<std::endl;
 
   // implicit padding (on the right/bottom) and explicit padding (all dimensions) define
   // sixteen regions:
@@ -130,46 +144,69 @@ void Ne16::load_do_padding() { // not linear
   // +-------+-------+-------+-------+
 
   // FIXME: non0-padding values do not work in mode16 in the model, see similar bug in NE16 RTL
-
+  // std::cout<<"Before PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+  // std::cout<<this->padding_left<<","<<this->j_major<<","<<this->padding_top<<","<<this->i_major<<std::endl;
   // top-left
   if(this->padding_left  > 0 && this->j_major==0 || this->padding_top > 0 && this->i_major==0) {
     xt::view(this->x_buffer, xt::range(0, this->padding_top), xt::range(0, this->padding_left), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"1"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
 
   // top
   if(this->padding_top  > 0 && this->i_major==0) {
     xt::view(this->x_buffer, xt::range(0, this->padding_top), xt::range(this->padding_left, right_lim), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"2"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+
   
   // top-right
   if((this->padding_right > 0 && this->j_major==this->subtile_nb_wo-1 || this->padding_top > 0 && this->i_major==0) && (right_lim <= this->w_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(0, this->padding_top), xt::range(right_lim, w_size_in_hw), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"3"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+
 
   // right
   if((this->padding_right > 0 && this->j_major==this->subtile_nb_wo-1) && (right_lim <= this->w_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(this->padding_top, bottom_lim), xt::range(right_lim, this->w_size_in_hw), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"4"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+
 
   // bottom-right
   if((this->padding_right > 0 && this->j_major==this->subtile_nb_wo-1 || this->padding_bottom > 0 && this->i_major==this->subtile_nb_ho-1) && (right_lim <= this->w_size_in_hw) && (bottom_lim <= this->h_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(bottom_lim, h_size_in_hw), xt::range(right_lim, w_size_in_hw), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"5"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+
 
   // bottom
   if((this->padding_bottom > 0 && this->i_major==this->subtile_nb_ho-1) && (bottom_lim <= this->h_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(bottom_lim, this->h_size_in_hw), xt::range(this->padding_left, right_lim), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"6"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+
 
   // bottom-left
   if((this->padding_left > 0 && this->j_major==0 || this->padding_bottom > 0 && this->i_major==this->subtile_nb_ho-1) && (bottom_lim <= this->h_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(bottom_lim, this->h_size_in_hw), xt::range(0, this->padding_left), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"7"<<std::endl;
   }
+  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
+
 
   // left
   if(this->padding_left > 0 && this->j_major==0) {
     xt::view(this->x_buffer, xt::range(this->padding_top, bottom_lim), xt::range(0, this->padding_left), xt::range(0, this->load_k_in_lim)) = this->padding_value;
+    // std::cout<<"8"<<std::endl;
   }
+  // std::cout<<"FINAL PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
 
 }
 
@@ -184,19 +221,37 @@ void Ne16::load_do_extract() {
     }
   }
   else if(this->fs == 3) {
+    // std::cout<<"load_do_extract begin"<<std::endl;
     for(auto i_col=0; i_col<this->NR_COLUMN; i_col++) { // spatial loop - implemented as a set of muxes
-      auto i = i_col / this->FILTER_SIZE;
-      auto j = i_col % this->FILTER_SIZE;
-      xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::view(this->x_buffer, xt::range(i, i+this->FILTER_SIZE), xt::range(j, j+this->FILTER_SIZE), xt::all()));
-      auto shape = xt::adapt(x_buffer_view.shape());
-      xt::view(this->x_array, i_col, xt::all()) = x_buffer_view.reshape({shape[0] * shape[1], shape[2]});
+      auto i = i_col / this->H_SIZE;
+      auto j = i_col % this->W_SIZE;
+      // std::cout<<"load_do_extract for 0"<<std::endl;
+      // std::cout<<"x_buffer"<<xt::view(this->x_buffer, xt::range(0,6), xt::range(0,6),0)<<std::endl;
+      if(i<this->h_size_out && j<this->w_size_out){
+        xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::view(this->x_buffer, xt::range(i, i+this->FILTER_SIZE), xt::range(j, j+this->FILTER_SIZE), xt::all()));
+        auto shape = xt::adapt(x_buffer_view.shape());
+        xt::view(this->x_array, i_col, xt::all()) = x_buffer_view.reshape({shape[0] * shape[1], shape[2]});
+      }
+      else {
+        xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::zeros<uint8_t>({this->FILTER_SIZE, this->FILTER_SIZE,this->TP_IN}));
+        auto shape = xt::adapt(x_buffer_view.shape());
+        xt::view(this->x_array, i_col, xt::all()) = x_buffer_view.reshape({shape[0] * shape[1], shape[2]});
+      }
+
+      // std::cout<<"x_buffer_view"<<x_buffer_view<<std::endl;
+      
+      // std::cout<<"SHAPE="<<shape<<std::endl;
+      
+      // std::cout<<"x array view"<<xt::view(this->x_array, i_col, xt::all());
     }
+    // std::cout<<"xarray 1"<<xt::view(this->x_array,1,xt::all());
   }
   else { // in 1x1 mode, fill only the first qw rows
     xt::view(this->x_array, xt::all()) = 0;
     for(auto i_row=0; i_row<this->qw; i_row++) { // spatial loop - implemented as a set of muxes
-      xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::view(this->x_buffer, xt::range(0, this->FILTER_SIZE), xt::range(0, this->FILTER_SIZE), xt::all()));
+      xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::view(this->x_buffer, xt::range(0, this->H_SIZE), xt::range(0, this->W_SIZE), xt::all()));
       auto shape = xt::adapt(x_buffer_view.shape());
+      // std::cout<<"TESTING PRINT"<<std::endl;
       xt::view(this->x_array, xt::all(), i_row) = x_buffer_view.reshape({shape[0] * shape[1], shape[2]});
     }
   }
@@ -206,19 +261,19 @@ void Ne16::load_filter_masking() {
   // filter masking
   xt::xarray<int32_t> W_mask = xt::ones<int32_t>({this->fs, this->fs});
   if(this->fs == 3) {
-    if(this->filter_mask_top > 0)
-      xt::view(W_mask, xt::range(0, this->filter_mask_top), xt::range(0, this->fs)) = 0;
-    if(this->filter_mask_right > 0)
-      xt::view(W_mask, xt::range(0, this->fs), xt::range(this->fs-this->filter_mask_right, this->fs)) = 0;
-    if(this->filter_mask_bottom > 0)
-      xt::view(W_mask, xt::range(this->fs-this->filter_mask_bottom, this->fs), xt::range(0, this->fs)) = 0;
-    if(this->filter_mask_left > 0)
-      xt::view(W_mask, xt::range(0, this->fs), xt::range(0, this->filter_mask_left)) = 0;
+    for(int i=0; i<3; i++){
+      for(int j=0; j<3; j++){
+        int index = 3*i + j;
+        xt::view(W_mask, xt::range(i, i+1), xt::range(j,j+1)) = ((((this->filter_mask_top)>>index) & 0x0001)==0x01) ? 0 : 1;
+      }
+    }
   }
+  // std::cout<<"W_mask="<<xt::view(W_mask,xt::all(),xt::all())<<std::endl;
   this->row_enable = xt::flatten(W_mask);
 }
 
 bool Ne16::load_exit_idx() {
+  // std::cout<<"load_exit_idx"<<std::endl;
   if(this->mode_linear) {
     if(this->load_i_fbuf == this->load_fbuf_lim-1) {
       return true;
@@ -238,6 +293,7 @@ bool Ne16::load_exit_idx() {
 }
 
 void Ne16::load_update_idx() {
+  // std::cout<<"load_update_idx"<<std::endl;
   if(this->mode_linear) {
     this->load_i_fbuf++;
   }

@@ -29,7 +29,7 @@ void Ne16::debug_x_buffer() {
   }
   else {
     std::ostringstream stringStream;
-    stringStream << "x_buffer[5,5,16] = \n" << (this->trace_format?std::hex:std::dec) << std::setw(2) << this->x_buffer << std::dec << "\n";
+    stringStream << "x_buffer[5,5,16] = \n" << (this->trace_format?std::hex:std::dec) << std::setw(2) << xt::view(this->x_buffer,xt::all(),xt::all(),0) << std::dec << "\n";
     std::string copyOfStr = stringStream.str();
     this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
   }
@@ -55,7 +55,8 @@ void Ne16::debug_x_array() {
 
 void Ne16::debug_accum(){
   std::ostringstream stringStream;
-  stringStream << "accum[9,32] = \n" << (this->trace_format?std::hex:std::dec) << std::setw(8) << xt::cast<int32_t>(this->accum) << std::dec << "\n";
+  // stringStream << "accum[9,32] = \n" << (this->trace_format?std::hex:std::dec) << std::setw(8) << xt::cast<int32_t>(this->accum) << std::dec << "\n";
+  stringStream << "accum[9,32] = \n" << (this->trace_format?std::hex:std::dec) << std::setw(8) << xt::view(this->accum,0,xt::all()) << std::dec << "\n";
   std::string copyOfStr = stringStream.str();
   this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
 }

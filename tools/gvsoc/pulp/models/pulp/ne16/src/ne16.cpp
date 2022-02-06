@@ -27,14 +27,17 @@ Ne16::Ne16(js::config *config)
     : vp::component(config)
 {
     // FIXME these parameters might be settable through config, later...
-    this->TP_IN           = 16;
+    this->TP_IN           = 32;
+    this->TP_IN_S         = 28;
     this->TP_OUT          = 32;
     this->QA_IN           = 8;
     this->QA_OUT          = 8;
-    this->NR_COLUMN       = 9;
+    this->H_SIZE          = 6;
+    this->W_SIZE          = 6;
+    this->NR_COLUMN       = this->H_SIZE*this->W_SIZE;
     this->COLUMN_SIZE     = 9;
-    this->BLOCK_SIZE      = 16;
-    this->F_BUFFER_SIZE   = 5;
+    this->BLOCK_SIZE      = 32;
+    this->F_BUFFER_SIZE   = 8;
     this->FILTER_SIZE     = 3;
     this->SHIFT_CYCLES    = 2;
     this->OVERHEAD_LD_1X1 = 19;
@@ -53,7 +56,7 @@ void Ne16::reset(bool active)
     this->x_buffer        = xt::zeros<uint8_t>({this->F_BUFFER_SIZE, this->F_BUFFER_SIZE, this->TP_IN});
     this->x_buffer_linear = xt::zeros<uint8_t>({32, this->TP_IN});
     this->x_array         = xt::zeros<uint8_t>({this->NR_COLUMN, this->COLUMN_SIZE, this->TP_IN}); 
-    this->weight          = xt::zeros<uint8_t>({this->FILTER_SIZE*this->FILTER_SIZE, 2});
+    this->weight          = xt::zeros<uint8_t>({this->FILTER_SIZE*this->FILTER_SIZE, (this->TP_IN/2)});
     this->nqs             = xt::zeros<uint8_t>({this->TP_OUT});
     this->job_id          = 0;
     this->cxt_job_id[0] = this->cxt_job_id[1] = -1;
@@ -71,9 +74,12 @@ vp::io_req_status_e Ne16::hwpe_slave(void *__this, vp::io_req *req)
     }
     uint8_t *data = req->get_data(); // size depends on data get_size
 
+    // std::cout<<"*************************"<<int(*data)<<"  "<<req->get_addr()<<std::endl;
+
     // Dispatch the register file access to the correct function
     if(req->get_is_write()) {
         if(((req->get_addr() & 0xfff) - 0x20) >> 2 == NE16_SPECIAL_TRACE_REG) {
+            // std::cout<<"COMMITTED_0"<<std::endl;
             if(*data == 0) {
                 _this->trace_level = L0_CONFIG;
                 _this->trace.msg("Setting tracing level to L0_CONFIG\n");
@@ -93,17 +99,20 @@ vp::io_req_status_e Ne16::hwpe_slave(void *__this, vp::io_req *req)
             return vp::IO_REQ_OK;
         }
         else if(((req->get_addr() & 0xfff) - 0x20) >> 2 == NE16_SPECIAL_FORMAT_TRACE_REG) {
+            // std::cout<<"COMMITTED_1"<<std::endl;
             _this->trace_format = *data;
             _this->trace.msg("Setting tracing format to %s\n", *data?"Hex":"Dec");
             return vp::IO_REQ_OK;
         }
         else if((req->get_addr() & 0x17f) == 0x0) {
             _this->commit();
+            // std::cout<<"COMMITTED_2"<<std::endl;
             if (!_this->job_running && !_this->fsm_start_event->is_enqueued() && *(uint32_t *) data == 0) {
                 _this->event_enqueue(_this->fsm_start_event, 1);
             }
         }
         else {
+            // std::cout<<"COMMITTED_3"<<std::endl;
             if (_this->trace_level == L1_ACTIV_INOUT || _this->trace_level == L2_DEBUG || _this->trace_level == L3_ALL) {
                 _this->trace.msg(vp::trace::LEVEL_DEBUG, "offset: %d data: %08x\n", ((req->get_addr() & 0x17f) - 0x20) >> 2, *(uint32_t *) data);
             }
@@ -112,12 +121,15 @@ vp::io_req_status_e Ne16::hwpe_slave(void *__this, vp::io_req *req)
     }
     else {
         if((req->get_addr() & 0x17f) == 0x4) {
+            // std::cout<<"COMMITTED_4"<<std::endl;
             *(uint32_t *) data = _this->acquire();
+            // std::cout<<"ACQUIRED"<<std::endl;
             if (_this->trace_level == L1_ACTIV_INOUT || _this->trace_level == L2_DEBUG || _this->trace_level == L3_ALL) {
                 _this->trace.msg("Returning %x\n", *(uint32_t *) data);
             }
         }
         else if((req->get_addr() & 0x17f) == 0xc) {
+            // std::cout<<"COMMITTED_5"<<std::endl;
             *(uint32_t *) data = ((_this->cxt_job_id[0]>=0?0x1:0)|(_this->cxt_job_id[1]>=0?0x100:0));
             if (_this->trace_level == L1_ACTIV_INOUT || _this->trace_level == L2_DEBUG || _this->trace_level == L3_ALL) {
                 _this->trace.msg("Returning %x\n", *(uint32_t *) data);
@@ -125,12 +137,14 @@ vp::io_req_status_e Ne16::hwpe_slave(void *__this, vp::io_req *req)
         }
         else if((req->get_addr() & 0x17f) == 0x10) {
             // Returns the active running job or the last jobid that was run
+            // std::cout<<"COMMITTED_6"<<std::endl;
             *(uint32_t *) data = _this->running_job_id;
             if (_this->trace_level == L1_ACTIV_INOUT || _this->trace_level == L2_DEBUG || _this->trace_level == L3_ALL) {
                 _this->trace.msg("Returning %x\n", *(uint32_t *) data);
             }
         }
         else {
+            // std::cout<<"COMMITTED_7"<<std::endl;
             *(uint32_t *) data = _this->regfile_rd(((req->get_addr() & 0x17f) - 0x20) >> 2);
             if (_this->trace_level == L1_ACTIV_INOUT || _this->trace_level == L2_DEBUG || _this->trace_level == L3_ALL) {
                 _this->trace.msg("Returning %x\n", *(uint32_t *) data);
@@ -143,22 +157,35 @@ vp::io_req_status_e Ne16::hwpe_slave(void *__this, vp::io_req *req)
 
 int Ne16::build()
 {
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^Start Begin^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->traces.new_trace("trace", &this->trace, vp::DEBUG);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after trace^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->new_reg("fsm_state", &this->state, 32);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after state^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->new_reg("ne16_busy", &this->activity, 8);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after busy^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->activity.set(0);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after activity^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->state.set(IDLE);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after IDLE^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
 
     this->new_master_port("out", &this->out);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after out^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
 
     this->new_master_port("irq", &this->irq);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after irq^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
 
     this->in.set_req_meth(&Ne16::hwpe_slave);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after hwpe_slave^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->new_slave_port("input", &this->in); // how to change this name?
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after new_slave^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
 
     this->fsm_start_event = this->event_new(&Ne16::fsm_start_handler);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after start_event^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->fsm_event = this->event_new(&Ne16::fsm_handler);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after fsm event^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     this->fsm_end_event = this->event_new(&Ne16::fsm_end_handler);
+    // std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^after end event^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
 
     this->trace_level = L0_CONFIG;
     this->trace_format = 1;

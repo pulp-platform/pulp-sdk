@@ -22,20 +22,23 @@
 
 void Ne16::streamout_setup() {
 
-  auto tp = this->depthwise ? this->TP_IN : this->TP_OUT;
+  // std::cout<<"streamout_setup begin"<<std::endl;
 
-  auto outfeat_hom_iter = this->FILTER_SIZE * this->outfeat_d2_stride;
-  auto outfeat_wom_iter = this->FILTER_SIZE * this->outfeat_d1_stride;
+  auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
+
+  auto outfeat_hom_iter = this->H_SIZE * this->outfeat_d2_stride;
+  auto outfeat_wom_iter = this->W_SIZE * this->outfeat_d1_stride;
  
   auto base_addr_y = this->outfeat_ptr + this->i_major*outfeat_hom_iter + this->j_major*outfeat_wom_iter + this->k_out_major*tp*this->quantization_bits/8;
 
-  auto streamout_k_out_lim = !this->depthwise ? this->mv_k_out_lim : (this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != this->TP_IN && this->subtile_rem_ko != 0) ? this->subtile_rem_ko : this->TP_IN;
+  auto streamout_k_out_lim = !this->depthwise ? this->mv_k_out_lim : (this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != this->TP_IN_S && this->subtile_rem_ko != 0) ? this->subtile_rem_ko : this->TP_IN;
 ;
-  auto h_size_out_X_w_size_out_with_strb = (this->quantization_bits == 8) || (streamout_k_out_lim <= 8)  ? 9  :
-                                                                             (streamout_k_out_lim <= 16) ? 18 :
-                                                                             (streamout_k_out_lim <= 24) ? 27 : 36;
+  auto h_size_out_X_w_size_out_with_strb = (this->quantization_bits == 8) || (streamout_k_out_lim <= 8)  ? this->NR_COLUMN  :
+                                                                             (streamout_k_out_lim <= 16) ? 2*this->NR_COLUMN :
+                                                                             (streamout_k_out_lim <= 24) ? 3*this->NR_COLUMN : 4*this->NR_COLUMN;
 
-  this->col_enable = xt::zeros<int32_t>({3,3});
+  
+  this->col_enable = xt::zeros<int32_t>({this->H_SIZE,this->W_SIZE});
   for(auto i=0; i<this->h_size_out; i++) {
     for(auto j=0; j<this->w_size_out; j++) {
       xt::view(this->col_enable, i, j) = 1;
@@ -54,18 +57,20 @@ void Ne16::streamout_setup() {
     this->outfeat_d0_stride, // word_stride
     this->quantization_bits == 32 ? (streamout_k_out_lim/8 > 0 ? streamout_k_out_lim/8 + (streamout_k_out_lim%8 == 0 ? 0 : 1) : 1) : 1, //w_size_out, // line_length
     this->outfeat_d1_stride, // line_stride
-    this->FILTER_SIZE, // block_length
+    this->H_SIZE, // block_length
     this->outfeat_d2_stride, // block_stride
     false
   );
 
-  this->streamout_k_out_lim = this->quantization_bits == 32 ? tp/8 : 1;
+  this->streamout_k_out_lim = this->quantization_bits == 32 ? this->depthwise ? (this->TP_IN/8):tp/8 : 1;
   if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != tp && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
     this->streamout_k_out_lim = this->quantization_bits == 32 ? this->subtile_rem_ko/8 + (this->subtile_rem_ko%8 == 0 ? 0 : 1) : 1;
   }
   this->streamout_k_out_iter = 0;
   this->streamout_i_out_iter = 0;
   this->streamout_j_out_iter = 0;
+
+  // std::cout<<"base_addr_y="<<base_addr_y<<" streamout_k_out_lim="<<this->streamout_k_out_lim<<std::endl;
 
   // relu is here because of easier modeling
   if(this->quantization_bits == 8) {
@@ -93,23 +98,30 @@ void Ne16::streamout_setup() {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   k_out_major=%d\n", this->k_out_major);
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   tp=%d\n", tp);
   }
+  // std::cout<<"streamout_setup end"<<std::endl;
 }
 
 int Ne16::streamout_cycle() { 
+  // std::cout<<"streamout_cycle begin"<<std::endl;
   int64_t cycles = 0;
-  auto tp = this->depthwise ? this->TP_IN : this->TP_OUT;
+  auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
   xt::xarray<uint8_t> xx = xt::zeros<uint8_t>({32});
   if(this->quantization_bits == 32) {
+    // std::cout<<"streamout_cycle debug 0"<<std::endl;
     auto k_out_last = (this->streamout_k_out_iter+1)*8;
     if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != tp && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
       k_out_last = k_out_last < this->subtile_rem_ko ? k_out_last : this->subtile_rem_ko;
     }
+    // std::cout<<"streamout_cycle debug 1"<<std::endl;
     for (auto i=this->streamout_k_out_iter*8; i<k_out_last; i++) {
       for(auto j=0; j<4; j++) {
-        xt::view(xx, (i-this->streamout_k_out_iter*8)*4+j) = (xt::view(this->accum, i, this->streamout_i_out_iter*this->FILTER_SIZE+this->streamout_j_out_iter) >> (j*8)) & 0xff;
+        xt::view(xx, (i-this->streamout_k_out_iter*8)*4+j) = (xt::view(this->accum, i, this->streamout_i_out_iter*this->H_SIZE+this->streamout_j_out_iter) >> (j*8)) & 0xff;
       }
     }
+    // std::cout<<"streamout_cycle debug 2"<<std::endl;
+    // std::cout<<"k_out_last="<<k_out_last<<" streamout_k_out_iter="<<this->streamout_k_out_iter<<" streamout_i_out_iter="<<this->streamout_i_out_iter<<" streamout_j_out_iter="<<this->streamout_j_out_iter<<std::endl;
     this->vst_y.ex(xx, (k_out_last-this->streamout_k_out_iter*8)*4, cycles, this->col_enable (this->streamout_i_out_iter, this->streamout_j_out_iter));
+    // std::cout<<"k_out_last="<<k_out_last<<" streamout_k_out_iter="<<this->streamout_k_out_iter<<std::endl;
   }
   else if(this->quantization_bits == 8) {
     auto k_out_last = tp;
@@ -121,25 +133,31 @@ int Ne16::streamout_cycle() {
     }
     this->vst_y.ex(xx, k_out_last, cycles, this->col_enable (this->streamout_i_out_iter, this->streamout_j_out_iter));
   }
+  // std::cout<<"streamout_cycle end"<<std::endl;
   return (int) cycles;
 }
 
 bool Ne16::streamout_exit_idx() {
+  // std::cout<<"streamout_exit_idx begin"<<std::endl;
   auto h_size_out = this->mode_linear ? 1 : this->h_size_out;
   auto w_size_out = this->mode_linear ? 1 : this->w_size_out;
   if(this->streamout_i_out_iter == h_size_out-1 && this->streamout_j_out_iter == w_size_out-1 && this->streamout_k_out_iter == this->streamout_k_out_lim-1) {
+    // std::cout<<"streamout_exit_idx end"<<std::endl;
     return true;
   }
   else {
+    // std::cout<<"streamout_exit_idx end"<<std::endl;
     return false;
   }
 }
 
 void Ne16::streamout_update_idx() {
+  // std::cout<<"streamout_update_idx begin"<<std::endl;
+  // std::cout<<"FILTER_SIZE="<<this->FILTER_SIZE<<" streamout_i_out_iter="<<this->streamout_i_out_iter<<" streamout_j_out_iter="<<this->streamout_j_out_iter<<"streamout_k_out_iter="<<this->streamout_k_out_iter<<std::endl;
   if(this->streamout_k_out_iter < this->streamout_k_out_lim-1) {
     this->streamout_k_out_iter++;
   } 
-  else if(this->streamout_j_out_iter < this->FILTER_SIZE-1) {
+  else if(this->streamout_j_out_iter < this->W_SIZE-1) {
     this->streamout_k_out_iter = 0;
     this->streamout_j_out_iter++;
   }
@@ -148,13 +166,18 @@ void Ne16::streamout_update_idx() {
     this->streamout_j_out_iter = 0;
     this->streamout_i_out_iter++;
   }
+  // std::cout<<"streamout_i_out_iter="<<this->streamout_i_out_iter<<" streamout_j_out_iter="<<this->streamout_j_out_iter<<"streamout_k_out_iter="<<this->streamout_k_out_iter<<std::endl;
+  // std::cout<<"streamout_update_idx end"<<std::endl;
 }
 
 bool Ne16::streamout_to_end_idx() {
+  // std::cout<<"streamout_to_end_idx begin"<<std::endl;
   if((this->k_out_major == this->subtile_nb_ko-1) && (this->i_major == this->subtile_nb_ho-1) && (this->j_major == this->subtile_nb_wo-1)) {
+    // std::cout<<"streamout_to_end_idx end"<<std::endl;
     return true;
   }
   else {
+    // std::cout<<"streamout_to_end_idx end"<<std::endl;
     return false;
   }
 }
