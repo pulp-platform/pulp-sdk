@@ -33,10 +33,10 @@ void Ne16::fsm_start_handler(void *__this, vp::clock_event *event) {
   _this->job_running = 1;
 
   // convenience parameters used internally in the model, but not set by register file
-  _this->h_out     = (_this->subtile_nb_ho-(_this->subtile_rem_ho ? 1 : 0)) * _this->FILTER_SIZE + _this->subtile_rem_ho;
-  _this->w_out     = (_this->subtile_nb_wo-(_this->subtile_rem_wo ? 1 : 0)) * _this->FILTER_SIZE + _this->subtile_rem_wo;
-  _this->h_out_int = (_this->h_out/3)*3 + ((_this->h_out%3) ? 3 : 0);
-  _this->w_out_int = (_this->w_out/3)*3 + ((_this->w_out%3) ? 3 : 0);
+  _this->h_out     = (_this->subtile_nb_ho-(_this->subtile_rem_ho ? 1 : 0)) * _this->H_SIZE + _this->subtile_rem_ho;
+  _this->w_out     = (_this->subtile_nb_wo-(_this->subtile_rem_wo ? 1 : 0)) * _this->W_SIZE + _this->subtile_rem_wo;
+  _this->h_out_int = (_this->h_out/_this->H_SIZE)*_this->H_SIZE + ((_this->h_out%_this->H_SIZE) ? _this->H_SIZE : 0);
+  _this->w_out_int = (_this->w_out/_this->W_SIZE)*_this->W_SIZE + ((_this->w_out%_this->W_SIZE) ? _this->W_SIZE : 0);
   _this->h_in_int  = (_this->h_out_int - 1) + _this->fs;
   _this->w_in_int  = (_this->w_out_int - 1) + _this->fs;
   _this->h_in      = (_this->h_out - 1) + _this->fs;
@@ -53,7 +53,7 @@ void Ne16::fsm_start_handler(void *__this, vp::clock_event *event) {
   // assert((_this->padding_top==0 && _this->padding_right==0 && _this->padding_bottom==0 && _this->padding_left==0) || _this->fs==3);
 
   // filter masking is not compatible with FS=1. sorry!
-  assert((_this->filter_mask_top==0 && _this->filter_mask_right==0 && _this->filter_mask_bottom==0 && _this->filter_mask_left==0) || _this->fs==3);
+  assert((_this->filter_mask_top==0)|| _this->fs==3);
 
   // depthwise is not compatible with FS=1. sorry!
   assert((!_this->depthwise) || (_this->fs==3));

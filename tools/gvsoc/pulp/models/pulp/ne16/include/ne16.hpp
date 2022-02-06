@@ -204,10 +204,13 @@ private:
 
     // HARDWARE parameters
     int TP_IN;
+    int TP_IN_S;
     int TP_IN_LINEAR;
     int TP_OUT;
     int QA_IN;
     int QA_OUT;
+    int H_SIZE;
+    int W_SIZE;
     int NR_COLUMN;
     int COLUMN_SIZE;
     int BLOCK_SIZE;
@@ -310,6 +313,7 @@ private:
     int quantization_right_shift;
     bool use_relu;
     bool streamin;
+    // int filter_mask_config;
     int filter_mask_top;
     int filter_mask_right;
     int filter_mask_bottom;
