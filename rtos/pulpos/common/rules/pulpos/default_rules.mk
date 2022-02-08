@@ -51,10 +51,15 @@ platform=$(PULPOS_PLATFORM)
 endif
 
 ifdef USE_PULPOS_TEST
-PULP_APP_CFLAGS += -I"$(PULP_SDK_HOME)/rtos/common_function/common_file_spi/include"
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/common_function/common_file_spi/src/common_spi.c
-PULP_APP_CFLAGS += -I"$(PULP_SDK_HOME)/rtos/common_function/abstraction_layer_spi_pulpos/include"
-PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/common_function/abstraction_layer_spi_pulpos/src/abstraction_layer_spi.c
+#include
+PULP_APP_CFLAGS += -I"$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/i2c/include"
+PULP_APP_CFLAGS += -I"$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/include"
+
+#src
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/src/common_spi.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/src/abstraction_layer_spi.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/i2c/src/common_i2c.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/i2c/src/abstraction_layer_i2c.c
 endif
 
 ifndef platform
