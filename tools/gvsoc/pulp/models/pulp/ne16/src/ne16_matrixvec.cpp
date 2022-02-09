@@ -24,7 +24,6 @@ xt::xarray<uint8_t> __Weight_transform_1x1(xt::xarray<uint8_t> W)
 {
   xt::xarray<uint8_t> wout_1x1 = xt::zeros<uint8_t>({32});
   int index_q8, index_r4, index_q4r2, index_l, index_h;
-  // std::cout<<"Before Weight Transform"<<std::hex<<xt::view(W,xt::all())<<std::endl;
   for(int i=0; i<32; i++)
   {
     index_q8 = i/8;
@@ -38,19 +37,15 @@ xt::xarray<uint8_t> __Weight_transform_1x1(xt::xarray<uint8_t> W)
     else{
       wout_1x1[i] = ((W[index_l] & 0xF0)>>4) + 16*((W[index_h] & 0xF0)>>4);
     }
-    // std::cout<<index_q4r2<<" W["<<index_l<<"]="<<xt::view(W,xt::range(index_l,index_l+1))<<", W["<<index_h<<"]="<<xt::view(W,xt::range(index_h,index_h+1))<<", wout_1x1["<<i<<"]="<<xt::view(wout_1x1,xt::range(i,i+1))<<std::endl;
   }
-  // std::cout<<"After Weight Transform"<<std::hex<<xt::view(wout_1x1,xt::all())<<std::endl;
   return wout_1x1;
 }
 
 xt::xarray<uint8_t>  __Weight_transform_28(xt::xarray<uint8_t> W)
 {
   xt::xarray<uint8_t> wout_3x3 = xt::zeros<uint8_t>({36});
-  // std::cout<<"__Weight_transorm_28 0"<<std::endl;
   int index0=0;
   int index1=0;
-  // std::cout<<"Before unpack"<<std::hex<<W<<std::endl;
   for(int i=0; i<32; i++)
   {
     index0 = i % 7;
@@ -100,21 +95,21 @@ xt::xarray<uint8_t> __WeightUnpack(
   int                 TP_IN,
   bool                mode16
 ) {
-  // std::cout<<"__WeightUnpack 0"<<size<<std::endl;
+
   w = w.reshape({size,(TP_IN/8),1});
-  // std::cout<<"__WeightUnpack 1"<<std::endl;
+
   xt::xarray<uint8_t> wu = xt::zeros<uint8_t>({size,(TP_IN/8),8});
-  // std::cout<<"__WeightUnpack 2"<<std::endl;
+
   xt::view(wu, xt::all(), xt::all()) = xt::view(w, xt::all(), xt::all());
-  // std::cout<<"__WeightUnpack 3"<<std::endl;
+
   wu = (wu >> xt::linspace(0, 7, 8).reshape({1, 1, 8})) & 0x1;
-  // std::cout<<"__WeightUnpack 4"<<std::endl;
+
   auto shape = xt::adapt(wu.shape());
-  // std::cout<<"Shape="<<shape<<std::endl;
+
   if(mode16) {
     return xt::hstack(xt::xtuple(wu.reshape({size*(TP_IN/8), 8}), wu.reshape({size*(TP_IN/8), 8})));
   }
-  // std::cout<<"__WeightUnpack 5"<<std::endl;
+
   return wu.reshape({size, (TP_IN/8)*8});
 }
 
@@ -148,11 +143,6 @@ void Ne16::__BinConvArray(
   bool                 mode_linear
 ) {
   for(auto c=0; c<this->NR_COLUMN; c++) { // spatial loop - over columns
-    if(c==0){
-      // std::cout<<"Start"<<std::hex<<xt::view(this->x_array, c, xt::all(), xt::all())<<std::endl;
-      // std::cout<<"Weight"<<weight<<std::endl;
-      // std::cout<<"Row enable"<<std::hex<<row_enable<<std::endl;
-    }
     xt::view(this->psum_column, c) = 0;
     for(auto r=0; r<this->COLUMN_SIZE; r++) { // spatial loop - over blocks in a column
       if(row_enable(r) == 0) // row disabling to implement filter masks
@@ -189,10 +179,7 @@ void Ne16::__BinConvArray(
       }
       xt::view(this->psum_column, c) += xt::view(this->psum_block, c, r);
     }
-    if(c==0)
-    {
-      // std::cout<<"binconv start "<<std::hex<<xt::view(this->accum,0,xt::all())<<std::endl;
-    }
+
     if(!mode_linear) {
       if(weight_shift) {
         xt::view(this->accum, xt::all(), c) += xt::view(this->psum_column, c);
@@ -209,18 +196,7 @@ void Ne16::__BinConvArray(
         xt::view(this->accum, idx, 0) += xt::view(this->psum_column, 0) + xt::view(this->psum_column, 1) + xt::view(this->psum_column, 2) + xt::view(this->psum_column, 3);
       }
     }
-    // if(c==0)
-    // {
-    //   std::cout<<"binconv activations "<<xt::view(this->x_array, c, xt::all(),xt::all())<<std::endl;
-    //   std::cout<<"binconv weight "<<std::hex<<xt::view(this->weight,xt::all())<<std::endl;
-    //   std::cout<<"binconv accum "<<std::hex<<xt::view(this->accum,c,xt::all())<<std::endl;
-    // }
-    if(c==0)
-    {
-      // std::cout<<"binconv end "<<std::hex<<xt::view(this->accum,0,xt::all())<<std::endl;
-    }
   }
-  // std::cout<<"*****************************__BinConvArray end*********************************"<<std::endl;
 }
 
 void Ne16::__weightoffs(
@@ -228,7 +204,6 @@ void Ne16::__weightoffs(
   xt::xarray<int32_t> row_enable,
   xt::xarray<int32_t> mac_enable
 ) {
-  // std::cout<<"*****************************__weightoffs begin*********************************"<<std::endl;
   auto start_s = 1;
   for(auto s=start_s; s<this->SHIFT_CYCLES; s++) { // temporal loop - fake weight for Wmin offsetting // FIXME: how to properly do this in 1x1 mode?
 
@@ -239,39 +214,21 @@ void Ne16::__weightoffs(
       xt::view(weight_ld, xt::all()) = 0xff;
     else
       xt::view(weight_ld, 0, xt::all()) = 0xff;
-    // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 0^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     auto weight = __WeightUnpack(weight_ld, read_size, this->TP_IN, false); //this->mode16 & this->mode_linear);
-    // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 1^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
+    
     auto scale = this->Wmin;
 
     xt::xarray<int32_t> block_enable_linear = xt::ones<int32_t>({this->NR_COLUMN, this->COLUMN_SIZE});
-    // if(this->mode16 && this->mode_linear) {
-    //   for(auto rr=0; rr<this->NR_COLUMN; rr++) {
-    //     for(auto cc=0; cc<this->COLUMN_SIZE; cc++) {
-    //       auto i_kin_16bit = (cc<8 && rr<4) ? rr*8+cc : -1;
-    //       auto load_fbuf_lim = this->load_fbuf_lim;
-    //       xt::view(block_enable_linear, rr, cc) = ((i_kin_16bit != -1 && i_kin_16bit < load_fbuf_lim) ? 1 : 0);
-    //     }
-    //   }
-    //   // std::cout << "block_enable_linear=" << block_enable_linear << "\n";
-    // }
-    // std::cout<<"weightoffs start="<<xt::view(this->accum,0,xt::all());
-
-    this->__BinConvArray(weight, scale, this->depthwise ? dw_iter : 0, block_enable_linear, row_enable, mac_enable, !this->depthwise, false, false, this->mode16, this->mode_linear);
-    // std::cout<<"weightoffs end="<<xt::view(this->accum,0,xt::all());
-    // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 2^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
     
+    this->__BinConvArray(weight, scale, this->depthwise ? dw_iter : 0, block_enable_linear, row_enable, mac_enable, !this->depthwise, false, false, this->mode16, this->mode_linear); 
   }
-  // std::cout<<"*****************************__weightoffs end*********************************"<<std::endl;
 }
 
 void Ne16::depthwise_setup() {
-  // std::cout<<"*****************************depthwise_setup begin*********************************"<<std::endl;
   this->k_out_lim_dw = (this->k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN_S && this->subtile_rem_ki != 0) ? this->subtile_rem_ki : this->TP_IN_S;
   this->dw_lim = this->depthwise ? this->k_out_lim_dw : 1;
   this->dw_iter = 0;
   this->mac_enable = xt::zeros<int32_t>({this->TP_IN});
-  // std::cout<<"*****************************depthwise_setup end*********************************"<<std::endl;
 }
 
 void Ne16::depthwise_update_idx() {
@@ -279,7 +236,6 @@ void Ne16::depthwise_update_idx() {
 }
 
 void Ne16::weightoffs() {
-  // std::cout<<"*****************************weightoffs begin*********************************"<<std::endl;
   if(this->depthwise) {
     xt::view(this->mac_enable, xt::all()) = 0;
     xt::view(this->mac_enable, this->dw_iter) = 1;
@@ -289,16 +245,13 @@ void Ne16::weightoffs() {
     xt::view(this->mac_enable, xt::range(this->TP_IN_S, this->TP_IN)) = (this->fs==3) ? 0 : 1;
   }
   this->__weightoffs(this->dw_iter, this->row_enable, this->mac_enable);
-  // std::cout<<"*****************************weightoffs end*********************************"<<std::endl;
 }
 
 void Ne16::matrixvec_setup() {
-  // std::cout<<"*****************************matrixvec_setup begin*********************************"<<std::endl;
   auto k_in_major = this->depthwise ? this->k_out_major : this->k_in_major_iter;
 
   // set up streamer to address weights (32b word-based)
   // depthwise mode: layout is (subtile_nb_ki*qw, 9, TP_IN/8)
-  // this->base_addr_W_dw = this->weights_ptr + (k_in_major*this->qw) * this->FILTER_SIZE*this->FILTER_SIZE * (this->TP_IN/8);
   this->base_addr_W_dw = this->weights_ptr + (k_in_major*this->qw) * 8 * (this->TP_IN/8);
   this->vld_W_dw = Ne16VectorLoad<uint8_t>(
     this,
@@ -313,9 +266,7 @@ void Ne16::matrixvec_setup() {
   );
   
   // 3x3 mode: layout is (k_out, subtile_nb_ki*qw, 9, TP_IN/8)
-  // this->base_addr_W_3x3 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*this->qw + k_in_major*this->qw) * this->FILTER_SIZE*this->FILTER_SIZE * (this->mode16 ? (this->TP_IN/8) : (this->TP_IN/4));
   this->base_addr_W_3x3 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*this->qw + k_in_major*this->qw) * 8 * (this->mode16 ? (this->TP_IN/16) : (this->TP_IN/8));
-  // std::cout<<"base_addr_W_3x3="<<this->base_addr_W_3x3<<", weights_ptr="<<this->weights_ptr<<std::endl;
   this->vld_W_3x3 = Ne16VectorLoad<uint8_t>(
     this,
     this->base_addr_W_3x3, // base_addr
@@ -363,48 +314,30 @@ void Ne16::matrixvec_setup() {
                        (this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != this->TP_OUT && this->subtile_rem_ko != 0) ? this->subtile_rem_ko : this->TP_OUT;
   this->mv_k_out_iter = 0;
   this->mv_qw_iter = 0; // was simply qw
-  // std::cout<<"*****************************matrixvec_setup end*********************************"<<std::endl;
 }
 
 int Ne16::matrixvec_cycle() {
-  // std::cout<<"*****************************matrixvec_cycle begin*********************************"<<std::endl;
   auto& vld_W =      this->mode_linear ? this->vld_W_linear       : this->depthwise ? this->vld_W_dw       : (this->fs == 3) ? this->vld_W_3x3       : this->vld_W_1x1;
-  // auto read_size = (this->fs == 3) ? this->FILTER_SIZE*this->FILTER_SIZE : (this->mode_linear) ? 16 : this->qw;
+
   auto read_size = (this->fs == 3) ? 8 : (this->mode_linear) ? 16 : 8;//fixed for differnt layout in pointwise mode
-  // auto read_size = (this->fs == 3) ? 8 : (this->mode_linear) ? 16 : this->qw;
+
   auto k_out = this->depthwise ? this->dw_iter : this->mv_k_out_iter;
   // load and unpack weight bits
   int64_t cycles = 0;
   xt::xarray<uint8_t> weight_ld = vld_W.ex(read_size*(this->TP_IN/8), cycles); // each packet is composed of read_size x 16 bit
   auto shape = xt::adapt(weight_ld.shape());
-  // std::cout<<"Shape="<<shape<<std::endl;
-  // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 2^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
+
   xt::xarray<uint8_t> weight_ld_transform = (this->fs == 3) ? __Weight_transform_28(weight_ld) : __Weight_transform_1x1(weight_ld);
-  // std::cout<<"WEIGHT="<<std::hex<<xt::view(weight_ld,xt::all())<<std::endl;
-  // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 4^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
-  // auto weight = __WeightUnpack(weight_ld, read_size, this->TP_IN, this->mode16);
+
   auto weight = __WeightUnpack(weight_ld_transform, (this->fs==3) ? 9 : read_size, this->TP_IN, this->mode16);
   auto scale = 1 << this->mv_qw_iter;
-  // std::cout<<"WEIGHT_UNPACK="<<weight<<std::endl;
-  // std::cout<<"WEIGHT="<<weight_ld<<std::endl;
 
   xt::xarray<int32_t> space = xt::logspace(0, 7, 8, 2);
   space = xt::reshape_view(space, {8, 1});
 
   xt::xarray<int32_t> block_enable_linear = xt::ones<int32_t>({NR_COLUMN, COLUMN_SIZE});
-  // if(this->mode16 && this->mode_linear) {
-  //   for(auto rr=0; rr<this->NR_COLUMN; rr++) {
-  //     for(auto cc=0; cc<this->COLUMN_SIZE; cc++) {
-  //       auto i_kin_16bit = (cc<8 && rr<4) ? rr*8+cc : -1;
-  //       auto load_fbuf_lim = this->load_fbuf_lim;
-  //       xt::view(block_enable_linear, rr, cc) = ((i_kin_16bit != -1 && i_kin_16bit < load_fbuf_lim) ? 1 : 0);
-  //     }
-  //   }
-  // }
-  // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 4^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
+
   this->__BinConvArray(weight, scale, k_out, block_enable_linear, this->row_enable, this->mac_enable, false, false, this->fs==1 && !this->mode_linear, this->mode16, this->mode_linear);
-  // std::cout<<"^^^^^^^^^^^^^^^^^^^DEBUG 5^^^^^^^^^^^^^^^^^^^^^"<<std::endl;
-  // std::cout<<"*****************************matrixvec_cycle end*********************************"<<std::endl;
 
   return (int) cycles;
 }
