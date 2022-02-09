@@ -129,7 +129,7 @@ int Ne16::streamout_cycle() {
       k_out_last = this->subtile_rem_ko;
     }
     for (auto i=0; i<k_out_last; i++) {
-      xt::view(xx, i) = xt::view(this->accum, i, this->streamout_i_out_iter*this->FILTER_SIZE+this->streamout_j_out_iter);
+      xt::view(xx, i) = xt::view(this->accum, i, this->streamout_i_out_iter*this->H_SIZE+this->streamout_j_out_iter);
     }
     this->vst_y.ex(xx, k_out_last, cycles, this->col_enable (this->streamout_i_out_iter, this->streamout_j_out_iter));
   }
