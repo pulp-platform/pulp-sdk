@@ -21,7 +21,7 @@ VP_DIRS=pulp pulp/fll pulp/stdout pulp/chips/pulpissimo \
   pulp/chips/multino pulp/chips/arnold \
   pulp/chips/pulpissimo_v1 \
   pulp/gpio pulp/chips/pulp_v1 pulp/chips/vivosoc3_1 pulp/ima \
-  pulp/ne16 \
+  pulp/neureka \
 
 -include $(ROOT_VP_BUILD_DIR)/props.mk
 

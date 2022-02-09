@@ -1,5 +1,5 @@
-APP = ne16_test
-APP_SRCS += ne16_test.c
+APP = neureka_test
+APP_SRCS += neureka_test.c
 APP_CFLAGS += -O3 -g -Iinc
 
 PMSIS_OS=pulpos
