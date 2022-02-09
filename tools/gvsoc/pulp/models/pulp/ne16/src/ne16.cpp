@@ -56,7 +56,7 @@ void Ne16::reset(bool active)
     this->x_buffer        = xt::zeros<uint8_t>({this->F_BUFFER_SIZE, this->F_BUFFER_SIZE, this->TP_IN});
     this->x_buffer_linear = xt::zeros<uint8_t>({32, this->TP_IN});
     this->x_array         = xt::zeros<uint8_t>({this->NR_COLUMN, this->COLUMN_SIZE, this->TP_IN}); 
-    this->weight          = xt::zeros<uint8_t>({this->FILTER_SIZE*this->FILTER_SIZE, (this->TP_IN/2)});
+    this->weight          = xt::zeros<uint8_t>({this->FILTER_SIZE*this->FILTER_SIZE, (this->TP_IN/8)});
     this->nqs             = xt::zeros<uint8_t>({this->TP_OUT});
     this->job_id          = 0;
     this->cxt_job_id[0] = this->cxt_job_id[1] = -1;
@@ -77,7 +77,6 @@ vp::io_req_status_e Ne16::hwpe_slave(void *__this, vp::io_req *req)
     // Dispatch the register file access to the correct function
     if(req->get_is_write()) {
         if(((req->get_addr() & 0xfff) - 0x20) >> 2 == NE16_SPECIAL_TRACE_REG) {
-            // std::cout<<"COMMITTED_0"<<std::endl;
             if(*data == 0) {
                 _this->trace_level = L0_CONFIG;
                 _this->trace.msg("Setting tracing level to L0_CONFIG\n");

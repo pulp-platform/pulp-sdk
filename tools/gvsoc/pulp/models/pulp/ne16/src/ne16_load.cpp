@@ -35,15 +35,6 @@ void Ne16::load_setup() {
   this->w_size_in_hw = (this->j_major<this->subtile_nb_wo-1 || this->subtile_rem_wi==0) ? (this->fs == 3 ? this->F_BUFFER_SIZE : this->W_SIZE) : this->subtile_rem_wi;
  
   auto k_in_major = this->depthwise ? this->k_out_major : this->k_in_major_iter;
-  
-  // std::cout<<"h_size_in="<<this->h_size_in<<std::endl;
-  // std::cout<<"w_size_in="<<this->w_size_in<<std::endl;
-  // std::cout<<"h_size_out="<<this->h_size_out<<std::endl;
-  // std::cout<<"w_size_out="<<this->w_size_out<<std::endl;
-  // std::cout<<"h_size_in_X_w_size_in="<<this->h_size_in_X_w_size_in<<std::endl;
-  // std::cout<<"h_size_in_X_w_size_out="<<this->h_size_out_X_w_size_out<<std::endl;
-  // std::cout<<"h_size_in_hw="<<this->h_size_in_hw<<std::endl;
-  // std::cout<<"w_size_in_hw="<<this->w_size_in_hw<<std::endl;
 
   if(this->trace_level == L3_ALL) {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   h_size_in=%d\n", this->h_size_in);
@@ -83,7 +74,6 @@ void Ne16::load_setup() {
     this->load_k_in_lim = this->TP_IN;
     this->load_padding = {0, 0}; // std::vector<uint32_t>
 
-    // std::cout<<"Starting load"<<std::endl;
     if(k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN) { // last k_in tile, only if it requires padding
       this->load_k_in_lim = this->subtile_rem_ki;
       this->load_padding = {0, static_cast<uint32_t>(this->TP_IN-this->subtile_rem_ki)};
@@ -112,7 +102,6 @@ void Ne16::load_setup() {
 int Ne16::load_cycle() { // not linear
   int64_t cycles = 0;
   xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, xt::all()) = xt::pad(this->vld_x.ex(this->load_k_in_lim, cycles), this->load_padding);
-  // std::cout<<"Load x_buffer (load_i_fbuf="<<load_i_fbuf<<", load_j_fbuf="<<load_j_fbuf<<")"<<xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, 0)<<std::endl;
   return (int) cycles;
 }
 
@@ -129,8 +118,6 @@ void Ne16::load_do_padding() { // not linear
   auto right_lim  = (this->F_BUFFER_SIZE-this->padding_right  > this->w_size_in_hw) ? this->w_size_in_hw : this->F_BUFFER_SIZE-this->padding_right;
   auto bottom_lim = (this->F_BUFFER_SIZE-this->padding_bottom > this->h_size_in_hw) ? this->h_size_in_hw : this->F_BUFFER_SIZE-this->padding_bottom;
 
-  // std::cout<<"right_lim="<<right_lim<<", bottom_lim"<<bottom_lim<<std::endl;
-
   // implicit padding (on the right/bottom) and explicit padding (all dimensions) define
   // sixteen regions:
   // +-------+-------+-------+-------+
@@ -144,70 +131,46 @@ void Ne16::load_do_padding() { // not linear
   // +-------+-------+-------+-------+
 
   // FIXME: non0-padding values do not work in mode16 in the model, see similar bug in NE16 RTL
-  // std::cout<<"Before PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-  // std::cout<<this->padding_left<<","<<this->j_major<<","<<this->padding_top<<","<<this->i_major<<std::endl;
+  
   // top-left
   if(this->padding_left  > 0 && this->j_major==0 || this->padding_top > 0 && this->i_major==0) {
     xt::view(this->x_buffer, xt::range(0, this->padding_top), xt::range(0, this->padding_left), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"1"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
 
   // top
   if(this->padding_top  > 0 && this->i_major==0) {
     xt::view(this->x_buffer, xt::range(0, this->padding_top), xt::range(this->padding_left, right_lim), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"2"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
 
-  
   // top-right
   if((this->padding_right > 0 && this->j_major==this->subtile_nb_wo-1 || this->padding_top > 0 && this->i_major==0) && (right_lim <= this->w_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(0, this->padding_top), xt::range(right_lim, w_size_in_hw), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"3"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-
 
   // right
   if((this->padding_right > 0 && this->j_major==this->subtile_nb_wo-1) && (right_lim <= this->w_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(this->padding_top, bottom_lim), xt::range(right_lim, this->w_size_in_hw), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"4"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-
 
   // bottom-right
   if((this->padding_right > 0 && this->j_major==this->subtile_nb_wo-1 || this->padding_bottom > 0 && this->i_major==this->subtile_nb_ho-1) && (right_lim <= this->w_size_in_hw) && (bottom_lim <= this->h_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(bottom_lim, h_size_in_hw), xt::range(right_lim, w_size_in_hw), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"5"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-
 
   // bottom
   if((this->padding_bottom > 0 && this->i_major==this->subtile_nb_ho-1) && (bottom_lim <= this->h_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(bottom_lim, this->h_size_in_hw), xt::range(this->padding_left, right_lim), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"6"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-
 
   // bottom-left
   if((this->padding_left > 0 && this->j_major==0 || this->padding_bottom > 0 && this->i_major==this->subtile_nb_ho-1) && (bottom_lim <= this->h_size_in_hw)) {
     xt::view(this->x_buffer, xt::range(bottom_lim, this->h_size_in_hw), xt::range(0, this->padding_left), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"7"<<std::endl;
   }
-  // std::cout<<"AFTER PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-
 
   // left
   if(this->padding_left > 0 && this->j_major==0) {
     xt::view(this->x_buffer, xt::range(this->padding_top, bottom_lim), xt::range(0, this->padding_left), xt::range(0, this->load_k_in_lim)) = this->padding_value;
-    // std::cout<<"8"<<std::endl;
   }
-  // std::cout<<"FINAL PADDING"<<xt::view(this->x_buffer,xt::all(),xt::all(),0)<<std::endl;
-
 }
 
 void Ne16::load_do_extract() {
@@ -221,12 +184,9 @@ void Ne16::load_do_extract() {
     }
   }
   else if(this->fs == 3) {
-    // std::cout<<"load_do_extract begin"<<std::endl;
     for(auto i_col=0; i_col<this->NR_COLUMN; i_col++) { // spatial loop - implemented as a set of muxes
       auto i = i_col / this->H_SIZE;
       auto j = i_col % this->W_SIZE;
-      // std::cout<<"load_do_extract for 0"<<std::endl;
-      // std::cout<<"x_buffer"<<xt::view(this->x_buffer, xt::range(0,6), xt::range(0,6),0)<<std::endl;
       if(i<this->h_size_out && j<this->w_size_out){
         xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::view(this->x_buffer, xt::range(i, i+this->FILTER_SIZE), xt::range(j, j+this->FILTER_SIZE), xt::all()));
         auto shape = xt::adapt(x_buffer_view.shape());
@@ -237,21 +197,13 @@ void Ne16::load_do_extract() {
         auto shape = xt::adapt(x_buffer_view.shape());
         xt::view(this->x_array, i_col, xt::all()) = x_buffer_view.reshape({shape[0] * shape[1], shape[2]});
       }
-
-      // std::cout<<"x_buffer_view"<<x_buffer_view<<std::endl;
-      
-      // std::cout<<"SHAPE="<<shape<<std::endl;
-      
-      // std::cout<<"x array view"<<xt::view(this->x_array, i_col, xt::all());
     }
-    // std::cout<<"xarray 1"<<xt::view(this->x_array,1,xt::all());
   }
   else { // in 1x1 mode, fill only the first qw rows
     xt::view(this->x_array, xt::all()) = 0;
     for(auto i_row=0; i_row<this->qw; i_row++) { // spatial loop - implemented as a set of muxes
       xt::xarray<uint8_t> x_buffer_view = xt::eval(xt::view(this->x_buffer, xt::range(0, this->H_SIZE), xt::range(0, this->W_SIZE), xt::all()));
       auto shape = xt::adapt(x_buffer_view.shape());
-      // std::cout<<"TESTING PRINT"<<std::endl;
       xt::view(this->x_array, xt::all(), i_row) = x_buffer_view.reshape({shape[0] * shape[1], shape[2]});
     }
   }
@@ -268,12 +220,10 @@ void Ne16::load_filter_masking() {
       }
     }
   }
-  // std::cout<<"W_mask="<<xt::view(W_mask,xt::all(),xt::all())<<std::endl;
   this->row_enable = xt::flatten(W_mask);
 }
 
 bool Ne16::load_exit_idx() {
-  // std::cout<<"load_exit_idx"<<std::endl;
   if(this->mode_linear) {
     if(this->load_i_fbuf == this->load_fbuf_lim-1) {
       return true;
@@ -293,7 +243,6 @@ bool Ne16::load_exit_idx() {
 }
 
 void Ne16::load_update_idx() {
-  // std::cout<<"load_update_idx"<<std::endl;
   if(this->mode_linear) {
     this->load_i_fbuf++;
   }

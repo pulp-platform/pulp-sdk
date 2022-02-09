@@ -22,8 +22,6 @@
 
 void Ne16::streamout_setup() {
 
-  // std::cout<<"streamout_setup begin"<<std::endl;
-
   auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
 
   auto outfeat_hom_iter = this->H_SIZE * this->outfeat_d2_stride;
@@ -70,8 +68,6 @@ void Ne16::streamout_setup() {
   this->streamout_i_out_iter = 0;
   this->streamout_j_out_iter = 0;
 
-  // std::cout<<"base_addr_y="<<base_addr_y<<" streamout_k_out_lim="<<this->streamout_k_out_lim<<std::endl;
-
   // relu is here because of easier modeling
   if(this->quantization_bits == 8) {
     if(this->use_relu) {
@@ -98,30 +94,23 @@ void Ne16::streamout_setup() {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   k_out_major=%d\n", this->k_out_major);
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   tp=%d\n", tp);
   }
-  // std::cout<<"streamout_setup end"<<std::endl;
 }
 
 int Ne16::streamout_cycle() { 
-  // std::cout<<"streamout_cycle begin"<<std::endl;
   int64_t cycles = 0;
   auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
   xt::xarray<uint8_t> xx = xt::zeros<uint8_t>({32});
   if(this->quantization_bits == 32) {
-    // std::cout<<"streamout_cycle debug 0"<<std::endl;
     auto k_out_last = (this->streamout_k_out_iter+1)*8;
     if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != tp && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
       k_out_last = k_out_last < this->subtile_rem_ko ? k_out_last : this->subtile_rem_ko;
     }
-    // std::cout<<"streamout_cycle debug 1"<<std::endl;
     for (auto i=this->streamout_k_out_iter*8; i<k_out_last; i++) {
       for(auto j=0; j<4; j++) {
         xt::view(xx, (i-this->streamout_k_out_iter*8)*4+j) = (xt::view(this->accum, i, this->streamout_i_out_iter*this->H_SIZE+this->streamout_j_out_iter) >> (j*8)) & 0xff;
       }
     }
-    // std::cout<<"streamout_cycle debug 2"<<std::endl;
-    // std::cout<<"k_out_last="<<k_out_last<<" streamout_k_out_iter="<<this->streamout_k_out_iter<<" streamout_i_out_iter="<<this->streamout_i_out_iter<<" streamout_j_out_iter="<<this->streamout_j_out_iter<<std::endl;
     this->vst_y.ex(xx, (k_out_last-this->streamout_k_out_iter*8)*4, cycles, this->col_enable (this->streamout_i_out_iter, this->streamout_j_out_iter));
-    // std::cout<<"k_out_last="<<k_out_last<<" streamout_k_out_iter="<<this->streamout_k_out_iter<<std::endl;
   }
   else if(this->quantization_bits == 8) {
     auto k_out_last = tp;
@@ -133,27 +122,21 @@ int Ne16::streamout_cycle() {
     }
     this->vst_y.ex(xx, k_out_last, cycles, this->col_enable (this->streamout_i_out_iter, this->streamout_j_out_iter));
   }
-  // std::cout<<"streamout_cycle end"<<std::endl;
   return (int) cycles;
 }
 
 bool Ne16::streamout_exit_idx() {
-  // std::cout<<"streamout_exit_idx begin"<<std::endl;
   auto h_size_out = this->mode_linear ? 1 : this->h_size_out;
   auto w_size_out = this->mode_linear ? 1 : this->w_size_out;
   if(this->streamout_i_out_iter == h_size_out-1 && this->streamout_j_out_iter == w_size_out-1 && this->streamout_k_out_iter == this->streamout_k_out_lim-1) {
-    // std::cout<<"streamout_exit_idx end"<<std::endl;
     return true;
   }
   else {
-    // std::cout<<"streamout_exit_idx end"<<std::endl;
     return false;
   }
 }
 
 void Ne16::streamout_update_idx() {
-  // std::cout<<"streamout_update_idx begin"<<std::endl;
-  // std::cout<<"FILTER_SIZE="<<this->FILTER_SIZE<<" streamout_i_out_iter="<<this->streamout_i_out_iter<<" streamout_j_out_iter="<<this->streamout_j_out_iter<<"streamout_k_out_iter="<<this->streamout_k_out_iter<<std::endl;
   if(this->streamout_k_out_iter < this->streamout_k_out_lim-1) {
     this->streamout_k_out_iter++;
   } 
@@ -166,18 +149,13 @@ void Ne16::streamout_update_idx() {
     this->streamout_j_out_iter = 0;
     this->streamout_i_out_iter++;
   }
-  // std::cout<<"streamout_i_out_iter="<<this->streamout_i_out_iter<<" streamout_j_out_iter="<<this->streamout_j_out_iter<<"streamout_k_out_iter="<<this->streamout_k_out_iter<<std::endl;
-  // std::cout<<"streamout_update_idx end"<<std::endl;
 }
 
 bool Ne16::streamout_to_end_idx() {
-  // std::cout<<"streamout_to_end_idx begin"<<std::endl;
   if((this->k_out_major == this->subtile_nb_ko-1) && (this->i_major == this->subtile_nb_ho-1) && (this->j_major == this->subtile_nb_wo-1)) {
-    // std::cout<<"streamout_to_end_idx end"<<std::endl;
     return true;
   }
   else {
-    // std::cout<<"streamout_to_end_idx end"<<std::endl;
     return false;
   }
 }
