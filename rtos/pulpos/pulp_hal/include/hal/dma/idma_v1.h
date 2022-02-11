@@ -29,8 +29,8 @@
 #define DMA_MAX_NUM_STREAMS 4
 #define IDMA_EVENT 8 // all iDMA tx_cplt events are broadcast
 
-#define IDMA_DEFAULT_CONFIG 0x1
-#define IDMA_DEFAULT_CONFIG_2D 0x9
+#define IDMA_DEFAULT_CONFIG 0x4
+#define IDMA_DEFAULT_CONFIG_2D 0xC
 
 typedef unsigned int dma_ext_t;
 typedef unsigned int dma_loc_t;
