@@ -49,12 +49,11 @@ PI_L2 pos_udma_channel_t i2c_tx_channel;
  * regular UDMA v2 says its done when its udma fifos are empty but this might
  * not coincide with when the i2c signalling has finished. This is important
  * when you try to detect slave ACK/NACKs. */
-void __pi_i2c_eot_handler(int event, void *arg)
+void __pi_i2c_eot_handler(int event, uint8_t itf)
 {
 	I2C_TRACE("__pi_i2c_eot_handler\n");
 	uint32_t evt = (uint32_t)event;
-	uint32_t periph_id = (evt >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - ARCHI_UDMA_I2C_ID(0);
-	
+	int periph_id = itf;
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
 
@@ -78,17 +77,15 @@ void __pi_i2c_eot_handler(int event, void *arg)
 }
 #endif
 
-void __pi_i2c_rx_handler(int event, void *arg)
+void __pi_i2c_rx_handler(int event, uint8_t itf)
 {
 	I2C_TRACE("rx event \n");
 }
 
-void __pi_i2c_cmd_handler(int event, void *arg)
+void __pi_i2c_cmd_handler(int event, uint8_t itf)
 {
-	//("__pi_i2c_cmd_handler\n");
 	uint32_t evt = (uint32_t)event;
-	uint32_t periph_id = (evt >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - ARCHI_UDMA_I2C_ID(0);
-	
+	int periph_id = itf;
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
 	/*
@@ -134,7 +131,7 @@ void __pi_i2c_cmd_handler(int event, void *arg)
 	}
 }
 
-void __pi_i2c_tx_handler(int event, void *arg)
+void __pi_i2c_tx_handler(int event, uint8_t itf)
 {
 	I2C_TRACE("tx event \n");
 }
@@ -158,24 +155,23 @@ void __pi_irq_handle_end_of_task(pi_task_t *task)
 void pos_i2c_handle_copy(int event, void *arg)
 {
 	I2C_TRACE("event %d\n", event);
-	pos_udma_channel_t *channel = arg;
-	pi_task_t *pending_0 = channel->pendings[0];
-	uint8_t type_channel = pending_0->data[3];
-	if (event == SOC_EVENT_UDMA_I2C_RX(channel->base))
+	uint32_t itf = (event >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - ARCHI_UDMA_I2C_ID(0);
+
+	if (event == SOC_EVENT_UDMA_I2C_RX(itf))
 	{
-		__pi_i2c_rx_handler(event, channel);
+		__pi_i2c_rx_handler(event, itf);
 	}
-	else if (event == SOC_EVENT_UDMA_I2C_TX(channel->base))
+	else if (event == SOC_EVENT_UDMA_I2C_TX(itf))
 	{
-		__pi_i2c_tx_handler(event, channel);
+		__pi_i2c_tx_handler(event, itf);
 	}
-	else if (event == SOC_EVENT_UDMA_I2C_CMD(channel->base))
+	else if (event == SOC_EVENT_UDMA_I2C_CMD(itf))
 	{
-		__pi_i2c_cmd_handler(event, channel);
+		__pi_i2c_cmd_handler(event, itf);
 	}
-	else if (event == SOC_EVENT_UDMA_I2C_EOT(channel->base))
+	else if (event == SOC_EVENT_UDMA_I2C_EOT(itf))
 	{
-		__pi_i2c_eot_handler(event, channel);
+		__pi_i2c_eot_handler(event, itf);
 	}
 	else
 	{
@@ -354,7 +350,7 @@ void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct pi_task 
 	int size_full = size + 3;
 	uint32_t buffer_to_send[size_full];
 	struct i2c_cs_data_s *cs_data = (struct i2c_cs_data_s *)task->data[4];
-
+	driver_data->rx_channel->pendings[0]=task;
 	if (size == 0)
 		return;
 
@@ -414,6 +410,7 @@ void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct pi_task
 	uint32_t count = 0;
 	uint32_t i = 0;
 	struct i2c_cs_data_s *cs_data = (struct i2c_cs_data_s *)task->data[4];
+	driver_data->tx_channel->pendings[0]=task;
 	start_bit = flags & PI_I2C_XFER_NO_START;
 
 	/* Header. */
@@ -468,7 +465,8 @@ void __pi_i2c_copy(struct i2c_cs_data_s *cs_data, uint32_t l2_buff, uint32_t len
 	task->data[1] = length;
 	task->data[2] = flags;
 	task->data[3] = channel;
-	task->data[4] = (uint32_t)cs_data;
+	task->data[4] = (uint32_t)cs_data; 
+	task->data[5] = cs_data->device_id; 
 	task->id = PI_TASK_NONE_ID;
 	task->next = NULL;
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[cs_data->device_id];

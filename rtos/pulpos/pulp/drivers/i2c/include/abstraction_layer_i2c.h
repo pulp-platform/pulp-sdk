@@ -22,7 +22,7 @@
  * @repo           :  pulp-sdk/rtos/pulpos/pulp/drivers/i2c/include
  * @createdOn      :  /01/2022
  * @description    :  PulpOS
- *      			  The driver was tested on a VIP flash memory in RTL, where it was done one
+ *                    The driver was tested on a VIP flash memory in RTL, where it was done one
  *                    transfer at a time.
  *                    Multiple concurrent transfers have not been tested. I mean using multiple
  *                    I2C interfaces that do transfers at the same time.
@@ -47,17 +47,17 @@
 
 /* Number of the interrupt to be obtained based on the number of the interface */
 #define SOC_EVENT_UDMA_I2C_RX(id)                                          \
-	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
-	 UDMA_EVENT_OFFSET_RX)
+    ((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
+     UDMA_EVENT_OFFSET_RX)
 #define SOC_EVENT_UDMA_I2C_TX(id)                                          \
-	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
-	 UDMA_EVENT_OFFSET_TX)
+    ((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
+     UDMA_EVENT_OFFSET_TX)
 #define SOC_EVENT_UDMA_I2C_CMD(id)                                         \
-	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
-	 UDMA_EVENT_OFFSET_CMD)
+    ((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
+     UDMA_EVENT_OFFSET_CMD)
 #define SOC_EVENT_UDMA_I2C_EOT(id)                                         \
-	((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
-	 UDMA_EVENT_OFFSET_EOT)
+    ((ARCHI_UDMA_I2C_ID(id) << ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) + \
+     UDMA_EVENT_OFFSET_EOT)
 /**================================================================================================
  **                                         STRUCT
  *================================================================================================**/
@@ -66,13 +66,13 @@
  **                                         PROTOTYPE FUNCTION
  *================================================================================================**/
 /* IRQ handler for tx event */
-void __pi_i2c_tx_handler(int event, void *arg);
+void __pi_i2c_tx_handler(int event, uint8_t itf);
 /* IRQ handler for rx event */
-void __pi_i2c_rx_handler(int event, void *arg);
+void __pi_i2c_rx_handler(int event, uint8_t itf);
 /* IRQ handler for eot event */
-void __pi_i2c_eot_handler(int event, void *arg);
+void __pi_i2c_eot_handler(int event, uint8_t itf);
 /* IRQ handler for cmd event */
-void __pi_i2c_cmd_handler(int event, void *arg);
+void __pi_i2c_cmd_handler(int event, uint8_t itf);
 /* Free a task */
 void __pi_irq_handle_end_of_task(pi_task_t *task);
 /* Copy in UDMA. */
