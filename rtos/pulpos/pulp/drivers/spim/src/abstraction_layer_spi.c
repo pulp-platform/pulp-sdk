@@ -529,7 +529,9 @@ void pos_spi_handle_copy(int event, void *arg)
     pos_udma_channel_t *channel = arg;
     pi_task_t *pending_1 = channel->pendings[1];
     pi_task_t *pending_0 = channel->pendings[0];
-    uint32_t spi_id = channel->base;
+    //uint32_t spi_id = channel->base;
+    uint32_t evt = (uint32_t)event;
+    uint32_t spi_id = (evt >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - ARCHI_UDMA_SPIM_ID(0);
     struct spim_driver_data *drv_data = __g_spim_drv_data[spi_id];
     pi_task_t *pending_first = __pi_spim_drv_fifo_pop(drv_data);
     channel->pendings[0] = pending_1;

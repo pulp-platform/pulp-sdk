@@ -53,8 +53,8 @@ void __pi_i2c_eot_handler(int event, void *arg)
 {
 	I2C_TRACE("__pi_i2c_eot_handler\n");
 	uint32_t evt = (uint32_t)event;
-	pos_udma_channel_t *channel = arg;
-	uint32_t periph_id = channel->base;
+	uint32_t periph_id = (evt >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - ARCHI_UDMA_I2C_ID(0);
+	
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
 
@@ -87,8 +87,8 @@ void __pi_i2c_cmd_handler(int event, void *arg)
 {
 	//("__pi_i2c_cmd_handler\n");
 	uint32_t evt = (uint32_t)event;
-	pos_udma_channel_t *channel = arg;
-	uint32_t periph_id = channel->base;
+	uint32_t periph_id = (evt >> ARCHI_SOC_EVENT_UDMA_NB_CHANNEL_EVT_LOG2) - ARCHI_UDMA_I2C_ID(0);
+	
 
 	struct i2c_itf_data_s *driver_data = g_i2c_itf_data[periph_id];
 	/*
