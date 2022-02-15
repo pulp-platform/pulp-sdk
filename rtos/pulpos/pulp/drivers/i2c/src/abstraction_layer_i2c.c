@@ -36,6 +36,7 @@
  **                                         GLOBAL VARIABLE
  *================================================================================================**/
 struct i2c_itf_data_s *g_i2c_itf_data[ARCHI_UDMA_NB_I2C] = {0};
+uint32_t buffer_to_write[MAX_SIZE];
 PI_L2 int i2c_channel;
 PI_L2 pos_udma_channel_t i2c_rx_channel;
 PI_L2 pos_udma_channel_t i2c_tx_channel;
@@ -346,9 +347,7 @@ void __pi_i2c_copy_exec_read(struct i2c_itf_data_s *driver_data, struct pi_task 
 	uint32_t size = task->data[1];
 	uint32_t flags = task->data[2];
 	uint32_t channel = task->data[3];
-	int i = 0;
 	int size_full = size + 3;
-	uint32_t buffer_to_send[size_full];
 	struct i2c_cs_data_s *cs_data = (struct i2c_cs_data_s *)task->data[4];
 	driver_data->rx_channel->pendings[0]=task;
 	if (size == 0)
@@ -405,10 +404,7 @@ void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct pi_task
 	uint32_t size = task->data[1];
 	uint32_t flags = task->data[2];
 	uint32_t channel = task->data[3];
-	uint32_t buffer_to_write[size];
 	uint8_t *buffer_copy = (uint8_t *)task->data[0];
-	uint32_t count = 0;
-	uint32_t i = 0;
 	struct i2c_cs_data_s *cs_data = (struct i2c_cs_data_s *)task->data[4];
 	driver_data->tx_channel->pendings[0]=task;
 	start_bit = flags & PI_I2C_XFER_NO_START;
@@ -441,9 +437,9 @@ void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct pi_task
 	/* Data. */
 	if (size > 0)
 	{
-		while (count < size)
+		for(int j=0; j<size; j++)
 		{
-			buffer_to_write[count++] = (((uint32_t)I2C_CMD_WRB) << 24) | *(buffer_copy++);
+			buffer_to_write[j] = ((((uint32_t)I2C_CMD_WRB) << 24) | buffer_copy[j]);
 		}
 	}
 	

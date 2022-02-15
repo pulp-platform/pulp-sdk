@@ -74,11 +74,12 @@
 #endif
 
 /* Length of i2c cmd buffer. */
-#define __PI_I2C_CMD_BUFF_SIZE (256)
+//0xFF, where 0x3 is the number of command to send before buffer
+#define __PI_I2C_CMD_BUFF_SIZE (0x102)
 /* Lenght of i2c stop command sequence. */
 #define __PI_I2C_STOP_CMD_SIZE (3)
 /* Lenght of i2c eot subset of stop command sequence. */
-#define __PI_I2C_ONLY_EOT_CMD_SIZE (3)
+#define __PI_I2C_ONLY_EOT_CMD_SIZE (2)
 
 /* Defines for read & write adress access. */
 #define ADDRESS_WRITE 0x0
