@@ -39,25 +39,28 @@
 uint32_t deactive_irq_i2c(void)
 {
 #ifdef USE_PULPOS_TEST
-	return hal_irq_disable();
-#else
-	return __disable_irq();
+    return hal_irq_disable();
+#endif
+#ifdef USE_FREERTOS_TEST
+    return __disable_irq();
 #endif
 }
 
 void active_irq_i2c(uint32_t irq)
 {
-#ifdef USE_PULPOS_TEST
+#ifdef USE_PULPOS_TEST 
 	hal_irq_restore(irq);
-#else
-	__restore_irq(irq);
-#endif
+#endif 
+#ifdef USE_FREERTOS_TEST
+    __restore_irq(irq);
+#endif 
 }
 
 void __pi_i2c_wait_transfer(uint32_t device_id){
 #ifdef USE_PULPOS_TEST
 	while (plp_udma_busy(UDMA_I2C_CMD_ADDR(device_id)));
-#else
+#endif
+#ifdef USE_FREERTOS_TEST
 	while (hal_i2c_busy_get(device_id));
 #endif
 	
@@ -164,7 +167,8 @@ void __pi_i2c_cs_data_add(struct i2c_itf_data_s *driver_data, struct i2c_cs_data
 		head = head->next;
 	}
 	head->next = cs_data;
-#else
+#endif
+#ifdef USE_PULPOS_TEST
 	struct i2c_cs_data_s *head;
 	head = cs_data;
     head->next = driver_data->cs_list;
@@ -185,7 +189,8 @@ void __pi_i2c_cs_data_remove(struct i2c_itf_data_s *driver_data, struct i2c_cs_d
 	if (head != NULL) {
 		prev->next = head->next;
 	}
-#else
+#endif
+#ifdef USE_PULPOS_TEST
 	int count=0;
 	while ((head != NULL) && (head != cs_data)) 
 	{
@@ -252,6 +257,7 @@ void __pi_i2c_ioctl(struct i2c_cs_data_s *device_data, uint32_t cmd, void *arg)
 	case PI_I2C_CTRL_SET_MAX_BAUDRATE:
 		__pi_i2c_baudrate_set(device_data, (uint32_t)arg);
 		break;
+
 	default:
 		break;
 	}
