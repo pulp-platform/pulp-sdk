@@ -246,7 +246,7 @@ void __pi_i2c_conf_init(pi_i2c_conf_t *conf)
 	conf->cs = 0;
 	conf->max_baudrate = 200000;
 	conf->itf = 0;
-	conf->wait_cycles = 1;
+	conf->wait_cycles = 10;
 	conf->ts_ch = 0;
 	conf->ts_evt_id = 0;
 }

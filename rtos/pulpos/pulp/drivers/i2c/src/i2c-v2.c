@@ -21,9 +21,9 @@
  * ?                                                     ABOUT
  * @author         :  Orlando Nico, GreenWaves Technologies, Robert Balas 
  * @email          :  nico.orlando@studio.unibo.it, balasr@iis.ee.ethz.ch
- * @repo           :  pulp-sdk/rtos/pulpos/pulp/drivers/i2c/src
+ * @repo           :  driver
  * @createdOn      :  /01/2022
- * @description    :  PulpOS
+ * @description    :  FreeRTOS
  * 					  The driver was tested on a VIP flash memory in RTL, where it was done one
  *                    transfer at a time.
  *                    Multiple concurrent transfers have not been tested. I mean using multiple
@@ -115,7 +115,8 @@ int pi_i2c_read(struct pi_device *device, uint8_t *rx_buff, int length, pi_i2c_x
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
 	if (REG_GET(I2C_ACK_NACK, i2c_ack_get(device_data->device_id)))
 		status = PI_ERR_I2C_NACK;
-#else
+#endif
+#ifdef USE_PULPOS_TEST
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
 	unsigned int udma_i2c_channel_base = hal_udma_channel_base(UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(device_data->device_id)));
 	uint32_t ack = pulp_read32(udma_i2c_channel_base+0x38);
@@ -123,7 +124,6 @@ int pi_i2c_read(struct pi_device *device, uint8_t *rx_buff, int length, pi_i2c_x
 		status = PI_ERR_I2C_NACK;
 #endif
 #endif
-
 	return status;
 }
 
@@ -157,7 +157,8 @@ int pi_i2c_write(struct pi_device *device, uint8_t *tx_data, int length, pi_i2c_
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
 	if (REG_GET(I2C_ACK_NACK, i2c_ack_get(device_data->device_id)))
 		status = PI_ERR_I2C_NACK;
-#else
+#endif
+#ifdef USE_PULPOS_TEST
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
 	unsigned int udma_i2c_channel_base = hal_udma_channel_base(UDMA_CHANNEL_ID(ARCHI_UDMA_I2C_ID(device_data->device_id)));
 	uint32_t ack = pulp_read32(udma_i2c_channel_base+0x38);
@@ -172,7 +173,7 @@ void pi_i2c_write_async(struct pi_device *device, uint8_t *tx_data, int length,
 			pi_i2c_xfer_flags_e flags, pi_task_t *task)
 {
 	struct i2c_cs_data_s *device_data = (struct i2c_cs_data_s *)device->data;
-	udma_channel_e channel = TX_CHANNEL;
+	udma_channel_e channel = COMMAND_CHANNEL;
 	I2C_TRACE("I2C(%d) : transfer %d %lx %ld %lx, task %lx\n", device_data->device_id, channel,
 		  (uint32_t)tx_data, length, flags, task);
 	__pi_i2c_copy(device_data, (uint32_t)tx_data, length, flags, channel, task);

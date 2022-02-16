@@ -409,6 +409,11 @@ void __pi_i2c_copy_exec_write(struct i2c_itf_data_s *driver_data, struct pi_task
 	driver_data->tx_channel->pendings[0]=task;
 	start_bit = flags & PI_I2C_XFER_NO_START;
 
+	for(int j=0; j<MAX_SIZE; j++)
+	{
+		buffer_to_write[j]=0;
+	}
+
 	/* Header. */
 	driver_data->i2c_cmd_seq[index++] = (((uint32_t)I2C_CMD_CFG) << 24) | ((cs_data->clk_div >> 8) & 0xFF) | (cs_data->clk_div & 0xFF);
 	if (!start_bit)
