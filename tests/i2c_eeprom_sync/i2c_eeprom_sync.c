@@ -21,6 +21,7 @@
 /*
  * Test 24FC1025 eeprom (located at i2c address 0x50 in bus 0)
  */
+
 #ifdef USE_PULPOS_TEST
 #include "pmsis.h"
 #include <bsp/bsp.h>
@@ -112,10 +113,15 @@ void eeprom(void)
 	/* the address of our i2c eeprom is normally 0x50 if you want to
 	 * specifically test that */
 	printf("writing eeprom\n");
+	int res = 0;
 
-	pi_task_t task_write_buffer;	
-	pi_i2c_write_async(&i2c, tx, sizeof(tx), PI_I2C_XFER_START | PI_I2C_XFER_STOP, pi_task_block(&task_write_buffer));
-	pi_task_wait_on(&task_write_buffer);
+	res = pi_i2c_write(&i2c, tx, sizeof(tx),
+			       PI_I2C_XFER_START | PI_I2C_XFER_STOP);
+	if (res != PI_OK) {
+		printf("pi_i2c_write failed\n");
+		exit(1);
+	}
+
 	/* Wait for write to finish. It takes 5 million ns = 5 ms to finish. */
 	for (volatile int i = 0; i < 100000; ++i)
 		i++;
@@ -126,19 +132,18 @@ void eeprom(void)
 		0x00, /* addr lsb */
 	};
 
-	pi_task_t task_write_addr;
-	pi_i2c_write_async(&i2c, eeprom_addr, sizeof(eeprom_addr), PI_I2C_XFER_START | PI_I2C_XFER_NO_STOP, pi_task_block(&task_write_addr));	
-	//pi_i2c_write(&i2c, eeprom_addr, sizeof(eeprom_addr), PI_I2C_XFER_START | PI_I2C_XFER_NO_STOP);	
-	pi_task_t task_read_buffer;
-	pi_i2c_read_async(&i2c, rx, sizeof(rx), PI_I2C_XFER_START | PI_I2C_XFER_STOP, pi_task_block(&task_read_buffer));
-	pi_task_wait_on(&task_write_addr);
-	pi_task_wait_on(&task_read_buffer);
-
-	pi_task_destroy(&task_write_buffer);
-	pi_task_destroy(&task_write_addr);
-	pi_task_destroy(&task_read_buffer);
-
-	pi_i2c_close(&i2c);
+	res = pi_i2c_write(&i2c, eeprom_addr, sizeof(eeprom_addr),
+			   PI_I2C_XFER_START | PI_I2C_XFER_NO_STOP);
+	if (res != PI_OK) {
+		printf("pi_i2c_write for eeprom addr failed\n");
+		exit(1);
+	}
+	res = pi_i2c_read(&i2c, rx, sizeof(rx),
+			       PI_I2C_XFER_START | PI_I2C_XFER_STOP);
+	if (res != PI_OK) {
+		printf("pi_i2c_read failed\n");
+		exit(1);
+	}
 
 	printf("comparing\n");
 	int error = 0;
@@ -153,10 +158,10 @@ void eeprom(void)
 	}
 	if (error != 0)
 	{
-		printf("Test I2C async -> Not Success\n");
+		printf("Test I2C sync -> Not Success\n");
 		exit(1);
 	}
-	printf("Test I2C async -> Success\n");
+	printf("Test I2C sync -> Success\n");
 	exit(0);
 }
 
@@ -165,11 +170,12 @@ int main(void)
 	#ifdef USE_FREERTOS_TEST
 	/* Init board hardware. */
 	system_init();
-	printf("\n\n\t *** FreeRTOS Test I2C async *** \n\n");
+	printf("\n\n\t *** FreeRTOS Test I2C sync *** \n\n");
 	#else
-	printf("\n\n\t *** PULP-OS Test I2C async *** \n\n");
+	printf("\n\n\t *** PULP-OS Test I2C sync *** \n\n");
 	#endif
 
+	printf("i2c eeprom read/write test\n");
 	return pmsis_kickoff((void *)eeprom);
 }
 
