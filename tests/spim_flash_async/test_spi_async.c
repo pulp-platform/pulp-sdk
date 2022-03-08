@@ -17,12 +17,12 @@
  * SPDX-License-Identifier: Apache-2.0
  * Author: Germain Hagou
  *         Robert Balas (balasr@iis.ee.ethz.ch)
- * 		   nico.orlando@studio.unibo.it
  */
 
 /*
  * Test if we can write to spi using pmsis
  */
+
 #ifdef USE_PULPOS_TEST
 #include "pmsis.h"
 #include <bsp/bsp.h>
@@ -41,35 +41,25 @@
 #include <inttypes.h>
 #include <stdint.h>
 /* pmsis */
+#include "implementation_specific_defines.h"
 #include "target.h"
 #include "pmsis_types.h"
 #include "os.h"
-#include "implementation_specific_defines.h"
+#include "device.h"
 /* system includes */
 #include "system.h"
 #include "timer_irq.h"
 #include "fll.h"
 #include "irq.h"
 #include "gpio.h"
-#include "/scratch/norlando/pulp-open/pulp-sdk/rtos/pmsis/pmsis_api/include/pmsis/drivers/spi.h"
+#include "spi.h"
 #include "abstraction_layer_spi.h"
 #endif
 
-
-#if !defined(SYNC_CS_AUTO) && !defined(ASYNC_CS_AUTO) &&                       \
+#if !defined(SYNC_CS_AUTO) && !defined(ASYNC_CS_AUTO) && \
 	!defined(SYNC_CS_KEEP) && !defined(ASYNC_CS_KEEP)
 #define ASYNC_CS_AUTO 1
 #endif
-
-//#define DEBUG 1
-
- #ifdef DEBUG
- #define DEBUG_PRINTF printf
- #define DBG_PRINTF   printf
- #else
- #define DEBUG_PRINTF(...) ((void)0)
- #define DBG_PRINTF(...)	  ((void)0)
- #endif /* DEBUG */
 
 #define TOTAL_SIZE (256)
 //#define TOTAL_SIZE (8192*8 + 256)
@@ -78,14 +68,14 @@
 #define NB_BUFFERS 1
 
 // S25FL256S Instruction Set
-#define CMD_WRR	    0x01 // Write REG 1
-#define CMD_RDID    0x9F // Read ID (JEDEC Manufacturer & JEDEC CFI
-#define CMD_RDSR1   0x05 // Read status register-1
-#define CMD_WREN    0x06 // Write enable
-#define CMD_4P4E    0x21 // 4KB Erase
-#define CMD_4PP	    0x12 // Page program (4 bytes address)
-#define CMD_4QPP    0x34 // Page program QSPI (4 bytes address)
-#define CMD_4READ   0x13 // Read (4 bytes address)
+#define CMD_WRR 0x01	 // Write REG 1
+#define CMD_RDID 0x9F	 // Read ID (JEDEC Manufacturer & JEDEC CFI
+#define CMD_RDSR1 0x05	 // Read status register-1
+#define CMD_WREN 0x06	 // Write enable
+#define CMD_4P4E 0x21	 // 4KB Erase
+#define CMD_4PP 0x12	 // Page program (4 bytes address)
+#define CMD_4QPP 0x34	 // Page program QSPI (4 bytes address)
+#define CMD_4READ 0x13	 // Read (4 bytes address)
 #define CMD_4QOREAD 0x6C // Read QSPI(4 bytes address)
 
 #define ID_CFI_SIZE 10
@@ -95,9 +85,12 @@ static inline void get_info(int *buffer_size)
 #if !defined(PI_PLATFORM_RTL)
 	*buffer_size = TOTAL_SIZE;
 #else
-	if (pi_platform() == PI_PLATFORM_RTL) {
+	if (pi_platform() == PI_PLATFORM_RTL)
+	{
 		*buffer_size = TOTAL_SIZE_RTL;
-	} else {
+	}
+	else
+	{
 		*buffer_size = TOTAL_SIZE;
 	}
 #endif
@@ -118,25 +111,20 @@ static pi_task_t cmd_event[NB_BUFFERS];
 static pi_task_t rx_cmd_event[NB_BUFFERS];
 
 static void set_spim_verif_command(struct pi_device *spim, int cmd, int addr,
-				   int size, int32_t *cmd_buffer,
-				   pi_task_t *task)
+								   int size, int32_t *cmd_buffer,
+								   pi_task_t *task)
 {
 	/*
-	** The command moves it to the first 8 bits, and to the last 8 it puts
+	** The command moves it to the first 8 bits, a
+nd to the last 8 it puts
 	** the size.
 	** Size is the size in bytes of the command.
 	*/
 	cmd_buffer[0] = (cmd << 24) | (size * 8);
 	cmd_buffer[1] = addr;
-
-	DBG_PRINTF("%s:%s:%d cmd_buffer[0] = 0x%x)\n", __FILE__, __func__,
-		   __LINE__, cmd_buffer[0]);
-	DBG_PRINTF("%s:%s:%d cmd_buffer[1] = 0x%x)\n", __FILE__, __func__,
-		   __LINE__, cmd_buffer[1]);
-
 	if (task)
 		pi_spi_send_async(spim, cmd_buffer, 8 * 8, PI_SPI_CS_AUTO,
-				  task);
+						  task);
 	else
 		pi_spi_send(spim, cmd_buffer, 8 * 8, PI_SPI_CS_AUTO);
 }
@@ -176,75 +164,75 @@ static int test_entry()
 	if (rx_buffer_1 == NULL)
 		return -1;
 
-    printf("malloc rx buffer 2\n");
-	rx_buffer_2 = pmsis_l2_malloc(total_size);
-	if (rx_buffer_2 == NULL)
-		return -1;
-
 	printf("tx buffer init\n");
-	for (int i = 0; i < total_size; i++) {
+	for (int i = 0; i < total_size; i++)
+	{
 		tx_buffer[i] = i;
 	}
 
 	uint8_t cmd = CMD_WREN;
-		pi_task_t event_wren_1;
-		pi_task_t event_4pp_1;
-		pi_task_t event_tx_1;
-		pi_task_t event_wip_write_1;
-		pi_task_t event_wip_read_1;
-		pi_task_t event_4read_1;
-		pi_task_t event_rx_1;
+
+	pi_task_t event_wren_1;
+	pi_task_t event_4pp_1;
+	pi_task_t event_tx_1;
+	pi_task_t event_wip_write_1;
+	pi_task_t event_wip_read_1;
+	pi_task_t event_4read_1;
+	pi_task_t event_rx_1;
+
 	printf("async cs auto\n");
-    for (int i = 0; i < NB_BUFFERS; i++) {
-		
-        // Set write enabled
-        cmd = CMD_WREN;   
-        pi_spi_send_async(&spim0, &cmd, (1*8), PI_SPI_CS_AUTO, pi_task_block(&event_wren_1));
-        // send page address
-        add_buffer[0] = CMD_4PP; 
-        pi_spi_send_async(&spim0, add_buffer, (sizeof(add_buffer)*8), PI_SPI_CS_KEEP, pi_task_block(&event_4pp_1));
-        // send data 
-        pi_spi_send_async(&spim0, tx_buffer + buffer_size * i, (buffer_size*8), PI_SPI_CS_AUTO, pi_task_block(&event_tx_1));
-        // wait until program operation is in progress
-        DBG_PRINTF("%s:%s:%d ...start -> wip read...\n", __FILE__, __func__, __LINE__);
-        cmd = CMD_RDSR1; // command to read status register 1
-        volatile uint8_t status = 0xFF;
-        do
-        {
-            pi_spi_send(&spim0, &cmd, (1*8), PI_SPI_CS_KEEP);
-            pi_spi_receive(&spim0, &status, (1*8), PI_SPI_CS_AUTO);
-            printf("WIP Register: %d\n", status);
-			
-        }  while ((status & 0x01) != 0);// flash is buzy if status != 0
-		//printf("WIP Register: %d\n", status);
+	for (int i = 0; i < NB_BUFFERS; i++)
+	{
+		// Set write enabled
+		cmd = CMD_WREN;
+		pi_spi_send_async(&spim0, &cmd, (1 * 8), PI_SPI_CS_AUTO, pi_task_block(&event_wren_1));
 		// send page address
-        add_buffer[0] = CMD_4READ;
-        pi_spi_send_async(&spim0, add_buffer, (sizeof(add_buffer)*8), PI_SPI_CS_KEEP, pi_task_block(&event_4read_1)); 
-        pi_spi_receive_async(&spim0, rx_buffer_1 + buffer_size * i, (buffer_size*8), PI_SPI_CS_AUTO, pi_task_block(&event_rx_1));
+		add_buffer[0] = CMD_4PP;
+		pi_spi_send_async(&spim0, add_buffer, (sizeof(add_buffer) * 8), PI_SPI_CS_KEEP, pi_task_block(&event_4pp_1));
+		// send data
+		pi_spi_send_async(&spim0, tx_buffer + buffer_size * i, (buffer_size * 8), PI_SPI_CS_AUTO, pi_task_block(&event_tx_1));
+		// wait until program operation is in progress
+		cmd = CMD_RDSR1; // command to read status register 1
+		uint8_t status = 0xFF;
+		do
+		{
+			pi_spi_send_async(&spim0, &cmd, (1 * 8), PI_SPI_CS_KEEP, pi_task_block(&event_wip_write_1));
+			pi_task_wait_on(&event_wip_write_1);
+			pi_spi_receive_async(&spim0, &status, (1 * 8), PI_SPI_CS_AUTO, pi_task_block(&event_wip_read_1));
+			pi_task_wait_on(&event_wip_read_1);
+			status &= (1);
+			printf("WIP Register: %d\n", status);
+		} while (status != 0);
+		// send page address
+		add_buffer[0] = CMD_4READ;
+
+		pi_spi_send_async(&spim0, add_buffer, (sizeof(add_buffer) * 8), PI_SPI_CS_KEEP, pi_task_block(&event_4read_1));
+		pi_spi_receive_async(&spim0, rx_buffer_1 + buffer_size * i, (buffer_size * 8), PI_SPI_CS_AUTO, pi_task_block(&event_rx_1));
 	}
-	 	
-        pi_task_wait_on(&event_wren_1);
-		pi_task_wait_on(&event_4pp_1);
-		pi_task_wait_on(&event_tx_1);
-		pi_task_wait_on(&event_4read_1);
-		pi_task_wait_on(&event_rx_1);
+	pi_task_wait_on(&event_4read_1);
+	pi_task_wait_on(&event_rx_1);
 
 	printf("starting error check\n");
 	int error = 0;
-	for (int i = 0; i < total_size; i++) {
-		if (rx_buffer_1[i] != tx_buffer[i] && rx_buffer_2[i] != tx_buffer[i]) {
+	for (int i = 0; i < total_size; i++)
+	{
+		if (rx_buffer_1[i] != tx_buffer[i] && rx_buffer_2[i] != tx_buffer[i])
+		{
 			if (error == 0)
 				printf("First error at index %d, expected 0x%x, got 0x%x at %p\n",
-				       i, tx_buffer[i], rx_buffer_1[i],
-				       &rx_buffer_1[i]);
+					   i, tx_buffer[i], rx_buffer_1[i],
+					   &rx_buffer_1[i]);
 			error++;
 			return -1;
 		}
 	}
 
-	if (error) {
+	if (error)
+	{
 		printf("Got %d errors\n", error);
-	} else {
+	}
+	else
+	{
 		printf("Test success\n");
 	}
 	pi_spi_close(&spim0);
@@ -260,17 +248,12 @@ static void test_kickoff(void *arg)
 /* Program Entry. */
 int main(void)
 {
-	#ifdef USE_FREERTOS_TEST
+#ifdef USE_FREERTOS_TEST
 	/* Init board hardware. */
 	system_init();
-	printf("\n\n\t *** FreeRTOS Hello World *** \n\n");
-	#endif
-
-#ifdef USE_PULPOS_TEST
-	printf("\n\n\t *** Pulp OS Hello World *** \n\n");
-	#endif
-	
+	printf("\n\n\t *** FreeRTOS Test I2C async *** \n\n");
+#else
+	printf("\n\n\t *** PULP-OS Test I2C async *** \n\n");
+#endif
 	return pmsis_kickoff((void *)test_kickoff);
 }
-
-

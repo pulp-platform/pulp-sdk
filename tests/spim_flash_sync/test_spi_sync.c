@@ -17,32 +17,45 @@
  * SPDX-License-Identifier: Apache-2.0
  * Author: Germain Hagou
  *         Robert Balas (balasr@iis.ee.ethz.ch)
+ * Modify by Nico Orlando (nico.orlando@studio.unibo.it)
  */
 
 /*
  * Test if we can write to spi using pmsis
  */
 
+#ifdef USE_PULPOS_TEST
 #include "pmsis.h"
 #include <bsp/bsp.h>
-
-#if !defined(SYNC_CS_AUTO) && !defined(ASYNC_CS_AUTO) &&                       \
-	!defined(SYNC_CS_KEEP) && !defined(ASYNC_CS_KEEP)
-#define ASYNC_CS_AUTO 1
 #endif
 
-//#define DEBUG 1
-/**
- #ifdef DEBUG
- #define DEBUG_PRINTF printf
- #define DBG_PRINTF   printf
- #else
- #define DEBUG_PRINTF(...) ((void)0)
- #define DBG_PRINTF(...)	  ((void)0)
- #endif /* DEBUG */
+#ifdef USE_FREERTOS_TEST
+/* FreeRTOS kernel includes. */
+#include <FreeRTOS.h>
+#include <task.h>
 
-  #define DEBUG_PRINTF(...) ((void)0)
- #define DBG_PRINTF(...)	  ((void)0)
+/* c stdlib */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <inttypes.h>
+#include <stdint.h>
+/* pmsis */
+#include "implementation_specific_defines.h"
+#include "target.h"
+#include "pmsis_types.h"
+#include "os.h"
+#include "device.h"
+/* system includes */
+#include "system.h"
+#include "timer_irq.h"
+#include "fll.h"
+#include "irq.h"
+#include "gpio.h"
+#include "spi.h"
+#include "abstraction_layer_spi.h"
+#endif
 
 #define TOTAL_SIZE (256)
 //#define TOTAL_SIZE (8192*8 + 256)
@@ -101,11 +114,6 @@ static void set_spim_verif_command(struct pi_device *spim, int cmd, int addr,
 	cmd_buffer[0] = (cmd << 24) | (size * 8);
 	cmd_buffer[1] = addr;
 
-	DBG_PRINTF("%s:%s:%d cmd_buffer[0] = 0x%x)\n", __FILE__, __func__,
-		   __LINE__, cmd_buffer[0]);
-	DBG_PRINTF("%s:%s:%d cmd_buffer[1] = 0x%x)\n", __FILE__, __func__,
-		   __LINE__, cmd_buffer[1]);
-
 	if (task)
 		pi_spi_send_async(spim, cmd_buffer, 8 * 8, PI_SPI_CS_AUTO,
 				  task);
@@ -156,28 +164,21 @@ static int test_entry()
 
 	uint8_t cmd = CMD_WREN;
 
-
-	printf("async cs auto\n");
-
     for (int i = 0; i < NB_BUFFERS; i++) {
         // Set write enabled
         cmd = CMD_WREN;
-        DBG_PRINTF("%s:%s:%d ...pi_spi_send_async(&spim, cmd, 8, PI_SPI_CS_AUTO, pi_task_block(&event_wren))...\n", __FILE__, __func__, __LINE__);
         pi_spi_send(&spim, &cmd, (1*8), PI_SPI_CS_AUTO);
 
         // send page address
         add_buffer[0] = CMD_4PP;
-        DBG_PRINTF("%s:%s:%d ...pi_spi_send_async(&spim, add_buffer, (sizeof(add_buffer)*8), PI_SPI_CS_KEEP, NULL)...\n", __FILE__, __func__, __LINE__);
         pi_spi_send(&spim, add_buffer, (sizeof(add_buffer)*8), PI_SPI_CS_KEEP);
 
         // send data
-        DBG_PRINTF("%s:%s:%d ...pi_spi_send_async(&spim, tx_buffer, BUFFER_SIZE * 8, PI_SPI_CS_AUTO, pi_task_block(&event_tx))...\n", __FILE__, __func__, __LINE__);
         pi_spi_send(&spim, tx_buffer + buffer_size * i, (buffer_size*8), PI_SPI_CS_AUTO);
 
         // wait until program operation is in progress
-        DBG_PRINTF("%s:%s:%d ...start -> wip read...\n", __FILE__, __func__, __LINE__);
         cmd = CMD_RDSR1; // command to read status register 1
-        volatile uint8_t status = 0xFF;
+        uint8_t status = 0xFF;
         do
         {
             //DBG_PRINTF("%s:%s:%d ...pi_spi_send_async(&spim, cmd, 1, PI_SPI_CS_AUTO, pi_task_block(&event_wip_write))...\n", __FILE__, __func__, __LINE__);
@@ -186,18 +187,15 @@ static int test_entry()
             //DBG_PRINTF("%s:%s:%d ...pi_spi_receive_async(&spim, &status, 1, PI_SPI_CS_AUTO, pi_task_block(&event_wip_read))...\n", __FILE__, __func__, __LINE__);
             pi_spi_receive(&spim, &status, (1*8), PI_SPI_CS_AUTO);
             //DBG_PRINTF("%s:%s:%d ...pi_task_wait_on(&event_wip_read)...\n", __FILE__, __func__, __LINE__);
-            printf("WIP Register: %d\n", status);
+            status &= (1);
+			printf("WIP Register: %d\n", status);
         }while (status & 0x01 != 0); // flash is buzy if status != 0
-        DBG_PRINTF("%s:%s:%d ...end -> wip read...\n", __FILE__, __func__, __LINE__);
-
+        
         // send page address
         add_buffer[0] = CMD_4READ;
-        DBG_PRINTF( "%s:%s:%d ...pi_spi_send_async(&spim, add_buffer, (sizeof(add_buffer)*8), PI_SPI_CS_KEEP, NULL)...\n", __FILE__, __func__, __LINE__);
         pi_spi_send(&spim, add_buffer, (sizeof(add_buffer)*8), PI_SPI_CS_KEEP);
         // read data
-        DBG_PRINTF( "%s:%s:%d ...pi_spi_receive_async(&spim, rx_buffer, BUFFER_SIZE * 8, PI_SPI_CS_AUTO, pi_task_block(&event_rx))...\n", __FILE__, __func__, __LINE__);
-        pi_spi_receive(&spim, rx_buffer + buffer_size * i, (buffer_size*8), PI_SPI_CS_AUTO);
-        DBG_PRINTF("%s:%s:%d ...pi_task_wait_on(&event_rx)...\n", __FILE__, __func__, __LINE__);
+        pi_spi_receive(&spim, rx_buffer + buffer_size * i, (buffer_size*8), PI_SPI_CS_AUTO);    
     }
 
 	printf("starting error check\n");
@@ -231,7 +229,13 @@ static void test_kickoff(void *arg)
 /* Program Entry. */
 int main(void)
 {
-	printf("\n\n\t *** Pulp-SDK Hello World *** \n\n");
+#ifdef USE_FREERTOS_TEST
+	/* Init board hardware. */
+	system_init();
+	printf("\n\n\t *** FreeRTOS Test I2C sync *** \n\n");
+#else
+	printf("\n\n\t *** PULP-OS Test I2C sync *** \n\n");
+#endif
 	return pmsis_kickoff((void *)test_kickoff);
 }
 
