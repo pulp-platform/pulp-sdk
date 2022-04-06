@@ -23,6 +23,7 @@
 void Ne16::fsm_start_handler(void *__this, vp::clock_event *event) {
   Ne16 *_this = (Ne16 *)__this;
   _this->state.set(START);
+  _this->running_job_id = _this->cxt_job_id[_this->cxt_use_ptr];
   if(_this->trace_level == L3_ALL) {
     _this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM START EVENT\n");
   }
