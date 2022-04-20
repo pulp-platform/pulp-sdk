@@ -30,6 +30,7 @@
 #include "inc/neureka_cfg.h"
 #include "inc/neureka_infeat.h"
 #include "inc/neureka_weights.h"
+// #include "inc/neureka_weights_28.h"
 #include "inc/neureka_scale.h"
 #include "inc/neureka_scale_bias.h"
 #include "inc/neureka_scale_shift.h"
@@ -39,6 +40,10 @@
 #define NB_ITER 10
 
 static int glob_errors;
+
+#define WEIGHT_MEM_BASE 0x10400000
+#define SRAM_OFFSET 0x00400000
+#define MRAM_OFFSET 0x00000000
 
 int run_test() {
 
@@ -142,11 +147,19 @@ static int launch_cluster_task() {
 
 int test_entry() {
   printf("Starting test\n");
-  int errors = launch_cluster_task();
-  if (errors)
-    printf("Test failure\n");
-  else
-    printf("Test success\n");
+  uint8_t* W        = neureka_weights;
+  uint32_t* weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET; 
+  printf("Weight start ptr=%x\n",weight_start_ptr);
+  printf("NEUREKA WEIGHTS=%x\n", neureka_weights);
+  // memcpy((uint32_t*)neureka_weights,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
+  memcpy(weight_start_ptr,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
+  printf("Memcpy id Done!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  int errors = 0;
+  // int errors = launch_cluster_task();
+  // if (errors)
+  //   printf("Test failure\n");
+  // else
+  //   printf("Test success\n");
   return errors;
 }
 

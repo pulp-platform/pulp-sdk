@@ -148,19 +148,20 @@ vp::io_req_status_e Neureka::hwpe_slave(void *__this, vp::io_req *req)
 int Neureka::build()
 {
     this->traces.new_trace("trace", &this->trace, vp::DEBUG);
-    this->new_reg("fsm_state", &this->state, 32);
-    this->new_reg("neureka_busy", &this->activity, 8);
-    this->activity.set(0);
-    this->state.set(IDLE);
-    this->new_master_port("out", &this->out);
-    this->new_master_port("irq", &this->irq);
-    this->in.set_req_meth(&Neureka::hwpe_slave);
-    this->new_slave_port("input", &this->in); // how to change this name?
-    this->fsm_start_event = this->event_new(&Neureka::fsm_start_handler);
-    this->fsm_event = this->event_new(&Neureka::fsm_handler);
-    this->fsm_end_event = this->event_new(&Neureka::fsm_end_handler);
-    this->trace_level = L0_CONFIG;
-    this->trace_format = 1;
+    this->new_reg("fsm_state", &this->state, 32);//public in hpp
+    this->new_reg("neureka_busy", &this->activity, 8);//public in hpp
+    this->activity.set(0);//public in hpp
+    this->state.set(IDLE);//public in hpp
+    this->new_master_port("out", &this->out);//public in hpp
+    this->new_master_port("wmem_out", &this->wmem_out);//public in hpp
+    this->new_master_port("irq", &this->irq);//private in hpp connected to the cluster event unit
+    this->in.set_req_meth(&Neureka::hwpe_slave);//private in hpp
+    this->new_slave_port("input", &this->in); // how to change this name? //private in hpp linked to preipheral ico at the cluster
+    this->fsm_start_event = this->event_new(&Neureka::fsm_start_handler);//private in hpp
+    this->fsm_event = this->event_new(&Neureka::fsm_handler);//private in hpp
+    this->fsm_end_event = this->event_new(&Neureka::fsm_end_handler);//private in hpp
+    this->trace_level = L0_CONFIG;//public in hpp
+    this->trace_format = 1;//public in hpp
 
     return 0;
 }
