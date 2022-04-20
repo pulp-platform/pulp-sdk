@@ -196,6 +196,7 @@ public:
     vp::io_req io_req;
     vp::trace trace;
     vp::io_master out;
+    vp::io_master wmem_out;
     vp::reg_32 state;
     vp::reg_8 activity;
     NeurekaTraceLevel trace_level;

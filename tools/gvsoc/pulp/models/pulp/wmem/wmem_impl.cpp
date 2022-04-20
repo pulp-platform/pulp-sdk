@@ -24,17 +24,16 @@
 #include <stdio.h>
 #include <math.h>
 
-class interleaver : public vp::component
+class wmem : public vp::component
 {
 
 public:
 
-  interleaver(js::config *config);
+  wmem(js::config *config);
 
   int build();
 
   static vp::io_req_status_e req(void *__this, vp::io_req *req);
-  static vp::io_req_status_e req_ts(void *__this, vp::io_req *req);
 
 
 private:
@@ -42,30 +41,29 @@ private:
 
   vp::io_master **out;
   vp::io_slave **masters_in;
-  vp::io_slave **masters_ts_in;
   vp::io_slave in;
-  vp::io_slave ts_in;
 
   int nb_slaves;
   int nb_masters;
-  int stage_bits;
   uint64_t bank_mask;
-  vp::io_req ts_req;
+  int stage_bits;
 };
 
-interleaver::interleaver(js::config *config)
+wmem::wmem(js::config *config)
 : vp::component(config)
 {
 
 }
 
-vp::io_req_status_e interleaver::req(void *__this, vp::io_req *req)
+vp::io_req_status_e wmem::req(void *__this, vp::io_req *req)
 {
-  interleaver *_this = (interleaver *)__this;
+  // std::cout<<"IO request in wmem received"<<std::endl;
+  wmem *_this = (wmem *)__this;
   uint64_t offset = req->get_addr();
   bool is_write = req->get_is_write();
   uint64_t size = req->get_size();
   uint8_t *data = req->get_data();
+
   _this->trace.msg("Received IO req (offset: 0x%llx, size: 0x%llx, is_write: %d)\n", offset, size, is_write);
  
   int bank_id = (offset >> 2) & _this->bank_mask;
@@ -75,45 +73,14 @@ vp::io_req_status_e interleaver::req(void *__this, vp::io_req *req)
   return _this->out[bank_id]->req_forward(req);
 }
 
-vp::io_req_status_e interleaver::req_ts(void *__this, vp::io_req *req)
+
+int wmem::build()
 {
-  interleaver *_this = (interleaver *)__this;
-  uint64_t offset = req->get_addr();
-  bool is_write = req->get_is_write();
-  uint64_t size = req->get_size();
-  uint8_t *data = req->get_data();
-
-  _this->trace.msg("Received TS IO req (offset: 0x%llx, size: 0x%llx, is_write: %d)\n", offset, size, is_write);
- 
-  int bank_id = (offset >> 2) & _this->bank_mask;
-  uint64_t bank_offset = ((offset >> (_this->stage_bits + 2)) << 2) + (offset & 0x3);
-
-  bank_offset &= ~(1<<(20 - _this->stage_bits));
-
-  if (!is_write)
-  {
-    req->set_addr(bank_offset);
-    vp::io_req_status_e err = _this->out[bank_id]->req_forward(req);
-    if (err != vp::IO_REQ_OK) return err;
-    _this->trace.msg("Sending test-and-set IO req (offset: 0x%llx, size: 0x%llx)\n", offset & ~(1<<20), size);
-    uint64_t ts_data = -1;
-    _this->ts_req.set_addr(bank_offset);
-    _this->ts_req.set_size(size);
-    _this->ts_req.set_is_write(true);
-    _this->ts_req.set_data((uint8_t *)&ts_data);
-    return _this->out[bank_id]->req(&_this->ts_req);
-  }
-
-  req->set_addr(bank_offset);
-  return _this->out[bank_id]->req_forward(req);
-}
-
-int interleaver::build()
-{
+  // std::cout<<"WMEM BUILD"<<std::endl;
 
   traces.new_trace("trace", &trace, vp::DEBUG);
 
-  in.set_req_meth(&interleaver::req);
+  in.set_req_meth(&wmem::req);
   new_slave_port("in", &in);
 
   nb_slaves = get_config_int("nb_slaves");
@@ -135,16 +102,12 @@ int interleaver::build()
   }
 
   masters_in = new vp::io_slave *[nb_masters];
-  masters_ts_in = new vp::io_slave *[nb_masters];
+
   for (int i=0; i<nb_masters; i++)
   {
     masters_in[i] = new vp::io_slave();
-    masters_in[i]->set_req_meth(&interleaver::req);
+    masters_in[i]->set_req_meth(&wmem::req);
     new_slave_port("in_" + std::to_string(i), masters_in[i]);
-
-    masters_ts_in[i] = new vp::io_slave();
-    masters_ts_in[i]->set_req_meth(&interleaver::req_ts);
-    new_slave_port("ts_in_" + std::to_string(i), masters_ts_in[i]);
   }
 
   return 0;
@@ -152,7 +115,5 @@ int interleaver::build()
 
 extern "C" vp::component *vp_constructor(js::config *config)
 {
-  return new interleaver(config);
+  return new wmem(config);
 }
-
-

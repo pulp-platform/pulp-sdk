@@ -23,8 +23,9 @@
 #include <vp/itf/io.hpp>
 #include <vp/itf/wire.hpp>
 #include <stdio.h>
+#include <iostream>
 #include <math.h>
-
+using namespace std;
 class router;
 
 class Perf_counter {
@@ -77,6 +78,7 @@ public:
 
 class io_master_map : public vp::io_master
 {
+  // std::cout<<"ROUTER IO_MASTER_MAP";
 
   inline void bind_to(vp::port *port, vp::config *config);
 
@@ -132,7 +134,7 @@ MapEntry::MapEntry(unsigned long long base, MapEntry *left, MapEntry *right) : n
 void MapEntry::insert(router *router)
 {
   lowestBase = base;
-
+  // std::cout<<"ROUTER MAP ENTRY\n";
   if (size != 0) {
     if (port != NULL || itf != NULL) {    
       MapEntry *current = router->firstMapEntry;
@@ -160,6 +162,7 @@ void MapEntry::insert(router *router)
 
 vp::io_req_status_e router::req(void *__this, vp::io_req *req)
 {
+  // std::cout<<"ROUTER IO_REQ\n";
   router *_this = (router *)__this;
   
   if (!_this->init)
@@ -173,41 +176,52 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
   bool isRead = !req->get_is_write();
   uint64_t size = req->get_size();  
 
+  // std::cout<<"Received IO req offset: 0x"<<std::hex<<offset<<" size: 0x"<<size<<" isRead: "<<isRead<<"\n";
+  // std::cout<<"Before entry print";
   _this->trace.msg(vp::trace::LEVEL_TRACE, "Received IO req (offset: 0x%llx, size: 0x%llx, isRead: %d)\n", offset, size, isRead);
-
+  // std::cout<<"Before entry ";
   if (entry)
   {
     while(1) {
+      // std::cout<<" 0 ";
     // The entry does not have any child, this means we are at a final entry
       if (entry->left == NULL) break;
+      // std::cout<<" 1 ";
 
       if (offset >= entry->base) entry = entry->right;
       else entry = entry->left;
+      // std::cout<<" 2 ";
     }
 
     if (entry && (offset < entry->base || offset > entry->base + entry->size - 1)) {
       entry = NULL;
+      // std::cout<<" 3 ";
     }
   }
 
   if (!entry) {
     if (_this->errorMapEntry && offset >= _this->errorMapEntry->base && offset + size - 1 <= _this->errorMapEntry->base + _this->errorMapEntry->size - 1) {
+      // std::cout<<" 4 ";
     } else {
       entry = _this->defaultMapEntry;
+      // std::cout<<" 5 ";
     }
   }
 
   if (!entry) {
     //_this->trace.msg(&warning, "Invalid access (offset: 0x%llx, size: 0x%llx, isRead: %d)\n", offset, size, isRead);
+    // std::cout<<" 6 ";
     return vp::IO_REQ_INVALID;
   }
-
+  // std::cout<<" 7 ";
   if (entry == _this->defaultMapEntry) {
     _this->trace.msg(vp::trace::LEVEL_TRACE, "Routing to default entry (target: %s)\n", entry->target_name.c_str());
+    // std::cout<<" 8 ";
   } else {
     _this->trace.msg(vp::trace::LEVEL_TRACE, "Routing to entry (target: %s)\n", entry->target_name.c_str());
+    // std::cout<<" 9 ";
   }
-  
+  // std::cout<<" 10 ";
   if (0) { //_this->bandwidth != 0 and !req->is_debug()) {
     
 #if 0
@@ -238,11 +252,15 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
   }
 
   // Forward the request to the target port
-  if (entry->remove_offset) req->set_addr(offset - entry->remove_offset);
+  if (entry->remove_offset){
+     req->set_addr(offset - entry->remove_offset);
+     // std::cout<<"Removed offset"<<(offset - entry->remove_offset)<<std::endl;
+  }
   if (entry->add_offset) req->set_addr(offset + entry->add_offset);
   vp::io_req_status_e result = vp::IO_REQ_OK;
   if (entry->port)
   {
+    // std::cout<<"Entry port"<<std::endl;
     req->arg_push(NULL);
     result = _this->out.req(req, entry->port);
     if (result == vp::IO_REQ_OK)
@@ -250,6 +268,7 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
   }
   else if (entry->itf)
   {
+    // std::cout<<"Entry itf"<<std::endl;
     if (!entry->itf->is_bound())
     {
       _this->warning.msg(vp::trace::LEVEL_WARNING, "Invalid access, trying to route to non-connected interface (offset: 0x%llx, size: 0x%llx, is_write: %d)\n", offset, size, !isRead);
@@ -280,12 +299,13 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
       counter->nb_write++;
 
   }
-
+  // std::cout<<"reached end"<<std::endl;
   return result;
 }
 
 void router::grant(void *__this, vp::io_req *req)
 {
+  // std::cout<<"ROUTER GRANT\n";
   router *_this = (router *)__this;
 
   vp::io_slave *port = (vp::io_slave *)req->arg_pop();
@@ -299,6 +319,7 @@ void router::grant(void *__this, vp::io_req *req)
 
 void router::response(void *_this, vp::io_req *req)
 {
+  // std::cout<<"ROUTER RESPONSE\n";
   vp::io_slave *port = (vp::io_slave *)req->arg_pop();
   if (port != NULL)
     port->resp(req);
@@ -306,6 +327,7 @@ void router::response(void *_this, vp::io_req *req)
 
 int router::build()
 {
+  // std::cout<<"ROUTER BUILD\n";
   traces.new_trace("trace", &trace, vp::DEBUG);
 
   in.set_req_meth(&router::req);
@@ -397,18 +419,21 @@ extern "C" vp::component *vp_constructor(js::config *config)
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
 void router::init_entries() {
-
+  // std::cout<<"ROUTER INIT_ENTRIES\n";
   MapEntry *current = firstMapEntry;
   trace.msg(vp::trace::LEVEL_INFO, "Building router table\n");
   while(current) {
     trace.msg(vp::trace::LEVEL_INFO, "  0x%16llx : 0x%16llx -> %s\n", current->base, current->base + current->size, current->target_name.c_str());
+    // std::cout<<"current->base="<<current->base<<" current->size="<<current->base + current->size<<" current->target_name="<<current->target_name.c_str()<<"\n";
     current = current->next;
   }
   if (errorMapEntry != NULL) {
     trace.msg(vp::trace::LEVEL_INFO, "  0x%16llx : 0x%16llx -> ERROR\n", errorMapEntry->base, errorMapEntry->base + errorMapEntry->size);
+    // std::cout<<"errorMapEntry->base="<<errorMapEntry->base<<" errorMapEntry->size="<<errorMapEntry->base + errorMapEntry->size<<"\n";
   }
   if (defaultMapEntry != NULL) {
     trace.msg(vp::trace::LEVEL_INFO, "       -     :      -     -> %s\n", defaultMapEntry->target_name.c_str());
+    // std::cout<<"defaultMapEntry->target_name="<<defaultMapEntry->target_name.c_str()<<"\n";
   }
 
   MapEntry *firstInLevel = firstMapEntry;
@@ -461,6 +486,7 @@ void router::init_entries() {
 
 inline void io_master_map::bind_to(vp::port *_port, vp::config *config)
 {
+  // std::cout<<"ROUTER IO_MASTER_MAP BIND_TO\n";
   MapEntry *entry = new MapEntry();
   vp::config *conf;
   entry->port = (vp::io_slave *)_port;

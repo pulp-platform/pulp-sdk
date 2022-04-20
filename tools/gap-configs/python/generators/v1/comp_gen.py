@@ -33,6 +33,8 @@ class Interface(object):
     def __init__(self, comp, name):
         self.__dict__['name'] = name
         self.__dict__['comp'] = comp
+        if(name=='enable') :
+            print("Interface is initialized "+str(name))
 
     def get_slave(self):
         return self.comp.get_slave(self.name)
@@ -141,6 +143,8 @@ class Component(object):
         return self.__dict__[name]
 
     def set(self, name, value):
+        # if(name=='enable'):
+            # print("Called set "+str(name))
         self.__setattr__(name, value)
 
     def new_itf(self, name):
@@ -149,7 +153,11 @@ class Component(object):
         return itf
 
     def __setattr__(self, name, value):
+        # if(name=='enable'):
+            # print('before __setattr__')
         if type(value) == Interface:
+            # if(name=='enable'):
+                # print("Called __setattr__"+name)
             if self.__dict__['_Component__master_itfs'].get(name) is None:
                 self.__dict__['_Component__master_itfs'][name] = []
 
@@ -158,7 +166,11 @@ class Component(object):
             self.add_component(name, value)
 
     def __getattr__(self, name):
+        # if(name=='enable'):
+            # print('before __getattr__')
         if self.__dict__.get(name) is None:
+            # if(name=='enable'):
+            #     print('after __getattr__')
             itf = Interface(self, name)
             self.__dict__['_Component__slave_itfs'][name] = itf
             return itf
