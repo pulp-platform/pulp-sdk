@@ -152,8 +152,21 @@ int test_entry() {
   printf("Weight start ptr=%x\n",weight_start_ptr);
   printf("NEUREKA WEIGHTS=%x\n", neureka_weights);
   // memcpy((uint32_t*)neureka_weights,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
+  volatile uint32_t read_value = 0x0;
+  printf("______________________BEFORE COPY_________________________\n");
+  for(volatile int i=0; i<10; i++){
+    read_value = pulp_read32(WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
+    printf("Memory read value = %x, at address = %x\n", read_value, WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
+  }
   memcpy(weight_start_ptr,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
+  // pulp_write32(WEIGHT_MEM_BASE+MRAM_OFFSET+20, 0xF0FFAFFF);
   printf("Memcpy id Done!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  printf("______________________AFTER COPY_________________________\n");
+  for(volatile int i=0; i<10; i++){
+    read_value = pulp_read32(WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
+    printf("Memory read value = %x, at address = %x\n", read_value, WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
+  }
+  printf("Memcpy read is successful\n");
   int errors = 0;
   // int errors = launch_cluster_task();
   // if (errors)
