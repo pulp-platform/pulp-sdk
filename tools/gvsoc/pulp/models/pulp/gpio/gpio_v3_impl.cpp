@@ -224,7 +224,6 @@ vp::io_req_status_e Gpio::req(void *__this, vp::io_req *req)
   if (err != vp::IO_REQ_OK)
     goto error; 
 
-
   return vp::IO_REQ_OK;
 
 error:

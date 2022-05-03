@@ -1341,7 +1341,7 @@ vp::component *vp::component::new_component(std::string name, js::config *config
     {
         this->throw_error("ERROR, Failed to open periph model (module: " + module_name + ", error: " + std::string(dlerror()) + ")");
     }
-    // std::cout<<"VP CONSTRUCTOR NAME="<<name<<" MODULE_NAME="<<module_name<<"\n";
+
     vp::component *(*constructor)(js::config *) = (vp::component * (*)(js::config *)) dlsym(module, "vp_constructor");
     if (constructor == NULL)
     {
