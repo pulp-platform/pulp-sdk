@@ -1,6 +1,6 @@
 #define STIM_W_SIZE 2112
 // weights [33 x 2 x 8 x 4]
-uint8_t __attribute__((section(".heapsram"))) neureka_weights[] = {
+uint8_t __attribute__((section(".heapl2ram"))) neureka_weights[] = {
   0x6c,
   0x7f,
   0xe9,
