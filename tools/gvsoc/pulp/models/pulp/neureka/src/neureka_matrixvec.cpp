@@ -325,7 +325,7 @@ int Neureka::matrixvec_cycle() {
   auto k_out = this->depthwise ? this->dw_iter : this->mv_k_out_iter;
   // load and unpack weight bits
   int64_t cycles = 0;
-  xt::xarray<uint8_t> weight_ld = vld_W.ex(read_size*(this->TP_IN/8), true, cycles); // each packet is composed of read_size x 16 bit
+  xt::xarray<uint8_t> weight_ld = vld_W.ex(read_size*(this->TP_IN/8), this->weight_demux, cycles); // each packet is composed of read_size x 16 bit
   auto shape = xt::adapt(weight_ld.shape());
 
   xt::xarray<uint8_t> weight_ld_transform = (this->fs == 3) ? __Weight_transform_28(weight_ld) : __Weight_transform_1x1(weight_ld);

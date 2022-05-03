@@ -216,7 +216,8 @@ void Neureka::regfile_cxt() {
         this->streamin = ((value >> 14) & 0x1) ? true : false;
         // [13:12] normalization bits (00=8-bits, 01=16-bits, 10=32-bits)
         this->normalization_bits = 8 << ((value >> 12) & 0x3);
-        // [11:9] reserved
+        // [9] weight_demux -> if set to 1, weight is fetched from the wmem else it is fetched from L1
+        this->weight_demux       = ((value >> 9) & 0x1) ? true : false; 
         // [8] strided 2x2 mode (0=normal operation, 1=strided mode)
         this->strided2x2 = ((value >> 8) & 0x1) ? true : false;
         // [7] linear mode (0=normal operation, 1=linear mode)
