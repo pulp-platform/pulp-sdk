@@ -79,7 +79,7 @@ void Neureka::load_setup() {
       this->load_k_in_lim = this->subtile_rem_ki;
       this->load_padding = {0, static_cast<uint32_t>(this->TP_IN-this->subtile_rem_ki)};
     }
-    // std::cout<<"Ending load"<<std::endl;
+
     this->load_i_fbuf = 0;
     this->load_j_fbuf = 0;
   }
@@ -102,13 +102,13 @@ void Neureka::load_setup() {
 
 int Neureka::load_cycle() { // not linear
   int64_t cycles = 0;
-  xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, xt::all()) = xt::pad(this->vld_x.ex(this->load_k_in_lim, cycles), this->load_padding);
+  xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, xt::all()) = xt::pad(this->vld_x.ex(this->load_k_in_lim, false, cycles), this->load_padding);
   return (int) cycles;
 }
 
 int Neureka::load_cycle_linear() {
   int64_t cycles = 0;
-  auto x = xt::pad(this->vld_x.ex(this->TP_IN, cycles), this->load_padding);
+  auto x = xt::pad(this->vld_x.ex(this->TP_IN, false, cycles), this->load_padding);
   xt::view(this->x_buffer_linear, this->load_i_fbuf, xt::all()) = x;
   return (int) cycles;
 }
