@@ -98,7 +98,7 @@ int Neureka::streamin_cycle() {
     k_out_last = k_out_last < this->subtile_rem_ko ? k_out_last : this->subtile_rem_ko;
   }
   if(this->col_enable(this->streamin_i_out_iter, this->streamin_j_out_iter)) {
-    xx = this->vld_streamin.ex((k_out_last-this->streamin_k_out_iter*8)*4, cycles);
+    xx = this->vld_streamin.ex((k_out_last-this->streamin_k_out_iter*8)*4, false, cycles);
   }
   for (auto i=this->streamin_k_out_iter*8; i<k_out_last; i++) {
     xt::view(this->accum, i, this->streamin_i_out_iter*this->H_SIZE+this->streamin_j_out_iter) = 
