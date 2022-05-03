@@ -323,6 +323,7 @@ private:
     bool mode16;
     bool mode_linear;
     bool strided2x2;
+    bool weight_demux;
     int qw;
     bool depthwise;
 
