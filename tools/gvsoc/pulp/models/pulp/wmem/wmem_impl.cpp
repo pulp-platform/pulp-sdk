@@ -57,12 +57,12 @@ wmem::wmem(js::config *config)
 
 vp::io_req_status_e wmem::req(void *__this, vp::io_req *req)
 {
-  // std::cout<<"IO request in wmem received"<<std::endl;
   wmem *_this = (wmem *)__this;
   uint64_t offset = req->get_addr();
   bool is_write = req->get_is_write();
   uint64_t size = req->get_size();
   uint8_t *data = req->get_data();
+
 
   _this->trace.msg("Received IO req (offset: 0x%llx, size: 0x%llx, is_write: %d)\n", offset, size, is_write);
  
@@ -76,7 +76,6 @@ vp::io_req_status_e wmem::req(void *__this, vp::io_req *req)
 
 int wmem::build()
 {
-  // std::cout<<"WMEM BUILD"<<std::endl;
 
   traces.new_trace("trace", &trace, vp::DEBUG);
 
