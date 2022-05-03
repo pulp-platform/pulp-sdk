@@ -160,7 +160,7 @@ class NeurekaVectorLoad : public NeurekaStreamAccess {
       bool debug
     );
     NeurekaVectorLoad();
-    xt::xarray<T> ex(int width, int64_t& cycles);
+    xt::xarray<T> ex(int width, bool w_demux, int64_t& cycles);
     void foo();
 };
 
