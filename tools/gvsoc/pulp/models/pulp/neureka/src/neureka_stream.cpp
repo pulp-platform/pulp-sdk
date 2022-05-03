@@ -158,7 +158,7 @@ NeurekaVectorLoad<T>::NeurekaVectorLoad() : NeurekaStreamAccess((Neureka *) NULL
 }
 
 template <class T>
-xt::xarray<T> NeurekaVectorLoad<T>::ex(int width, int64_t& cycles) {
+xt::xarray<T> NeurekaVectorLoad<T>::ex(int width, bool w_demux, int64_t& cycles) {
   auto addr = this->iterate();
   uint8_t load_data[STREAM_MAX_WIDTH_BYTES];
   auto width_padded = width + 4;
@@ -166,13 +166,20 @@ xt::xarray<T> NeurekaVectorLoad<T>::ex(int width, int64_t& cycles) {
   auto width_words = width_padded*sizeof(T)/4;
   auto width_rem   = width_padded*sizeof(T)%4;
   int64_t max_latency = 0;
+  
   for(auto i=0; i<width_words; i++) {
     this->neureka->io_req.init();
-    this->neureka->io_req.set_addr(addr_padded+i*4 & NE16_STREAM_L1_MASK);
+    if(w_demux==true)
+      this->neureka->io_req.set_addr(addr_padded+i*4);
+    else 
+      this->neureka->io_req.set_addr(addr_padded+i*4 & NE16_STREAM_L1_MASK);
+    std::cout<<"Calculated Address = "<<std::hex<<this->neureka->io_req.get_addr()<<std::endl;
     this->neureka->io_req.set_size(4);
     this->neureka->io_req.set_data(load_data+i*4);
     this->neureka->io_req.set_is_write(false);
-    int err = this->neureka->out.req(&this->neureka->io_req);
+    int err = (w_demux==true) ? this->neureka->wmem_out.req(&this->neureka->io_req) : this->neureka->out.req(&this->neureka->io_req);
+    std::cout<<err<<std::endl;
+    
     if (err == vp::IO_REQ_OK) {
       int64_t latency = this->neureka->io_req.get_latency();
       if (latency > max_latency) {
@@ -189,7 +196,7 @@ xt::xarray<T> NeurekaVectorLoad<T>::ex(int width, int64_t& cycles) {
     this->neureka->io_req.set_size(width_rem);
     this->neureka->io_req.set_data(load_data+width_words*4);
     this->neureka->io_req.set_is_write(false);
-    int err = this->neureka->out.req(&this->neureka->io_req);
+    int err = (w_demux==true) ? this->neureka->wmem_out.req(&this->neureka->io_req) : this->neureka->out.req(&this->neureka->io_req);
     if (err == vp::IO_REQ_OK) {
       // int64_t latency = this->neureka->io_req.get_latency();
       // if (latency > max_latency) {
