@@ -173,12 +173,11 @@ xt::xarray<T> NeurekaVectorLoad<T>::ex(int width, bool w_demux, int64_t& cycles)
       this->neureka->io_req.set_addr(addr_padded+i*4);
     else 
       this->neureka->io_req.set_addr(addr_padded+i*4 & NE16_STREAM_L1_MASK);
-    std::cout<<"Calculated Address = "<<std::hex<<this->neureka->io_req.get_addr()<<std::endl;
+    
     this->neureka->io_req.set_size(4);
     this->neureka->io_req.set_data(load_data+i*4);
     this->neureka->io_req.set_is_write(false);
     int err = (w_demux==true) ? this->neureka->wmem_out.req(&this->neureka->io_req) : this->neureka->out.req(&this->neureka->io_req);
-    std::cout<<err<<std::endl;
     
     if (err == vp::IO_REQ_OK) {
       int64_t latency = this->neureka->io_req.get_latency();
