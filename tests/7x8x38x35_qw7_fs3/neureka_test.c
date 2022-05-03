@@ -18,6 +18,7 @@
  * Authors:  Francesco Conti <fconti@iis.ee.ethz.ch>
  *           Gianna Paulin <pauling@iis.ee.ethz.ch>
  *           Renzo Andri <andrire@iis.ee.ethz.ch>
+ *           Arpan Suravi Prasad <prasadar@iis.ee.ethz.ch>
  * Main Test Program for the NEUREKA
  */
 
@@ -40,10 +41,13 @@
 
 static int glob_errors;
 
+#define WEIGHT_MEM_BASE 0x10400000
+#define SRAM_OFFSET 0x00400000
+#define MRAM_OFFSET 0x00000000
+
 int run_test() {
 
   uint8_t* x        = neureka_infeat;
-  uint8_t* W        = neureka_weights;
   uint8_t* nq       = neureka_scale;
   uint8_t* nqs      = neureka_scale_shift;
   uint8_t* nqb      = neureka_scale_bias;
@@ -63,22 +67,18 @@ int run_test() {
   for(volatile int kk=0; kk<10; kk++);
 
   // program NEUREKA
-  NEUREKA_WRITE_REG(NEUREKA_REG_WEIGHTS_PTR,     W);
-  printf("_______________________REG0________________________\n");
+  
+  NEUREKA_WRITE_REG(NEUREKA_REG_WEIGHTS_PTR,     WEIGHT_MEM_BASE+MRAM_OFFSET);
   NEUREKA_WRITE_REG(NEUREKA_REG_INFEAT_PTR,      x);
-  printf("_______________________REG1________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_OUTFEAT_PTR,     actual_y);
-  printf("_______________________REG2________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_SCALE_PTR,       nq);
-  printf("_______________________REG3________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_SCALE_SHIFT_PTR, nqs);
-  printf("_______________________REG4________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_SCALE_BIAS_PTR,  nqb);
-  printf("_______________________REG5________________________\n");
+
   for(int i=6; i<24; i++) {
     NEUREKA_WRITE_REG(i*4, neureka_cfg[i]);
   }
-  printf("_______________________REG DONE________________________\n");
+
   // configure & reset perf counters
   pi_perf_conf(1 << PI_PERF_CYCLES);
   pi_perf_reset();
@@ -141,8 +141,12 @@ static int launch_cluster_task() {
 }
 
 int test_entry() {
-  printf("Starting test\n");
-  int errors = launch_cluster_task();
+  uint8_t* W        = neureka_weights;
+  uint32_t* weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET; 
+
+  memcpy(weight_start_ptr,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
+
+  volatile int errors = launch_cluster_task();
   if (errors)
     printf("Test failure\n");
   else
