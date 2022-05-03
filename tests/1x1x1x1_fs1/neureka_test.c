@@ -140,7 +140,6 @@ static int launch_cluster_task() {
 }
 
 int test_entry() {
-  printf("Starting test\n");
   uint8_t* W        = neureka_weights;
   uint32_t* weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET; 
 
