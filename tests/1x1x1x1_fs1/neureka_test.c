@@ -30,7 +30,6 @@
 #include "inc/neureka_cfg.h"
 #include "inc/neureka_infeat.h"
 #include "inc/neureka_weights.h"
-// #include "inc/neureka_weights_28.h"
 #include "inc/neureka_scale.h"
 #include "inc/neureka_scale_bias.h"
 #include "inc/neureka_scale_shift.h"
@@ -48,7 +47,6 @@ static int glob_errors;
 int run_test() {
 
   uint8_t* x        = neureka_infeat;
-  uint8_t* W        = neureka_weights;
   uint8_t* nq       = neureka_scale;
   uint8_t* nqs      = neureka_scale_shift;
   uint8_t* nqb      = neureka_scale_bias;
@@ -68,22 +66,18 @@ int run_test() {
   for(volatile int kk=0; kk<10; kk++);
 
   // program NEUREKA
-  NEUREKA_WRITE_REG(NEUREKA_REG_WEIGHTS_PTR,     W);
-  printf("_______________________REG0________________________\n");
+  
+  NEUREKA_WRITE_REG(NEUREKA_REG_WEIGHTS_PTR,     WEIGHT_MEM_BASE+MRAM_OFFSET);
   NEUREKA_WRITE_REG(NEUREKA_REG_INFEAT_PTR,      x);
-  printf("_______________________REG1________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_OUTFEAT_PTR,     actual_y);
-  printf("_______________________REG2________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_SCALE_PTR,       nq);
-  printf("_______________________REG3________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_SCALE_SHIFT_PTR, nqs);
-  printf("_______________________REG4________________________\n");
   NEUREKA_WRITE_REG(NEUREKA_REG_SCALE_BIAS_PTR,  nqb);
-  printf("_______________________REG5________________________\n");
+
   for(int i=6; i<24; i++) {
     NEUREKA_WRITE_REG(i*4, neureka_cfg[i]);
   }
-  printf("_______________________REG DONE________________________\n");
+
   // configure & reset perf counters
   pi_perf_conf(1 << PI_PERF_CYCLES);
   pi_perf_reset();
@@ -149,30 +143,14 @@ int test_entry() {
   printf("Starting test\n");
   uint8_t* W        = neureka_weights;
   uint32_t* weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET; 
-  printf("Weight start ptr=%x\n",weight_start_ptr);
-  printf("NEUREKA WEIGHTS=%x\n", neureka_weights);
-  // memcpy((uint32_t*)neureka_weights,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
-  volatile uint32_t read_value = 0x0;
-  printf("______________________BEFORE COPY_________________________\n");
-  for(volatile int i=0; i<10; i++){
-    read_value = pulp_read32(WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
-    printf("Memory read value = %x, at address = %x\n", read_value, WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
-  }
+
   memcpy(weight_start_ptr,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
-  // pulp_write32(WEIGHT_MEM_BASE+MRAM_OFFSET+20, 0xF0FFAFFF);
-  printf("Memcpy id Done!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-  printf("______________________AFTER COPY_________________________\n");
-  for(volatile int i=0; i<10; i++){
-    read_value = pulp_read32(WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
-    printf("Memory read value = %x, at address = %x\n", read_value, WEIGHT_MEM_BASE+MRAM_OFFSET+i*4);
-  }
-  printf("Memcpy read is successful\n");
-  int errors = 0;
-  // int errors = launch_cluster_task();
-  // if (errors)
-  //   printf("Test failure\n");
-  // else
-  //   printf("Test success\n");
+
+  volatile int errors = launch_cluster_task();
+  if (errors)
+    printf("Test failure\n");
+  else
+    printf("Test success\n");
   return errors;
 }
 
