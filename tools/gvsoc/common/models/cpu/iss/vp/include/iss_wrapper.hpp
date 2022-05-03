@@ -205,7 +205,7 @@ void iss_wrapper::exec_misaligned(void *__this, vp::clock_event *event)
   // wrapper, we need to account the extra access here.
   _this->cpu.state.insn_cycles++;
   iss_pccr_account_event(_this, CSR_PCER_LD, 1);
-  // std::cout<<"iss_wrapper::exec_misaligned\n";
+
   if (_this->data_req_aligned(_this->misaligned_addr, _this->misaligned_data,
     _this->misaligned_size, _this->misaligned_is_write) == vp::IO_REQ_OK)
   {
@@ -229,7 +229,7 @@ inline int iss_wrapper::data_req_aligned(iss_addr_t addr, uint8_t *data_ptr, int
   req->set_is_write(is_write);
   req->set_data(data_ptr);
   int err = data.req(req);
-  // std::cout<<"Access (pc: 0x"<<std::hex<<this->cpu.current_insn->addr<<", offset: 0x"<<addr<<", size: 0x"<<size<<", is_write: "<<is_write<<")\n";
+
   if (err == vp::IO_REQ_OK) 
   {
     this->cpu.state.insn_cycles += req->get_latency();
@@ -248,7 +248,7 @@ inline int iss_wrapper::data_req(iss_addr_t addr, uint8_t *data_ptr, int size, b
 
   iss_addr_t addr0 = addr & ADDR_MASK;
   iss_addr_t addr1 = (addr + size - 1) & ADDR_MASK;
-  // std::cout<<"iss_wrapper::data_req\n";
+
   if (likely(addr0 == addr1))
     return data_req_aligned(addr, data_ptr, size, is_write);
   else

@@ -452,7 +452,6 @@ int iss_wrapper::data_misaligned_req(iss_addr_t addr, uint8_t *data_ptr, int siz
   misaligned_addr = addr1;
   misaligned_is_write = is_write;
 
-  // std::cout<<"iss_wrapper::data_misaligned_req\n";
 
   // And do the first one now
   int err = data_req_aligned(addr, data_ptr, size0, is_write);
