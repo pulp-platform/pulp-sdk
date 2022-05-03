@@ -185,7 +185,6 @@ void Neureka::regfile_cxt() {
         this->padding_bottom = (value >> 20) & 0xf;
         this->padding_left   = (value >> 16) & 0xf;
         this->padding_value  = value & 0xffff;
-        // std::cout<<"Padding value from the register "<<this->padding_top<<","<<this->padding_right<<","<<this->padding_bottom<<","<<this->padding_left<<","<<this->padding_value<<std::endl;
         break;
 
       case NEUREKA_REG_WEIGHT_OFFSET:
