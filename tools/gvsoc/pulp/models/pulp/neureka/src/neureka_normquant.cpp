@@ -41,7 +41,7 @@ void Neureka::normquant_shift_setup() {
 
 int  Neureka::normquant_shift_cycle() {
   int64_t cycles = 0;
-  xt::view(this->nqs, xt::all()) = this->vld_nqs.ex(this->TP_OUT, cycles);
+  xt::view(this->nqs, xt::all()) = this->vld_nqs.ex(this->TP_OUT, false, cycles);
   return (int) cycles;
 }
 
@@ -73,7 +73,7 @@ void Neureka::normquant_mult_setup() {
 
 int  Neureka::normquant_mult_cycle() {
   int64_t cycles = 0;
-  xt::xarray<uint8_t> nq = this->vld_nq.ex(4, cycles);
+  xt::xarray<uint8_t> nq = this->vld_nq.ex(4, false, cycles);
   // FIXME casting --> 1) load NQS; 2) load NQ and compute MULT; 3) load NQB and compute shift+bias
   if(this->normalization_bits == 8) {
     auto nmult = 4;
@@ -145,7 +145,7 @@ int  Neureka::normquant_bias_cycle() {
   int64_t cycles = 0;
   xt::xarray<int32_t> nqb32 = xt::zeros<int32_t>({8});
   if(this->norm_option_bias) {
-    xt::xarray<uint8_t> nqb = this->vld_nqb.ex(32, cycles);
+    xt::xarray<uint8_t> nqb = this->vld_nqb.ex(32, false, cycles);
     for(auto i=0; i<8; i++) {
       xt::view(nqb32, i) = xt::cast<int32_t>(xt::view(nqb, i*4) + (xt::view(nqb, i*4+1) << 8) + (xt::view(nqb, i*4+2) << 16) + (xt::view(nqb, i*4+3) << 24));
     }
