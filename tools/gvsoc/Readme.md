@@ -3,7 +3,6 @@
 git clone git@github.com:pulp-platform/pulp-riscv-gnu-toolchain.git
 ```
 Tag used is v1.0.16
-
 # Set the following path variables 
 export PATH=/scratch/prasadar/v1.0.16-pulp-riscv-gcc-centos-7:$PATH
 export PULP_RISCV_GCC_TOOLCHAIN=/scratch/prasadar/v1.0.16-pulp-riscv-gcc-centos-7
