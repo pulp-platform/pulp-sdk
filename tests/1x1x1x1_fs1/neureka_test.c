@@ -146,6 +146,7 @@ int test_entry() {
   memcpy(weight_start_ptr,(uint32_t*)neureka_weights,sizeof(neureka_weights)); 
 
   volatile int errors = launch_cluster_task();
+  
   if (errors)
     printf("Test failure\n");
   else
