@@ -193,13 +193,48 @@ void Neureka::regfile_cxt() {
 
       case NEUREKA_REG_FILTER_MASK:
         // this->filter_mask_config = value;
-        this->filter_mask_top    = (value) & 0x1ff;//<----------FIX ME
+        this->filter_mask_top    = ((value) & 0x1FF);//<----------FIX ME
         // this->filter_mask_right  = (value >> 16) & 0xff;
         // this->filter_mask_bottom = (value >> 8) & 0xff;
         // this->filter_mask_left   = value & 0xff;
-        break;
+        // this->filter_mask_top    = ((value) & 0b1) & (((value) & 0b10)>>1)  & (((value) & 0b100)>>2);
+        // this->filter_mask_bottom    = (((value) & 0b1000000) >> 6) & (((value) & 0b10000000)>>7)  & (((value) & 0b100000000)>>8);
+        // this->filter_mask_left    = ((value) & 0b1) & (((value) & 0b1000)>>3)  & (((value) & 0b1000000)>>6);
+        // this->filter_mask_right    = (((value) & 0b100) >> 2) & (((value) & 0b100000)>>5)  & (((value) & 0b100000000)>>8);
+        // std::cout<<"FILTER MASK TOP"<<this->filter_mask_top<<std::endl;
+        // std::cout<<"FILTER MASK BOTTOM"<<this->filter_mask_bottom<<std::endl;
+        // std::cout<<"FILTER MASK LEFT"<<this->filter_mask_left<<std::endl;
+        // std::cout<<"FILTER MASK RIGHT"<<this->filter_mask_right<<std::endl;
+        // std::cout<<"VALUE = "<<std::hex<<value<<std::endl;
 
+        break;
+/*
+ cfg[NE16_REG_CONFIG0]           = bits(0, 31, 31) |
+                                    bits(8, 27, 30) |
+                                    bits(this->signed_activation ? 1:0, 26, 26) | 
+                                    bits(this->norm_option_bias ? 1 : 0, 25, 25) |
+                                    bits(this->norm_option_shift ? 1 : 0, 24, 24) |
+                                    bits(this->use_relu ? 0 : 1, 23, 23) |
+                                    bits(this->quantization_bits >> 4, 21, 22) |
+                                    bits(this->shift_reqnt(0), 16, 20) |
+                                    bits(0, 15, 15) | // FIXME UNUSED
+                                    bits(this->streamin ? 1 : 0, 14, 14) |
+                                    bits(this->normalization_bits >> 4, 12, 13) |
+                                    bits(this->use_rounding ? 0 : 1, 11, 11) |
+                                    bits(0, 8, 10)  | // FIXME reserved for padding flags --> UNUSED
+                                    bits(this->mode_linear ? 1 : 0, 7, 7) |
+                                    bits(filter_mode, 5, 6) |
+                                    bits(this->output_quant, 4, 4) |
+                                    bits(this->mode16 ? 1 : 0, 3, 3) |
+                                    bits(this->qw-1, 0, 2) |
+                                    bits(this->activation_prefetch ? 1:0,10,10)|
+                                    bits(this->weight_demux ? 1:0,9,9);// weight_demux
+
+*/
       case NEUREKA_REG_CONFIG0:
+        // [26] signed_activation 
+        this->signed_activation = ((value >> 26) & 0x1) ? true : false;
+        std::cout<<"SIGNED ACTIVATION="<<this->signed_activation<<"\n";
         // [25] norm option bias (0=do not load bias; 1=load bias)
         this->norm_option_bias = ((value >> 25) & 0x1) ? true : false;
         // [24] norm option shift (0=use quantization right shift; 1=load with norm)
@@ -219,7 +254,7 @@ void Neureka::regfile_cxt() {
         // [9] weight_demux -> if set to 1, weight is fetched from the wmem else it is fetched from L1
         this->weight_demux       = ((value >> 9) & 0x1) ? true : false; 
         // [8] strided 2x2 mode (0=normal operation, 1=strided mode)
-        this->strided2x2 = ((value >> 8) & 0x1) ? true : false;
+        this->strided2x2 = ((value >> 8) & 0x1) ? true : false; // Check the config regs
         // [7] linear mode (0=normal operation, 1=linear mode)
         this->mode_linear = ((value >> 7) & 0x1) ? true : false;
         // [6:5] filter mode (11=reserved, 10=1x1, 01=3x3 depthwise, 00=3x3)

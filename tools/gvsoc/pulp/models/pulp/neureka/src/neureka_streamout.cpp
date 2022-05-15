@@ -71,15 +71,21 @@ void Neureka::streamout_setup() {
 
   // relu is here because of easier modeling
   if(this->quantization_bits == 8) {
+    // std::cout<<"INSIDE QUANT 0 "<<this->use_relu<<std::endl;
     if(this->use_relu) {
       xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 255);
+      // std::cout<<"INSIDE QUANT 1 "<<this->use_relu<<std::endl;
     }
     else {
+      // std::cout<<std::hex<<xt::view(this->accum, xt::all())<<std::endl;
       xt::view(this->accum, xt::all()) = xt::clip(this->accum, -128, 127);
+      // std::cout<<"INSIDE QUANT 2 "<<this->use_relu<<std::endl;
+      // std::cout<<std::hex<<xt::view(this->accum, xt::all())<<std::endl;
     }
   }
   else if(this->use_relu) {
     xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 0xffffffff);
+    // std::cout<<"INSIDE QUANT 3 "<<this->use_relu<<std::endl;
   }
   if(this->accum_traces) {
     this->debug_accum();
