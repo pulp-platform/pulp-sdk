@@ -48,3 +48,4 @@ void Neureka::debug_psum_block(){
   std::string copyOfStr = stringStream.str();
   this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
 }
+

@@ -116,7 +116,7 @@ xt::xarray<uint8_t> __WeightUnpack(
 
 xt::xarray<int64_t> __BinConvBlock(
   xt::xarray<uint8_t> w,
-  xt::xarray<uint8_t> x,
+  xt::xarray<int8_t> x,
   int scale=0,
   int TP_IN=32,
   bool mode16=false

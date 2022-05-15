@@ -315,6 +315,7 @@ private:
     int quantization_right_shift;
     bool use_relu;
     bool streamin;
+    bool signed_activation;
     // int filter_mask_config;
     int filter_mask_top;
     int filter_mask_right;
@@ -344,9 +345,9 @@ private:
     xt::xarray<int64_t> psum_column; // partial sums at the output of a BinConv Column (no actual storage in NEUREKA)
     xt::xarray<int64_t> accum;       // accumulators (*actual storage* in NEUREKA)
     xt::xarray<int64_t> accum_save;
-    xt::xarray<uint8_t> x_buffer;    // feature buffer (*actual storage* in NEUREKA)
-    xt::xarray<uint8_t> x_buffer_linear; // feature buffer (*actual storage* in NEUREKA -- representation for linear case)
-    xt::xarray<uint8_t> x_array;     // reordered feature array (no actual storage in NEUREKA)
+    xt::xarray<int8_t> x_buffer;    // feature buffer (*actual storage* in NEUREKA)
+    xt::xarray<int8_t> x_buffer_linear; // feature buffer (*actual storage* in NEUREKA -- representation for linear case)
+    xt::xarray<int8_t> x_array;     // reordered feature array (no actual storage in NEUREKA)
     xt::xarray<uint8_t> weight;      // input weight stream
 
     // CLEAR
