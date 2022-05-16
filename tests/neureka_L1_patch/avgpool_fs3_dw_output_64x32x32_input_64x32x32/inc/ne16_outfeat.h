@@ -1,4 +1,4 @@
-// #define STIM_Y_SIZE 65536
+// #define STIM_Y_SIZE_AVGPOOL 65536
 // // outfeat [32 x 32 x 64]
 // uint8_t ne16_outfeat_avgpool[] = {
 //   0xe7,
