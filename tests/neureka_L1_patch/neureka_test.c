@@ -68,6 +68,7 @@
 #include "stride2_fs1_output_32x16x16_input_64x32x32/inc/ne16_scale_bias.h"
 #include "stride2_fs1_output_32x16x16_input_64x32x32/inc/ne16_scale_shift.h"
 #include "stride2_fs1_output_32x16x16_input_64x32x32/inc/ne16_streamin.h"
+#include "stride2_fs1_output_32x16x16_input_64x32x32/inc/ne16_outfeat.h"
 
 
 #define NB_ITER 10
@@ -148,8 +149,9 @@ int run_test() {
 
   // start perf counter
   pi_perf_start();
-/*
+
   NEUREKA_WRITE_CMD(NEUREKA_COMMIT_AND_TRIGGER, NEUREKA_TRIGGER_CMD);
+  // printf("TRIGGERED NEUREKA \n");
   
 
   NEUREKA_BARRIER_ACQUIRE(job_id);
@@ -199,7 +201,7 @@ int run_test() {
     NEUREKA_WRITE_REG(i*4, ne16_cfg_streamin[i]);
   }
   NEUREKA_WRITE_CMD(NEUREKA_COMMIT_AND_TRIGGER, NEUREKA_TRIGGER_CMD);
-*/
+
   // wait on barrier
   NEUREKA_BARRIER();
 
@@ -211,9 +213,9 @@ int run_test() {
 
   printf("%d cycles\n", pi_perf_read(PI_PERF_CYCLES));
 
-  // int errors = neureka_compare_int(actual_y, golden_y, STIM_Y_SIZE/4);
-  // return errors;
-  return 0;
+  int errors = neureka_compare_int(actual_y1, ne16_outfeat_streamin, STIM_Y_SIZE_STREAMIN/4);
+  return errors;
+  // return 0;
 }
 
 static struct pi_cluster_task task[1];
@@ -258,18 +260,24 @@ int test_entry() {
 
   uint32_t* weight_start_ptr = WEIGHT_MEM_BASE; 
   memcpy(weight_start_ptr,(uint32_t*)ne16_weights_avgpool,sizeof(ne16_weights_avgpool));
+
+  printf("DONE MEMCPY 0\n");
   
   weight_start_ptr = WEIGHT_MEM_BASE+SRAM_OFFSET+sizeof(ne16_weights_avgpool); 
   memcpy(weight_start_ptr,(uint32_t*)ne16_weights_no_normquant,sizeof(ne16_weights_no_normquant));
+  printf("DONE MEMCPY 1\n");
   
   weight_start_ptr = WEIGHT_MEM_BASE+SRAM_OFFSET+sizeof(ne16_weights_no_normquant)+sizeof(ne16_weights_avgpool); 
   memcpy(weight_start_ptr,(uint32_t*)ne16_weights_streamin,sizeof(ne16_weights_streamin));
+  printf("DONE MEMCPY 2\n");
 
   weight_start_ptr = WEIGHT_MEM_BASE+SRAM_OFFSET+sizeof(ne16_weights_no_normquant)+sizeof(ne16_weights_avgpool)+sizeof(ne16_weights_streamin); 
   memcpy(weight_start_ptr,(uint32_t*)ne16_weights_stride2,sizeof(ne16_weights_stride2));
+  printf("DONE MEMCPY 3\n");
 
   weight_start_ptr = WEIGHT_MEM_BASE+SRAM_OFFSET+sizeof(ne16_weights_no_normquant)+sizeof(ne16_weights_avgpool)+sizeof(ne16_weights_stride2)+sizeof(ne16_weights_streamin); 
   memcpy(weight_start_ptr,(uint32_t*)ne16_weights_padding,sizeof(ne16_weights_padding));
+  printf("DONE MEMCPY 4\n");
 
 
   volatile int errors = launch_cluster_task();

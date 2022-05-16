@@ -1,6 +1,6 @@
 // #define STIM_Y_SIZE 8192
 // // outfeat [16 x 16 x 32]
-// uint8_t ne16_outfeat_stride2[] = {
+// PI_L2 uint8_t ne16_outfeat_stride2[] = {
 //   0x7f,
 //   0x80,
 //   0x80,
