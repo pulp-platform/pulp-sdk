@@ -32,7 +32,7 @@
 
 // the NE16 can only access L1 memory in the range 0xY000_0000 -- 0xY001_FFFC, where Y=1 or 0
 // in the model, Y is ignored
-#define NE16_STREAM_L1_MASK 0x0007FFFF
+#define NE16_STREAM_L1_MASK 0x0003FFFF
 
 NeurekaStreamAccess::NeurekaStreamAccess(
   Neureka *neureka,
