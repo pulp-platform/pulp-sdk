@@ -31,6 +31,7 @@ def get_config(tp, cluster_id):
   has_hwacc         = tp.get('cluster/peripherals/hwacc') is not None
   has_ima           = tp.get('cluster/peripherals/ima') is not None
   has_ne16          = tp.get('cluster/peripherals/ne16') is not None
+  has_redMule       = tp.get('cluster/peripherals/redMule') is not None
   dma_irq_0         = tp.get('cluster/pe/irq').get_dict().index('dma_0')
   dma_irq_1         = tp.get('cluster/pe/irq').get_dict().index('dma_1')
   dma_irq_ext       = tp.get('cluster/pe/irq').get_dict().index('dma_ext')
@@ -53,9 +54,12 @@ def get_config(tp, cluster_id):
 
   if has_ima:
     ima_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
-
+  
   if has_ne16:
     ne16_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+  
+  if has_redMule:
+    redMule_irq     = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
   core_conf = js.import_config_from_file("ips/riscv/%s.json" % cluster_core, find=True)
 
@@ -152,6 +156,11 @@ def get_config(tp, cluster_id):
       ("ne16", get_mapping_area(tp.get_child_dict("cluster/peripherals/ne16"), cluster_size, cluster_id, True))
     ]))
 
+  if has_redMule:
+    periph_ico_mappings.update(OrderedDict([
+      ("redMule", get_mapping_area(tp.get_child_dict("cluster/peripherals/redMule"), cluster_size, cluster_id, True))
+    ]))
+
   cluster.periph_ico = Component(properties=OrderedDict([
     ('@includes@', ["ips/interco/router.json"]),
     ('mappings', periph_ico_mappings)
@@ -226,6 +235,8 @@ def get_config(tp, cluster_id):
   if has_ima:
     l1_interleaver_nb_masters += ima_conf.get_int('nb_masters')
   if has_ne16:
+    l1_interleaver_nb_masters += 1
+  if has_redMule:
     l1_interleaver_nb_masters += 1
 
   cluster.l1_ico.interleaver = Component(properties=OrderedDict([
@@ -327,6 +338,11 @@ def get_config(tp, cluster_id):
       ('@includes@', ["ips/ne16/ne16.json"])
     ]))
 
+  if has_redMule:
+    cluster.redMule = Component(properties=OrderedDict([
+      ('@includes@', ["ips/redMule/redMule.json"])
+    ]))
+
   cluster.icache_ctrl = Component(properties=OrderedDict([
     ('@includes@', ["ips/icache_ctrl/icache_ctrl_v2.json"])
   ]))
@@ -392,6 +408,8 @@ def get_config(tp, cluster_id):
     cluster.periph_ico.ima = cluster.ima.input
   if has_ne16:
     cluster.periph_ico.ne16 = cluster.ne16.input
+  if has_redMule:
+    cluster.periph_ico.redMule = cluster.redMule.input
   cluster.periph_ico.event_unit = cluster.event_unit.input
   cluster.periph_ico.cluster_ctrl = cluster.cluster_ctrl.input
   cluster.periph_ico.timer = cluster.timer.input
@@ -413,6 +431,10 @@ def get_config(tp, cluster_id):
   if has_ne16:
     for i in range(0, nb_pe):
       cluster.ne16.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ne16_irq, i))
+
+  if has_redMule:
+    for i in range(0, nb_pe):
+      cluster.redMule.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (redMule_irq, i))
 
   for i in range(0, nb_pe):
     cluster.icache_ctrl.flush = cluster.get('pe%d' % i).flush_cache
@@ -516,6 +538,10 @@ def get_config(tp, cluster_id):
   if has_ne16:
     cluster.ne16.set('out', cluster.l1_ico.new_itf('ne16_in'))
     cluster.l1_ico.set('ne16_in', cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4)))
+
+  if has_redMule:
+    cluster.redMule.set('out', cluster.l1_ico.new_itf('redMule_in'))
+    cluster.l1_ico.set('redMule_in', cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4)))
 
   for i in range(0, nb_pe):
     cluster.l1_ico.get('pe%d_ico' % i).dma = cluster.l1_ico.new_itf('dma_%d'%i)
