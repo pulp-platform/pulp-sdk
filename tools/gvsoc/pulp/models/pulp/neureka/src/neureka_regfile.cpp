@@ -234,7 +234,7 @@ void Neureka::regfile_cxt() {
       case NEUREKA_REG_CONFIG0:
         // [26] signed_activation 
         this->signed_activation = ((value >> 26) & 0x1) ? true : false;
-        std::cout<<"SIGNED ACTIVATION="<<this->signed_activation<<"\n";
+//         std::cout<<"SIGNED ACTIVATION="<<this->signed_activation<<"\n";
         // [25] norm option bias (0=do not load bias; 1=load bias)
         this->norm_option_bias = ((value >> 25) & 0x1) ? true : false;
         // [24] norm option shift (0=use quantization right shift; 1=load with norm)
