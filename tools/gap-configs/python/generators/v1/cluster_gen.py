@@ -69,8 +69,9 @@ def get_config(tp, cluster_id):
   l1_bank_size = int(tp.get_child_int('cluster/l1/size') / nb_l1_banks)
 
 # Assign the memory value equivalent to the L1. later it can be modified according to the properties.
-  nb_wmem_banks = nb_l1_banks  
-  wmem_bank_size = l1_bank_size
+  if has_wmem:
+    nb_wmem_banks = nb_l1_banks  
+    wmem_bank_size = l1_bank_size
 
 
   cluster = Component(properties=OrderedDict([
@@ -95,7 +96,7 @@ def get_config(tp, cluster_id):
     ('latency', 2),
     ('mappings', OrderedDict([
       ("l1", get_mapping_area(tp.get_child_dict("cluster/l1"), cluster_size, cluster_id, True)),
-      ("wmem_soc", get_mapping_area(tp.get_child_dict("cluster/wmem"), cluster_size, cluster_id, False)),
+      ("wmem_soc", OrderedDict()),
       ("l1_ts", l1_ts_mapping),
       ("periph_ico", get_mapping_area(tp.get_child_dict("cluster/peripherals"), cluster_size, cluster_id)),
       ("periph_ico_alias", get_mapping(tp.get_child_dict("cluster/peripherals/alias"), add_offset=get_area_int('%d' % ((tp.get_child_int("cluster/peripherals/base") - tp.get_child_int("cluster/peripherals/alias/base"))), cluster_size, cluster_id))),
@@ -106,6 +107,13 @@ def get_config(tp, cluster_id):
       ("soc", OrderedDict())
     ]))
   ]))
+
+  if has_wmem:
+    cluster_ico_mappings = cluster.cluster_ico.get_property("mappings")
+    cluster_ico_mappings.update(OrderedDict([
+      ("wmem_soc", get_mapping_area(tp.get_child_dict("cluster/wmem"), cluster_size, cluster_id, False))
+    ]))
+    cluster.cluster_ico.set_property('mappings', cluster_ico_mappings)
 
   demux_eu_mapping = tp.get_child_dict("cluster/demux_peripherals/event_unit")
   demux_eu_mapping['base'] = '0x%x' % (int(demux_eu_mapping['base'], 0) - tp.get_child_int("cluster/demux_peripherals/base"))

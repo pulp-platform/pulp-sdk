@@ -12,7 +12,7 @@ PULP_PROPERTIES += udma/version timer/version stdout/version soc_eu/version \
 properties := $(foreach prop,$(PULP_PROPERTIES), --property=$(prop))
 
 
-VP_DIRS=pulp pulp/fll pulp/stdout pulp/chips/pulpissimo \
+VP_DIRS=pulp pulp/fll pulp/stdout pulp/chips/pulpissimo pulp/chips/siracusa \
   pulp/itc pulp/timer pulp/soc_eu pulp/udma \
   pulp/icache_ctrl pulp/cluster pulp/event_unit \
   pulp/chips/pulp pulp/mchan pulp/padframe pulp/adv_dbg_unit \
