@@ -1,0 +1,26 @@
+{
+    "@include@": "common.json",
+
+    "gvsoc": {
+        "runner_module": "gv.chips.siracusa"
+    },
+
+    "rtl": {
+        "runner_module": "runner.rtl.chips.siracusa"
+    },
+
+    "target": {
+        "@includes@": [ "chips/siracusa/siracusa.json" ]
+    },
+
+    "runner": {
+        "flash_devices": [
+          "target/board/devices/flash",
+          "target/board/devices/spiflash"
+        ],
+        "boot": {
+            "mode": "flash",
+            "device": "target/board/devices/spiflash"
+        }
+    }
+}
