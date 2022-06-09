@@ -43,7 +43,7 @@
   "cluster": {
     "base": "0x10000000",
     "alias": "0x00000000",
-    "size": "0x00400000",
+    "size": "0x00800000",
     "core": "ri5ky_v2_6_sfloat_single_regfile",
     "version": 5,
     "json_file": "cluster_v5_fpu",
@@ -65,7 +65,7 @@
 
     "l1": {
       "base": "0x10000000",
-      "size": "0x00010000",
+      "size": "0x00040000",
       "banking_factor": 2
     },
 
@@ -75,6 +75,11 @@
         "nb_ways_bits": 2,
         "line_size_bits": 4
       }
+    },
+
+    "wmem": {
+      "base": "0x10400000",
+      "size"  : "0x00400000"
     },
 
     "peripherals": {
@@ -102,7 +107,7 @@
         "size": "0x00000800"
       },
 
-      "ne16": {
+      "neureka": {
         "base": "0x10201000",
         "size": "0x00000400"
       },
