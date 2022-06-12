@@ -247,6 +247,7 @@ int Neureka::fsm() {
           latency += 9 - (this->load_i_fbuf_lim)*(this->load_j_fbuf_lim);
         }
         this->load_do_padding();
+        this->debug_x_buffer();
         this->load_do_extract();
         this->load_filter_masking();
         this->depthwise_setup();
