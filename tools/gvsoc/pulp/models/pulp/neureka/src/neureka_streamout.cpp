@@ -106,11 +106,14 @@ void Neureka::streamout_setup() {
 int Neureka::streamout_cycle() { 
   int64_t cycles = 0;
   auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
-  auto ko = (this->subtile_nb_ko-1)*tp + this->subtile_rem_ko;
+  auto ko = ((this->subtile_nb_ko-1)*tp + this->subtile_rem_ko);
+  auto ko_rem = (this->subtile_nb_ko==1) ? this->subtile_rem_ko : ((ko%tp)==0)? tp : ko%tp ;
+  auto ko_rem_index = (this->subtile_nb_ko==1) ? ko_rem : (this->k_out_major==this->subtile_nb_ko-1)?ko_rem : tp;
+  
   xt::xarray<uint8_t> xx = xt::zeros<uint8_t>({32});
   if(this->quantization_bits == 32) {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before streamout_k_out_lim=%d\n", this->streamout_k_out_lim);
-    auto k_out_last = (this->streamout_k_out_iter == this->streamout_k_out_lim-1) & (this->depthwise) ? ko : (this->streamout_k_out_iter+1)*8;
+    auto k_out_last = (this->streamout_k_out_iter == this->streamout_k_out_lim-1) & (this->depthwise) ? ko_rem_index : (this->streamout_k_out_iter+1)*8;
     if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != tp && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
       this->trace.msg(vp::trace::LEVEL_DEBUG, "  Inside the if before subtile_rem_ko=%d\n", this->subtile_rem_ko);
       this->trace.msg(vp::trace::LEVEL_DEBUG, "  Inside the if before subtile_nb_ko=%d\n", this->subtile_nb_ko);
