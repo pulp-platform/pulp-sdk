@@ -108,15 +108,20 @@ int Neureka::streamout_cycle() {
   auto tp = this->depthwise ? this->TP_IN_S : this->TP_OUT;
   xt::xarray<uint8_t> xx = xt::zeros<uint8_t>({32});
   if(this->quantization_bits == 32) {
-    auto k_out_last = (this->streamout_k_out_iter+1)*8;
+    auto k_out_last = (this->streamout_k_out_iter == this->streamout_k_out_lim-1) ? (this->streamout_k_out_iter+1)*(tp/4) : (this->streamout_k_out_iter+1)*8;
     if(this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != tp && this->subtile_rem_ko != 0) { // last k_in tile, only if it requires padding
       k_out_last = k_out_last < this->subtile_rem_ko ? k_out_last : this->subtile_rem_ko;
+      this->trace.msg(vp::trace::LEVEL_DEBUG, "  Inside the if k_out_last=%d\n", k_out_last);
     }
     for (auto i=this->streamout_k_out_iter*8; i<k_out_last; i++) {
       for(auto j=0; j<4; j++) {
         xt::view(xx, (i-this->streamout_k_out_iter*8)*4+j) = (xt::view(this->accum, i, this->streamout_i_out_iter*this->H_SIZE+this->streamout_j_out_iter) >> (j*8)) & 0xff;
       }
     }
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "   k_out_last=%d\n", k_out_last);
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "   streamout_k_out_iter=%d\n", this->streamout_k_out_iter);
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "   streamout_i_out_iter=%d\n", this->streamout_i_out_iter);
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "   streamout_j_out_iter=%d\n", this->streamout_j_out_iter);
     this->vst_y.ex(xx, (k_out_last-this->streamout_k_out_iter*8)*4, cycles, this->col_enable (this->streamout_i_out_iter, this->streamout_j_out_iter));
   }
   else if(this->quantization_bits == 8) {
