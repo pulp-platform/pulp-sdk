@@ -93,8 +93,7 @@ xt::xarray<int64_t> __NormQuant(
 xt::xarray<uint8_t> __WeightUnpack(
   xt::xarray<uint8_t> w,
   int                 size,
-  int                 TP_IN,
-  bool                mode16
+  int                 TP_IN
 ) {
 
   w = w.reshape({size,(TP_IN/8),1});
@@ -107,10 +106,6 @@ xt::xarray<uint8_t> __WeightUnpack(
 
   auto shape = xt::adapt(wu.shape());
 
-  if(mode16) {
-    return xt::hstack(xt::xtuple(wu.reshape({size*(TP_IN/8), 8}), wu.reshape({size*(TP_IN/8), 8})));
-  }
-
   return wu.reshape({size, (TP_IN/8)*8});
 }
 
@@ -118,15 +113,9 @@ xt::xarray<int64_t> __BinConvBlock(
   xt::xarray<uint8_t> w,
   xt::xarray<int8_t> x,
   int scale=0,
-  int TP_IN=32,
-  bool mode16=false
+  int TP_IN=32
 ) {
-  if(mode16) {
-    xt::xarray<int64_t> wx_lo = xt::view(w, xt::range(0, 8)) * xt::view(x, xt::range(0, TP_IN, 2)); // FIXME size
-    xt::xarray<int64_t> wx_hi = xt::view(w, xt::range(0, 8)) * xt::view(x, xt::range(1, TP_IN+1, 2)); // FIXME size
-    auto wx = wx_hi * 256 + wx_lo;
-    return xt::sum(wx, 0) * scale;
-  }
+
   return xt::sum(w * x, 0) * scale;
 }
 
@@ -134,14 +123,11 @@ void Neureka::__BinConvArray(
   xt::xarray<uint8_t>& weight,
   int                  scale,
   int                  idx,
-  xt::xarray<int32_t>  block_enable_linear,
   xt::xarray<int32_t>  row_enable,
   xt::xarray<int32_t>  mac_enable,
   bool                 weight_shift,
   bool                 weight_invert,
-  bool                 use_row_as_scale,
-  bool                 mode16,
-  bool                 mode_linear
+  bool                 use_row_as_scale
 ) {
   for(auto c=0; c<this->NR_COLUMN; c++) { // spatial loop - over columns
     xt::view(this->psum_column, c) = 0;
@@ -156,46 +142,22 @@ void Neureka::__BinConvArray(
         std::string copyOfStr = stringStream.str();
         this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
       }
-      if (!mode_linear) {
-        xt::view(this->psum_block, c, r) = __BinConvBlock(xt::view(weight, r) * mac_enable, activ, scale_loc, this->TP_IN, mode16);
-      }
-      else {
-        xt::xarray<uint8_t> weight_lin = xt::zeros_like(weight);
-        if(c==0) {
-          xt::view(weight_lin, xt::range(0, 8)) = xt::view(weight, xt::range(0, 8));
-        }
-        else if(c==1){
-          xt::view(weight_lin, xt::range(0, 8)) = xt::view(weight, xt::range(8, 16));
-        }
-        else if(c==2 && mode16){
-          xt::view(weight_lin, xt::range(0, 8)) = xt::view(weight, xt::range(16, 24));
-        }
-        else if(c==3 && mode16){
-          xt::view(weight_lin, xt::range(0, 8)) = xt::view(weight, xt::range(24, 32));
-        }
-        xt::view(this->psum_block, c, r) = __BinConvBlock(xt::view(weight_lin, r) * mac_enable * xt::view(block_enable_linear, c, r), activ, scale_loc, this->TP_IN, mode16);
-      }
+      
+      xt::view(this->psum_block, c, r) = __BinConvBlock(xt::view(weight, r) * mac_enable, activ, scale_loc, this->TP_IN);
       if(weight_shift && weight_invert) {
         xt::view(this->psum_block, c, r) = -xt::view(this->psum_block, c, r);
       }
       xt::view(this->psum_column, c) += xt::view(this->psum_block, c, r);
     }
 
-    if(!mode_linear) {
-      if(weight_shift) {
-        xt::view(this->accum, xt::all(), c) += xt::view(this->psum_column, c);
-      }
-      else {
-        xt::view(this->accum, idx, c) += xt::view(this->psum_column, c);
-      }
+    if(weight_shift) {
+      xt::view(this->accum, xt::all(), c) += xt::view(this->psum_column, c);
+    } 
+    else if(this->depthwise){
+      xt::view(this->accum, xt::all(), c) += xt::view(this->psum_column, c);
     }
-    else if(c==3) {
-      if(weight_shift) {
-        xt::view(this->accum, xt::all(), 0) += xt::view(this->psum_column, 0) + xt::view(this->psum_column, 1) + xt::view(this->psum_column, 2) + xt::view(this->psum_column, 3);
-      }
-      else {
-        xt::view(this->accum, idx, 0) += xt::view(this->psum_column, 0) + xt::view(this->psum_column, 1) + xt::view(this->psum_column, 2) + xt::view(this->psum_column, 3);
-      }
+    else {
+      xt::view(this->accum, idx, c) += xt::view(this->psum_column, c);
     }
   }
 }
@@ -209,37 +171,45 @@ void Neureka::__weightoffs(
   for(auto s=start_s; s<this->SHIFT_CYCLES; s++) { // temporal loop - fake weight for Wmin offsetting // FIXME: how to properly do this in 1x1 mode?
 
     // fake-load and unpack weight bits
-    auto read_size = (this->mode_linear) ? (this->mode16 ? 32 : 16) : this->FILTER_SIZE*this->FILTER_SIZE;
+    auto read_size = this->FILTER_SIZE*this->FILTER_SIZE;
     xt::xarray<uint8_t> weight_ld = xt::zeros<uint8_t>({read_size, this->TP_IN/8});
-    if(this->fs == 3 || this->mode_linear)
+    if(this->fs == 3)
       xt::view(weight_ld, xt::all()) = 0xff;
     else
       xt::view(weight_ld, 0, xt::all()) = 0xff;
-    auto weight = __WeightUnpack(weight_ld, read_size, this->TP_IN, false); //this->mode16 & this->mode_linear);
+    auto weight = __WeightUnpack(weight_ld, read_size, this->TP_IN); //this->mode16 & this->mode_linear);
     
     auto scale = this->Wmin;
-
-    xt::xarray<int32_t> block_enable_linear = xt::ones<int32_t>({this->NR_COLUMN, this->COLUMN_SIZE});
     
-    this->__BinConvArray(weight, scale, this->depthwise ? dw_iter : 0, block_enable_linear, row_enable, mac_enable, !this->depthwise, false, false, this->mode16, this->mode_linear); 
+    this->__BinConvArray(weight, scale, this->depthwise ? dw_iter : 0, row_enable, mac_enable, !this->depthwise, false, false); 
   }
 }
 
 void Neureka::depthwise_setup() {
   this->k_out_lim_dw = (this->k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN_S && this->subtile_rem_ki != 0) ? this->subtile_rem_ki : this->TP_IN_S;
   this->dw_lim = this->depthwise ? this->k_out_lim_dw : 1;
+  // this->dw_lim = this->depthwise ? 1 : 1;
   this->dw_iter = 0;
   this->mac_enable = xt::zeros<int32_t>({this->TP_IN});
 }
 
 void Neureka::depthwise_update_idx() {
   this->dw_iter++;
+  std::ostringstream stringStream;
+  stringStream << "dw_iter="<<this->dw_iter<<std::endl;
+  std::string copyOfStr = stringStream.str();
+  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
 }
 
 void Neureka::weightoffs() {
   if(this->depthwise) {
     xt::view(this->mac_enable, xt::all()) = 0;
-    xt::view(this->mac_enable, this->dw_iter) = 1;
+    xt::view(this->mac_enable, xt::range(0,this->k_out_lim_dw)) = 1;
+    std::ostringstream stringStream;
+    stringStream << "mac_enable="<<this->mac_enable<<std::endl;
+    std::string copyOfStr = stringStream.str();
+    this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
+    // xt::view(this->mac_enable, this->dw_iter) = 1;
   }
   else {
     xt::view(this->mac_enable, xt::range(0,this->TP_IN_S)) = 1;
@@ -265,9 +235,14 @@ void Neureka::matrixvec_setup() {
     this->weights_d2_stride, // block_stride
     false
   );
+
+  std::ostringstream stringStream;
+  stringStream <<"base_addr_W_dw="<<this->base_addr_W_dw-this->weights_ptr<<", word_length="<<this->subtile_nb_ki*this->qw<<", word_stride="<<this->weights_d0_stride<<", line_length="<<this->qw<<", line_stride="<<this->weights_d1_stride<<std::endl;
+  std::string copyOfStr = stringStream.str();
+  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
   
   // 3x3 mode: layout is (k_out, subtile_nb_ki*qw, 9, TP_IN/8)
-  this->base_addr_W_3x3 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*this->qw + k_in_major*this->qw) * 8 * (this->mode16 ? (this->TP_IN/16) : (this->TP_IN/8));
+  this->base_addr_W_3x3 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*this->qw + k_in_major*this->qw) * 8 * (this->TP_IN/8);
   this->vld_W_3x3 = NeurekaVectorLoad<uint8_t>(
     this,
     this->base_addr_W_3x3, // base_addr
@@ -281,7 +256,7 @@ void Neureka::matrixvec_setup() {
   );
 
   // 1x1 mode: layout is (k_out, subtile_nb_ki, qw, TP_IN/8)
-  this->base_addr_W_1x1 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*8 + k_in_major*8) * (this->mode16 ? 2 : (this->TP_IN/8));
+  this->base_addr_W_1x1 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*8 + k_in_major*8) * (this->TP_IN/8);
   this->vld_W_1x1 = NeurekaVectorLoad<uint8_t>(
     this,
     this->base_addr_W_1x1, // base_addr
@@ -293,24 +268,8 @@ void Neureka::matrixvec_setup() {
     this->weights_d2_stride, // block_stride
     false
   );
-  
-  // linear mode:
-  auto linear_d0_stride = (this->mode16 ? 1 : 2) * this->k_in; // distance in QW = 2 * k_in
-  auto linear_d1_stride = this->qw * (this->mode16 ? 1 : 2) * this->k_in; // distance in K_IN subtiles = 32
-  this->base_addr_W_linear = this->weights_ptr + this->k_out_major * this->qw * (this->mode16 ? 1 : 2) * this->k_in * 32 + k_in_major * 32;
-  this->vld_W_linear = NeurekaVectorLoad<uint8_t>(
-    this,
-    this->base_addr_W_linear, // base_addr
-    -1, // word_length
-    linear_d0_stride, // word_stride
-    this->qw, // line_length
-    linear_d1_stride, // line_stride
-    -1, // block_length
-    32*this->k_in/(this->mode16 ? 1 : 1)*this->qw/8, // block_stride
-    false
-  );
 
-  this->mv_qw_lim = (this->fs == 3 || this->mode_linear) ? this->qw : 1;
+  this->mv_qw_lim = (this->fs == 3) ? this->qw : 1;
   this->mv_k_out_lim = this->depthwise ? 1 :
                        (this->k_out_major == this->subtile_nb_ko-1 && this->subtile_rem_ko != this->TP_OUT && this->subtile_rem_ko != 0) ? this->subtile_rem_ko : this->TP_OUT;
   this->mv_k_out_iter = 0;
@@ -318,9 +277,9 @@ void Neureka::matrixvec_setup() {
 }
 
 int Neureka::matrixvec_cycle() {
-  auto& vld_W =      this->mode_linear ? this->vld_W_linear       : this->depthwise ? this->vld_W_dw       : (this->fs == 3) ? this->vld_W_3x3       : this->vld_W_1x1;
+  auto& vld_W = this->depthwise ? this->vld_W_dw       : (this->fs == 3) ? this->vld_W_3x3       : this->vld_W_1x1;
 
-  auto read_size = (this->fs == 3) ? 8 : (this->mode_linear) ? 16 : 8;//fixed for differnt layout in pointwise mode
+  auto read_size = 8;//fixed for differnt layout in pointwise mode
 
   auto k_out = this->depthwise ? this->dw_iter : this->mv_k_out_iter;
   // load and unpack weight bits
@@ -330,21 +289,28 @@ int Neureka::matrixvec_cycle() {
 
   xt::xarray<uint8_t> weight_ld_transform = (this->fs == 3) ? __Weight_transform_28(weight_ld) : __Weight_transform_1x1(weight_ld);
 
-  auto weight = __WeightUnpack(weight_ld_transform, (this->fs==3) ? 9 : read_size, this->TP_IN, this->mode16);
+  auto weight = __WeightUnpack(weight_ld_transform, (this->fs==3) ? 9 : read_size, this->TP_IN);
   auto scale = 1 << this->mv_qw_iter;
 
   xt::xarray<int32_t> space = xt::logspace(0, 7, 8, 2);
   space = xt::reshape_view(space, {8, 1});
 
-  xt::xarray<int32_t> block_enable_linear = xt::ones<int32_t>({NR_COLUMN, COLUMN_SIZE});
+  std::ostringstream stringStream;
+  stringStream << "mac_enable"<<xt::view(this->mac_enable, xt::all())<<std::endl;
+  std::string copyOfStr = stringStream.str();
+  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
 
-  this->__BinConvArray(weight, scale, k_out, block_enable_linear, this->row_enable, this->mac_enable, false, false, this->fs==1 && !this->mode_linear, this->mode16, this->mode_linear);
+  this->__BinConvArray(weight, scale, k_out, this->row_enable, this->mac_enable, false, false, this->fs==1);
 
   return (int) cycles;
 }
 
 bool Neureka::matrixvec_exit_idx() {
   if(this->mv_k_out_iter == this->mv_k_out_lim-1 && this->mv_qw_iter == this->mv_qw_lim-1) {
+    std::ostringstream stringStream;
+    stringStream << "mv_k_out_iter="<<this->mv_k_out_iter<<", mv_k_out_lim="<<this->mv_k_out_lim<<", mv_qw_iter="<<this->mv_qw_iter<<", mv_qw_lim="<<this->mv_qw_lim<<std::endl;
+    std::string copyOfStr = stringStream.str();
+    this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
     return true;
   }
   else {
@@ -363,7 +329,11 @@ void Neureka::matrixvec_update_idx() {
 }
 
 bool Neureka::matrixvec_to_matrixvec_idx() {
-  if(this->dw_iter == this->dw_lim-1) {
+  if((this->dw_iter == this->dw_lim-1) || (this->dw_iter==0 && this->depthwise)) {
+    std::ostringstream stringStream;
+    stringStream << "dw_iter="<<this->dw_iter<<", dw_lim="<<this->dw_lim<<std::endl;
+    std::string copyOfStr = stringStream.str();
+    this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
     return true;
   }
   else {
