@@ -23,7 +23,15 @@
  */
 
 #ifndef ARCHI_FPGA_FREQUENCY
-#define ARCHI_FPGA_FREQUENCY 5000000
+#define ARCHI_FPGA_FREQUENCY 50000000
+#endif
+
+#ifndef ARCHI_FPGA_FC_FREQUENCY
+#define ARCHI_FPGA_FC_FREQUENCY 50000000
+#endif
+
+#ifndef ARCHI_FPGA_CL_FREQUENCY
+#define ARCHI_FPGA_CL_FREQUENCY 50000000
 #endif
 
 /*
@@ -71,7 +79,6 @@
 #define RISCV_VERSION       4
 #define MCHAN_VERSION       7
 #define PADS_VERSION        2
-#define IMA_VERSION         1
 
 
 /*
@@ -119,36 +126,26 @@
 
 #define ARCHI_UDMA_HAS_SPIM      1
 #define ARCHI_UDMA_HAS_UART      1
-#define ARCHI_UDMA_HAS_SDIO      1
 #define ARCHI_UDMA_HAS_I2C       1
-#define ARCHI_UDMA_HAS_I2S       1
 #define ARCHI_UDMA_HAS_CAM       1
-#define ARCHI_UDMA_HAS_TRACER    1
 #define ARCHI_UDMA_HAS_FILTER    1
 #define ARCHI_UDMA_HAS_HYPER     1
 
 #define ARCHI_UDMA_NB_SPIM      1
 #define ARCHI_UDMA_NB_UART      1
-#define ARCHI_UDMA_NB_SDIO      1
 #define ARCHI_UDMA_NB_I2C       1
-#define ARCHI_UDMA_NB_I2S       1
 #define ARCHI_UDMA_NB_CAM       1
-#define ARCHI_UDMA_NB_TRACER    1
 #define ARCHI_UDMA_NB_FILTER    1
 #define ARCHI_UDMA_NB_HYPER     1
 
-#define ARCHI_UDMA_UART_ID(id)            0
-#define ARCHI_UDMA_SPIM_ID(id)            1
-#define ARCHI_UDMA_I2C_ID(id)             (2 + (id))
-#define ARCHI_UDMA_SDIO_ID(id)            (4   + (id))
-#define ARCHI_UDMA_I2S_ID(id)             5
-#define ARCHI_UDMA_CAM_ID(id)             6
-#define ARCHI_UDMA_FILTER_ID(id)          (7  + (id))
-#define ARCHI_UDMA_HYPER_ID(id)           (8 + (id))
-#define ARCHI_UDMA_TRACER_ID(id)          9
-#define ARCHI_UDMA_TGEN_ID(id)            10
+#define ARCHI_UDMA_UART_ID(id)   (0 + (id))
+#define ARCHI_UDMA_SPIM_ID(id)   (1 + (id))
+#define ARCHI_UDMA_I2C_ID(id)    (2 + (id))
+#define ARCHI_UDMA_CAM_ID(id)    (3 + (id))
+#define ARCHI_UDMA_HYPER_ID(id)  (4 + (id))
+#define ARCHI_UDMA_FILTER_ID(id) (6 + (id))
 
-#define ARCHI_NB_PERIPH                   11
+#define ARCHI_NB_PERIPH                   6
 
 
 
