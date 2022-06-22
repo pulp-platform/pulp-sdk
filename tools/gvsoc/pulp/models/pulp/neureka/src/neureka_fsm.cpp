@@ -135,7 +135,7 @@ int Neureka::fsm() {
   auto latency = 0;
 
   this->x_buffer_traces = false;
-  this->x_buffer_traces_postload = false;
+  this->x_buffer_traces_postload = true;
   this->accum_traces_poststreamin = false;
   this->accum_traces = false;
   this->accum_traces_postmatrixvec =true;
