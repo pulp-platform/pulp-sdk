@@ -19,7 +19,7 @@
       "camera": {
         "@include@": "devices/camera.json",
         "interface": "cpi0",
-        "ctrl_interface": "i2c1"
+        "ctrl_interface": "i2c0"
       },
       "flash": {
         "includes": ["devices/hyperflash.json"],
@@ -122,12 +122,6 @@
         "version": 7,
         "base": "0x10201800",
         "size": "0x00000400"
-      },
-
-      "ima": {
-        "base": "0x10202000",
-        "size": "0x00000400",
-        "version": 1
       },
 
       "dbg_unit": {

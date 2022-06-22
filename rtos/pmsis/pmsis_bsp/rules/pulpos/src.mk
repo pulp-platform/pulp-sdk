@@ -72,7 +72,6 @@ endif
 ifeq '$(CONFIG_HYPERFLASH)' '1'
 PULP_SRCS += $(BSP_HYPERFLASH_SRC)
 CONFIG_FLASH = 1
-CONFIG_HYPER = 1
 endif
 
 ifeq '$(CONFIG_MRAM)' '1'

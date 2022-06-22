@@ -59,6 +59,20 @@ PULP_SRCS += drivers/hyperbus/hyperbus-v$(udma/hyper/version).c
 endif
 endif
 
+# I3C
+
+ifeq '$(CONFIG_I3C)' '1'
+ifneq '$(udma/version)' ''
+CONFIG_UDMA = 1
+PULP_CFLAGS   += -I$(PULPOS_PULP_HOME)/drivers/i3c/include/
+PULP_SRCS     += drivers/i3c/src/cdn_print.c
+PULP_SRCS     += drivers/i3c/src/command_list.c
+PULP_SRCS     += drivers/i3c/src/i3c.c
+PULP_SRCS     += drivers/i3c/src/i3c_obj_if.c
+PULP_SRCS     += drivers/i3c/src/cps_impl.c
+endif
+endif
+
 
 # SPIM
 

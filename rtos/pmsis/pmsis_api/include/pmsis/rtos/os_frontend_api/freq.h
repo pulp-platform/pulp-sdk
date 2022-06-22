@@ -20,7 +20,8 @@
 typedef enum {
   PI_FREQ_DOMAIN_FC     = 0,
   PI_FREQ_DOMAIN_CL     = 1,
-  PI_FREQ_DOMAIN_PERIPH = 2
+  PI_FREQ_DOMAIN_PERIPH = 2,
+  PI_FREQ_NB_DOMAINS    = 3
 } pi_freq_domain_e;
 
 /**

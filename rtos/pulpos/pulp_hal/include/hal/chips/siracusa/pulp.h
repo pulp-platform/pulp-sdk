@@ -29,7 +29,6 @@
 #include "hal/fll/fll_v1.h"
 #include "hal/gpio/gpio_v3.h"
 #include "hal/rom/rom_v2.h"
-#include "hal/ima/ima_v1.h"
 
 #include "hal/udma/udma_v3.h"
 #include "hal/udma/cpi/udma_cpi_v1.h"
@@ -37,5 +36,10 @@
 #include "hal/udma/spim/udma_spim_v3.h"
 #include "hal/udma/uart/udma_uart_v1.h"
 #include "hal/udma/hyper/udma_hyper_v3.h"
+
+#include "hal/chips/siracusa/pll_regs.h"
+#include "hal/chips/siracusa/pll.h"
+
+#include "hal/chips/siracusa/i3c_regs.h"
 
 #endif
