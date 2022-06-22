@@ -83,6 +83,9 @@ void Neureka::fsm_start_handler(void *__this, vp::clock_event *event) {
 
 void Neureka::fsm_handler(void *__this, vp::clock_event *event) {
   Neureka *_this = (Neureka *)__this;
+  if(_this->trace_level == L3_ALL) {
+    _this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM HANDLER EVENT\n");
+  }
   _this->fsm_loop();
 }
 
@@ -97,6 +100,7 @@ void Neureka::fsm_end_handler(void *__this, vp::clock_event *event) {
   _this->trace.msg(vp::trace::LEVEL_INFO, "Ending job (id=%d).\n", job_id);
   if (!_this->fsm_start_event->is_enqueued() && _this->job_pending > 0) {
       _this->event_enqueue(_this->fsm_start_event, 1);
+      _this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Start Event enqueued with cycles=%d\n", _this->fsm_start_event->get_cycle());
       _this->trace.msg(vp::trace::LEVEL_INFO, "Starting a new job from the queue.\n");
   }
   _this->activity.set(0);
@@ -110,9 +114,19 @@ void Neureka::fsm_loop() {
   } while(latency == 0 && state.get() != END);
   if(state.get() == END && !this->fsm_end_event->is_enqueued()) {
     this->event_enqueue(this->fsm_end_event, latency);
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM End Event enqueued with cycles=%d\n", this->fsm_end_event->get_cycle());
   }
   else if (!this->fsm_event->is_enqueued()) {
+    if(this->trace_level == L3_ALL) {
+      std::ostringstream stringStream;
+      stringStream << "New Event Enqueued with latency = " <<latency<< "\n";
+      std::string copyOfStr = stringStream.str();
+      this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
+    }
+    // this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event before enque with cycles=%d\n", this->fsm_event->get_cycle());
     this->event_enqueue(this->fsm_event, latency);
+    // std::cout<<"FSM Event enqueued "<<this->fsm_event->get_cycle()<<std::endl;
+    // this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event enqueued with cycles=%d\n", this->fsm_event->get_cycle());
   }
 }
 
@@ -124,12 +138,12 @@ int Neureka::fsm() {
   this->x_buffer_traces_postload = false;
   this->accum_traces_poststreamin = false;
   this->accum_traces = false;
-  this->accum_traces_postmatrixvec =false;
+  this->accum_traces_postmatrixvec =true;
   this->accum_traces_normquant = false;
   this->accum_traces_streamout = false;
   this->psum_block_traces = false;
   this->binconv_traces = false;
-  this->fsm_traces = false;
+  this->fsm_traces = true;
   if(this->trace_level == L1_ACTIV_INOUT) {
     this->x_buffer_traces_postload = true;
     this->accum_traces_streamout = true;
@@ -190,7 +204,9 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  streamin_j_out_iter=%d\n", this->streamin_j_out_iter);
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  streamin_i_out_iter=%d\n", this->streamin_i_out_iter);
       }
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before streamin cycle=%d\n", latency);
       latency = this->streamin_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After streamin cycle=%d\n", latency);
       if(this->accum_traces) {
         this->debug_accum();
       }
@@ -220,7 +236,9 @@ int Neureka::fsm() {
       state_next = LOAD;
 
       // emulate 6 cycles of latency due to FIFOs + ctrl
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before streamin load cycle=%d\n", latency);
       latency += 6;
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After streamin load cycle=%d\n", latency);
       break;
       
     case LOAD:
@@ -233,21 +251,18 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  load_i_fbuf=%d\n", this->load_i_fbuf);
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  load_j_fbuf=%d\n", this->load_j_fbuf);
       }
-      if(this->mode_linear) {
-        latency = this->load_cycle_linear();
-      }
-      else {
-        latency = this->load_cycle();
-      }
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before load cycle=%d\n", latency);
+      latency = this->load_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After load cycle=%d\n", latency);
       if(this->x_buffer_traces) {
         this->debug_x_buffer();
       }
       if(this->load_exit_idx()) {
-        if(this->fs == 1 && !this->mode_linear) {
+        if(this->fs == 1) {
           latency += 9 - (this->load_i_fbuf_lim)*(this->load_j_fbuf_lim);
+          // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After load cycle 1x1=%d\n", latency);
         }
         this->load_do_padding();
-        this->debug_x_buffer();
         this->load_do_extract();
         this->load_filter_masking();
         this->depthwise_setup();
@@ -260,7 +275,7 @@ int Neureka::fsm() {
 
     case LOAD_MATRIXVEC:
       if(this->fsm_traces) {
-        this->trace.msg(vp::trace::LEVEL_DEBUG, "State LOAD_MATRIXVEC\n");
+        // this->trace.msg(vp::trace::LEVEL_DEBUG, "State LOAD_MATRIXVEC\n");
       }
       if(this->x_buffer_traces_postload) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  k_in_major=%d\n", this->k_in_major_iter);
@@ -281,13 +296,15 @@ int Neureka::fsm() {
       }
       state_next = MATRIXVEC;
 
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before load_matrixvec cycle =%d\n", latency);
       // emulate 6 cycles of latency due to FIFOs + ctrl (10 for 1x1 layers)
       if(this->depthwise && this->dw_iter == 0) {
-        latency += 22;
+        latency += 34; // Depthwise weight offset cycles
       }
       else if(!this->depthwise) {
         latency += this->fs == 1 ? 10 : 6;
       }
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After load_matrixvec cycle =%d\n", latency);
 
       break;
     
@@ -299,18 +316,21 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  mv_qw_iter=%d\n", mv_qw_iter); // was simply qw
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  mv_qw_lim=%d\n", mv_qw_lim); // was simply qw
       }
-      latency = this->matrixvec_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before matrixvec cycle =%d\n", latency);
+      latency = this->matrixvec_cycle();//computes for 1 cycle in dw mode, 1 mac is enabled
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After matrixvec cycle =%d\n", latency);
       if(this->psum_block_traces) {
         this->debug_psum_block();
       }
       if(this->accum_traces) {
         this->debug_accum();
       }
-      if(this->matrixvec_exit_idx()) {
+      if(this->matrixvec_exit_idx()) {// true after iteration for qw is completed in depthwise mode
 
         // emulate 6 cycles of latency due to FIFOs + ctrl
         if(!this->depthwise) {
           latency += 6;
+          // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After matrixvec depthwise cycle =%d\n", latency);
         }
 
         if(this->fsm_traces) {
@@ -342,7 +362,7 @@ int Neureka::fsm() {
         }
       }
       else {
-        this->matrixvec_update_idx();
+        this->matrixvec_update_idx();// for depthwise only updates w.r.t. qw
       }
       break;
       
@@ -350,7 +370,9 @@ int Neureka::fsm() {
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State NORMQUANT_SHIFT\n");
       }
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before normquant_shift cycle =%d\n", latency);
       latency = this->normquant_shift_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After normquant_shift cycle =%d\n", latency);
       this->normquant_mult_setup();
       state_next = NORMQUANT_MULT;
       break;
@@ -360,7 +382,9 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State NORMQUANT_MULT\n");
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  nq_iter=%d\n", this->nq_iter);
       }
+       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before normquant_mult cycle =%d\n", latency);
       latency = this->normquant_mult_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After normquant_mult cycle =%d\n", latency);
       if(this->accum_traces_normquant) {
         this->debug_accum();
       }
@@ -378,7 +402,9 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State NORMQUANT_BIAS\n");
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  nqb_iter=%d\n", this->nqb_iter);
       }
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before normquant_bias cycle =%d\n", latency);
       latency = this->normquant_bias_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After normquant_bias cycle =%d\n", latency);
       if(this->accum_traces_normquant) {
         this->debug_accum();
       }
@@ -398,11 +424,14 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  streamout_i_out_iter=%d\n", this->streamout_i_out_iter);
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  streamout_j_out_iter=%d\n", this->streamout_j_out_iter);
       }
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before streamout cycle =%d\n", latency);
       latency = this->streamout_cycle();
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After streamout cycle =%d\n", latency);
       if(this->streamout_exit_idx()) {
 
-        if(this->fs == 1 && !this->mode_linear) {
+        if(this->fs == 1) {
           latency += 9 - (this->streamout_i_out_iter+1)*(this->streamout_j_out_iter+1) * (this->output_quant ? this->quantization_bits/8 : 4);
+          this->trace.msg(vp::trace::LEVEL_DEBUG, "  After streamout cycle adjust =%d\n", latency);
         }
         if(this->accum_traces_streamout) {
           this->trace.msg(vp::trace::LEVEL_DEBUG, "  k_in_major=%d\n", this->k_in_major_iter);

@@ -383,7 +383,7 @@ private:
     bool matrixvec_to_load_idx();
     bool matrixvec_to_matrixvec_idx();
     // internal functions
-    void __BinConvArray(xt::xarray<uint8_t>&, int, int, xt::xarray<int32_t>, xt::xarray<int32_t>, xt::xarray<int32_t>, bool=false, bool=false, bool=false, bool=false, bool=false);
+    void __BinConvArray(xt::xarray<uint8_t>&, int, int, xt::xarray<int32_t>, xt::xarray<int32_t>, bool=false, bool=false, bool=false);
     void __weightoffs(int, xt::xarray<int32_t>, xt::xarray<int32_t>);
     
     // NORMQUANT
@@ -408,6 +408,7 @@ private:
     // INDEX
     void k_in_major_update_idx();
     void high_update_idx();
+    void next_high_update_idx();
 
     // INDEX state
     int k_out_major;
@@ -426,6 +427,14 @@ private:
     int k_out_lim_dw;
     int dw_lim;
     int dw_iter;
+
+    // INDEX next_iter
+    int next_k_in_major;
+    int next_k_out_major;
+    int next_i_major;
+    int next_j_major;
+    int next_k_in_major_iter;
+
 
     // STREAMIN state
     int streamin_ij_out;

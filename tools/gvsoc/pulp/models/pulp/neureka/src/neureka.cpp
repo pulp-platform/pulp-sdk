@@ -55,7 +55,6 @@ void Neureka::reset(bool active)
     this->psum_column     = xt::zeros<int64_t>({this->NR_COLUMN});
     this->accum           = xt::zeros<int64_t>({this->TP_OUT, this->NR_COLUMN});
     this->x_buffer        = xt::zeros<uint8_t>({this->F_BUFFER_SIZE, this->F_BUFFER_SIZE, this->TP_IN});
-    this->x_buffer_linear = xt::zeros<uint8_t>({32, this->TP_IN});
     this->x_array         = xt::zeros<uint8_t>({this->NR_COLUMN, this->COLUMN_SIZE, this->TP_IN}); 
     this->weight          = xt::zeros<uint8_t>({this->FILTER_SIZE*this->FILTER_SIZE, (this->TP_IN/8)});
     this->nqs             = xt::zeros<uint8_t>({this->TP_OUT});
