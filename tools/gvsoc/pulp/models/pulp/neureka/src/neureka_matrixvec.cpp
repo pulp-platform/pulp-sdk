@@ -153,9 +153,6 @@ void Neureka::__BinConvArray(
     if(weight_shift) {
       xt::view(this->accum, xt::all(), c) += xt::view(this->psum_column, c);
     } 
-    else if(this->depthwise){
-      xt::view(this->accum, xt::all(), c) += xt::view(this->psum_column, c);
-    }
     else {
       xt::view(this->accum, idx, c) += xt::view(this->psum_column, c);
     }
@@ -204,12 +201,12 @@ void Neureka::depthwise_update_idx() {
 void Neureka::weightoffs() {
   if(this->depthwise) {
     xt::view(this->mac_enable, xt::all()) = 0;
-    xt::view(this->mac_enable, xt::range(0,this->k_out_lim_dw)) = 1;
+    // xt::view(this->mac_enable, xt::range(0,this->k_out_lim_dw)) = 1;
     std::ostringstream stringStream;
     stringStream << "mac_enable="<<this->mac_enable<<std::endl;
     std::string copyOfStr = stringStream.str();
     this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
-    // xt::view(this->mac_enable, this->dw_iter) = 1;
+    xt::view(this->mac_enable, this->dw_iter) = 1;
   }
   else {
     xt::view(this->mac_enable, xt::range(0,this->TP_IN_S)) = 1;
@@ -329,7 +326,7 @@ void Neureka::matrixvec_update_idx() {
 }
 
 bool Neureka::matrixvec_to_matrixvec_idx() {
-  if((this->dw_iter == this->dw_lim-1) || (this->dw_iter==0 && this->depthwise)) {
+  if((this->dw_iter == this->dw_lim-1)) {
     std::ostringstream stringStream;
     stringStream << "dw_iter="<<this->dw_iter<<", dw_lim="<<this->dw_lim<<std::endl;
     std::string copyOfStr = stringStream.str();
