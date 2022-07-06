@@ -33,7 +33,7 @@ jobs:
         run: |
           source temp_env
           source configs/pulp-open.sh
-          make build
+          make all
           cd ${{ github.workspace }}
           export -p > temp_env
       - name: Launch regression tests

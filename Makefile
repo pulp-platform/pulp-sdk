@@ -25,4 +25,7 @@ build: gvsoc.build.all
 
 clean: gvsoc.clean
 
-all: build
+checkout:
+    git submodule update --recursive --init
+
+all: build checkout
