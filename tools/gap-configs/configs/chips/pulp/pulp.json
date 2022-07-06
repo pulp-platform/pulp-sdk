@@ -34,7 +34,11 @@
     }
   },
 
-  "chip": "pulp",
+  "chip": {
+    "name": "pulp"
+  },
+
+  "chip_family": "pulp",
   
   "padframe": {
     "content": "chips/pulp/padframe.json"
@@ -100,11 +104,6 @@
       "event_unit": {
         "base": "0x10200800",
         "size": "0x00000800"
-      },
-
-      "ne16": {
-        "base": "0x10201000",
-        "size": "0x00000400"
       },
 
       "icache_ctrl": {
@@ -198,7 +197,7 @@
     "riscv_tap": {
       "riscv_debug": true,
       "config": {
-        "@includes@": ["ips/debug/riscv_dtm.json"]
+        "@includes@": ["ips/debug/riscv_dtm_old.json"]
       }
     },
 
