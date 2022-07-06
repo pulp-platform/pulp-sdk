@@ -1,14 +1,13 @@
-#!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 #
 # Copyright (C) 2019 GreenWaves Technologies
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,7 +51,7 @@ def appendArgs(parser: argparse.ArgumentParser, partitionConfig: js.config=None)
 	:param parser:
 	:type parser: argparse.ArgumentParser
 	"""
-	
+
 	# Output
 	kwargs = {'default': 'lfs.img'}
 	if partitionConfig:
@@ -68,7 +67,7 @@ def operationFunc(args, config=None):
 		return
 
 	traces.info('Generating LittleFS image')
-	
+
 	cmd = 'mklfs -b 262144 -r 4 -p 4 -s 10485760 -c %s -i %s' % (config.get_str('root_dir'), args.output)
 
 	traces.info('Generating LittleFS images with command:')
@@ -97,10 +96,10 @@ def main(custom_commandline = None, config = None, partition_config = None):
 		description = 'Build a Gap flash image from binary files - v%s' % __version__,
 		prog = 'build_flash_image',
 		fromfile_prefix_chars = '@')
-	
+
 	common.appendCommonOptions(parser)
 	appendArgs(parser, partition_config)
-	
+
 	argcomplete.autocomplete(parser)
 
 	# If no argument has been passed and a config has been passed, force arg_parse to not take arguments from sys.argv
@@ -109,7 +108,7 @@ def main(custom_commandline = None, config = None, partition_config = None):
 		custom_commandline = []
 
 	args = parser.parse_args(custom_commandline)
-	
+
 	try:
 		operationFunc(args, config=partition_config)
 	finally:

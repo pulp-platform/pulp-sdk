@@ -26,6 +26,7 @@ try:
 except:
     pass
 from errors import FatalError
+import shlex
 
 
 def appendArgs(parser: argparse.ArgumentParser, runnerConfig: js.config) -> None:
@@ -61,8 +62,8 @@ def appendArgs(parser: argparse.ArgumentParser, runnerConfig: js.config) -> None
 
 class Runner(runner.default_runner.Runner):
 
-    def __init__(self, args, config):
-        super(Runner, self).__init__(args, config)
+    def __init__(self, args, config, system):
+        super(Runner, self).__init__(args, config, system)
 
         self.__process_args()
 
@@ -72,7 +73,11 @@ class Runner(runner.default_runner.Runner):
             pass
 
         self.areas = []
-        self.cmd_args = []
+        self.cmd_args = self.config.get('rtl/args').get_dict()
+
+        if os.environ.get('GAPY_RTL_SIMULATOR_ARGS') is not None:
+            self.cmd_args += shlex.split(os.environ.get('GAPY_RTL_SIMULATOR_ARGS'))
+
         self.plt_args = []
         self.env = {}
         self.platform_path = None
@@ -86,13 +91,6 @@ class Runner(runner.default_runner.Runner):
 
         if self.config.get('**/runner/peripherals') is not None:
             self.set_arg('-gCONFIG_FILE=rtl_config.json')
-
-            if os.environ.get('INSTALL_DIR') is not None:
-                dpi_path = '%s/lib/libpulpdpi' % (os.environ.get('INSTALL_DIR'))
-                if not os.path.exists(dpi_path + '.so'):
-                    raise FatalError('Did no find DPI models: ' + dpi_path + '.so')
-
-                self.set_arg('-sv_lib %s' % dpi_path)
 
         #
         # Co-simulation with GVSOC
@@ -109,9 +107,10 @@ class Runner(runner.default_runner.Runner):
                 self.set_cmd_arg('-sv_lib %s' % dpi_path)
 
 
-            full_config, gvsoc_config_path = gv.gvsoc.gen_config(args, self.config)
-            gv.gvsoc.prepare_exec(self.config, full_config)
-            gv.gvsoc.dump_config(full_config, gvsoc_config_path)
+            self.full_config, gvsoc_config_path = gv.gvsoc.gen_config(args, self.config)
+            gv.gvsoc.prepare_exec(self.config, self.full_config)
+            gv.gvsoc.dump_config(self.full_config, gvsoc_config_path)
+            self.gvsoc_config_path = gvsoc_config_path
         
             if self.platform_tool == 'vsim':
                 self.set_arg('+DPI_CONFIG_FILE=%s' % gvsoc_config_path)
@@ -119,13 +118,15 @@ class Runner(runner.default_runner.Runner):
                 self.set_cmd_arg('+DPI_CONFIG_FILE=%s' % gvsoc_config_path)
 
         else:
-            if os.environ.get('TARGET_CHIP') == 'GAP9_V2':
+            if os.environ.get('TARGET_CHIP_FAMILY') == 'GAP9':
                 dpi_path = os.path.join(self.__get_platform_path(), 'ips_inputs/dpi/libchipwrapper')
 
                 if self.platform_tool == 'vsim':
                     self.set_arg('-sv_lib %s' % dpi_path)
                 else:
                     self.set_cmd_arg('-sv_lib %s' % dpi_path)
+
+            self.full_config =  js.import_config(self.config.get_dict(), interpret=True, gen=True)
 
         if self.args.cov or os.environ.get('GAPY_RTL_COVERAGE') is not None:
             test_name = os.environ.get('PLPTEST_NAME')
@@ -136,10 +137,14 @@ class Runner(runner.default_runner.Runner):
             self.set_cmd_arg('-covoverwrite -covworkdir %s/cov_work -covtest %s' % (os.environ.get('XCSIM_PATH'), test_name))
 
 
-        self.full_config =  js.import_config(self.config.get_dict(), interpret=True, gen=True)
 
 
     def exec(self):
+        if self.config.get_bool('**/runner/gvsoc_dpi/enabled'):
+
+            gv.gvsoc.dump_config(self.full_config, self.gvsoc_config_path)
+        
+
         os.chdir(self.config.get_str('gapy/work_dir'))
 
         plt_path = self.__get_platform_path()
@@ -179,6 +184,10 @@ class Runner(runner.default_runner.Runner):
             if os.system('xmsdfc models/s26ks512s/bmod/s26ks512s.sdf'):
                 return -1
 
+        svcf_file = self.config.get('rtl/svcf_file')
+        if svcf_file is not None:
+            os.environ['GAPY_SVCF_FILE'] = ' '.join(svcf_file.get_dict())
+
         command = self.__get_platform_cmd()
 
         with open('rtl_config.json', 'w') as file:
@@ -195,7 +204,7 @@ class Runner(runner.default_runner.Runner):
             status = 0
 
         if self.args.extend_traces:
-            traces = ['trace_core_1f_0.log', 'trace_core_00_0.log', 'trace_core_00_1.log', 'trace_core_00_2.log', 'trace_core_00_3.log', 'trace_core_00_4.log', 'trace_core_00_5.log', 'trace_core_00_6.log', 'trace_core_00_7.log', 'trace_core_00_8.log']
+            traces = ['trace_core_00_9.log', 'trace_core_00_0.log', 'trace_core_00_1.log', 'trace_core_00_2.log', 'trace_core_00_3.log', 'trace_core_00_4.log', 'trace_core_00_5.log', 'trace_core_00_6.log', 'trace_core_00_7.log', 'trace_core_00_8.log']
             binary = self.config.get_str('runner/boot-loader')
             rom_binary = '%s/boot/boot-gap9' % self.__get_platform_path()
 
@@ -213,10 +222,11 @@ class Runner(runner.default_runner.Runner):
         binary = self.config.get_str('runner/boot-loader')
 
         self.gen_stim_slm_64('vectors/stim.txt', [binary])
+        self.gen_stim_slm_32('slm_files/l2_stim.slm', [binary])
 
 
 
-    def __gen_stim_slm(self, filename, width):
+    def __gen_stim_slm(self, filename, width, format=None):
 
         #self.dump('  Generating to file: ' + filename)
 
@@ -227,7 +237,10 @@ class Runner(runner.default_runner.Runner):
 
         with open(filename, 'w') as file:
             for key in sorted(self.mem.keys()):
-                file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
+                if format == 'slm':
+                    file.write('@%X %0*X\n' % (int(key), width*2, self.mem.get(key)))
+                else:
+                    file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
 
 
 
@@ -312,6 +325,13 @@ class Runner(runner.default_runner.Runner):
         self.__gen_stim_slm(stim_file, 8)
 
 
+    def gen_stim_slm_32(self, stim_file, binaries):
+
+        self.__parse_binaries(4, binaries)
+
+        self.__gen_stim_slm(stim_file, 4, format='slm')
+
+
     def __process_args(self):
         if self.args.gui:
             self.config.set('rtl/mode', 'gui')
@@ -366,7 +386,12 @@ class Runner(runner.default_runner.Runner):
 
         plt_path = self.__get_platform_path()
 
-        self.set_env('VSIM_RUNNER_FLAGS', ' '.join(self.get_args()))
+        for arg in self.cmd_args:
+            self.set_arg(str(arg))
+
+
+        if self.platform_tool == 'vsim':
+            self.set_env('VSIM_RUNNER_FLAGS', ' '.join(self.get_args()))
         
         command = []
 
@@ -379,8 +404,21 @@ class Runner(runner.default_runner.Runner):
 
         command += self.cmd_args
 
-        for arg in commands.get("args_eval").get_dict():
-            command.append(eval(arg))
+        if os.environ.get('TARGET_CHIP') == 'GAP9':
+            if self.config.get_str("rtl/mode") == 'shell':
+                command.append("-64")
+                command.append("-c")
+                command.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % self.__get_platform_path())
+                command.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_platform_path())
+                command.append("-do 'source %s/tcl_files/run.tcl; set_tcheck; run_and_exit'" % self.__get_platform_path())
+            else:
+                command.append("-64")
+                command.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % self.__get_platform_path())
+                command.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_platform_path())
+                command.append("-do 'source %s/tcl_files/run.tcl; set_tcheck;'" % self.__get_platform_path())
+        else:
+            for arg in commands.get("args_eval").get_dict():
+                command.append(eval(arg))
 
         return ' '.join(command)
 

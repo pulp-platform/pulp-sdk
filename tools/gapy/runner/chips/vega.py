@@ -18,7 +18,7 @@ import traces
 
 class Runner(object):
 
-    def __init__(self, args, config):
+    def __init__(self, args, config, system):
         pass
 
     def gen_efuse_stim(self, filename):
@@ -30,6 +30,7 @@ class Runner(object):
           # RTL platform | flash boot | no encryption | no wait xtal
         efuses[0] = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
         efuses[37] = 1 << 0   # Boot on UDMA HYPER
+        efuses[39] = 1 << 0   # Boot on UDMA HYPER CS 1
 
 
         traces.info('  Generating to file: ' + filename)

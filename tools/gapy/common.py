@@ -1,12 +1,12 @@
 #
 # Copyright (C) 2019 GreenWaves Technologies
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,6 +27,7 @@ import traces
 import json_tools as js
 
 import importlib
+from tools.runner.runner import Runner
 
 gapyDir = os.path.dirname(os.path.realpath(__file__))
 targetsDir = os.path.join(gapyDir, 'targets')
@@ -69,6 +70,11 @@ def appendCommonOptions(parser):
                         default = 'None',
                         choices = targetList,
                         help = 'Gives the name of the target configuration.')
+    
+    parser.add_argument('--py-target',
+                        dest = 'py_target',
+                        default = None,
+                        help = 'Gives the python script of the target configuration.')
     
     #
     # Plateforms
@@ -144,16 +150,29 @@ def importConfig(parser):
         argsCli.remove('-h')
     parser.parse_known_args(argsCli)
     args, _ = parser.parse_known_args(argsCli)
-    if args.target is not None:
+
+    if args.py_target is not None:
+        class_name, module_name = args.py_target.split('@')
+
+        module = importlib.import_module(module_name)
+
+        if not callable(getattr(module, class_name, None)):
+                    raise RuntimeError('Unable to find target class (method: %s, filepath: %s)' % (class_name, module_name))
+
+        runner = Runner(None, 'top', options=args.config_items, target_class=getattr(module, class_name, None))
+        
+        return (js.import_config(runner.get_config()), runner)
+
+    elif args.target is not None:
         jsonPath = os.path.join(targetsDir, args.target + '.json')
         ini_configs = args.ini_configs
 
         if os.environ.get('GAPY_CONFIGS_INI') is not None:
             ini_configs += os.environ.get('GAPY_CONFIGS_INI').split()
 
-        return js.import_config_from_file(jsonPath, find = True, interpret = True, paths = gapyJsonPath, ini_configs=ini_configs, config_items=args.config_items)
+        return (js.import_config_from_file(jsonPath, find = True, interpret = True, paths = gapyJsonPath, ini_configs=ini_configs, config_items=args.config_items), None)
     else:
-        return None
+        return (None, None)
 
 
 def argToInt(value):

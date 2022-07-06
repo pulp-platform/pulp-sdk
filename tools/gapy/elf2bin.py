@@ -1,23 +1,19 @@
-#!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
+
 #
 # Copyright (C) 2019 GreenWaves Technologies
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
-# http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-
-#
-# Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
 #
 
 import sys
@@ -45,7 +41,7 @@ def appendArgs(parser: argparse.ArgumentParser) -> None:
     """
     Append specific module arguments.
     """
-    
+
     # Inputs ELF
     parser.add_argument("elf",
                         nargs = '+',
@@ -53,10 +49,10 @@ def appendArgs(parser: argparse.ArgumentParser) -> None:
                         help = "ELF programs to convert.")
 
 
-def operationFunc(args, config=None):
+def operationFunc(args, config=None, system=None):
 
     traces.info('Gapy ELF2Bin converter.')
-    
+
     for elf in args.elf:
         traces.info("Convertting %s:" % elf.name)
         binApp = binary.App(elf = elf)
@@ -70,25 +66,25 @@ def operationFunc(args, config=None):
 
 def main(custom_commandline = None):
     """Main function for elf2bin.
-    
+
 custom_commandline - Optional override for default arguments parsing (that uses sys.argv), can be a list of custom arguments
     as strings.Arguments and their values need to be added as individual items to the list e.g."-b 115200" thus
     becomes['-b', '115200'].
     """
-    
+
     parser = argparse.ArgumentParser(
         description = 'Convert GAP ELF App to a binary used by SSBL to load app. - v%s' % __version__,
         prog = 'elf2bin',
         fromfile_prefix_chars = '@',
         formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    
+
     common.appendCommonOptions(parser)
-    
+
     appendArgs(parser)
-    
+
     argcomplete.autocomplete(parser)
     args = parser.parse_args(custom_commandline)
-    
+
     try:
         operationFunc(args)
     finally:

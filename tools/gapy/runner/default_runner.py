@@ -21,12 +21,16 @@ import gen_lfs
 import traces
 import os
 import shutil
+import importlib
+import tools.runner.runner
+
 
 class Runner(object):
 
-    def __init__(self, args, config):
+    def __init__(self, args, config, system):
         self.config = config
         self.args = args
+        self.system = system
         self.verbose = config.get_bool('gapy/verbose')
 
     def run(self):
@@ -48,12 +52,25 @@ class Runner(object):
             if self.exec() != 0:
                 return -1
 
+        if self.args.gtkw:
+            if self.gtkw() != 0:
+                return -1
+
         return 0
 
 
     def conf(self):
 
-        boot_mode = self.config.get_str("runner/boot/mode")
+        if  self.config.get('runner/targets') is None:
+            self.__handle_target('runner')
+        else:
+            for target in self.config.get('runner/targets').get_dict():
+                self.__handle_target(target + '/runner', flash_device_prefix=target + '/')
+
+
+    def __handle_target(self, target, flash_device_prefix=None):
+
+        boot_mode = self.config.get_str(target + "/boot/mode")
         if boot_mode is None: 
             raise errors.InputError('The boot mode has to be specified')
 
@@ -61,14 +78,17 @@ class Runner(object):
 
         # If we boot from flash, store the boot binary information in the specified flash
         if boot_mode == 'flash':
-            flash_config = self.get_boot_flash()
+            flash_config = self.get_boot_flash(target, flash_device_prefix)
             flash_config.set('content/boot-loader', binary)
 
         work_dir = self.config.get_str('gapy/work_dir')
 
 
         # Go through all the specified flashes to generate image and stimuli if needed
-        for flash_path in self.config.get_py('runner/flash_devices'):
+        for flash_path in self.config.get_py(target + '/flash_devices'):
+
+            if flash_device_prefix is not None:
+                flash_path = flash_device_prefix + flash_path
 
             traces.info('Building stimuli for flash ' + flash_path)
 
@@ -76,35 +96,40 @@ class Runner(object):
             if flash_config is None:
                 raise errors.InputError('Invalid flash device: ' + flash_path)
 
-            gen_image = False
-            flash_image = self.args.force
+            if flash_config.get('content/image') is None:
 
-            # The flash can contain the boot binary and several partitions for FS
-            if flash_config.get('content/boot-loader') is not None:
+                gen_image = False
+                flash_image = self.args.force
 
-                gen_image = True
+                # The flash can contain the boot binary and several partitions for FS
+                ssbl_flash = os.environ.get('GAP_SSBL_FLASH')
+                if ssbl_flash is not None and ssbl_flash == flash_path:
+                    flash_config.set('content/boot-loader', os.environ.get('GAP_SSBL_PATH'))
 
-
-            if flash_config.get('content/partitions') is not None:
-
-                for name, partition in flash_config.get('content/partitions').get_items().items():
-
+                if flash_config.get('content/boot-loader') is not None:
+                    flash_image = True
                     gen_image = True
 
-                    type_name = partition.get_str('type')
+                if flash_config.get('content/partitions') is not None:
 
-                    if type_name not in ['hostfs'] and ((partition.get('files') is not None and len(partition.get('files').get_dict()) != 0) or (partition.get_str('root_dir'))):
-                        flash_image = True
+                    for name, partition in flash_config.get('content/partitions').get_items().items():
 
-                    if type_name is not None:
-                        img_path = os.path.join(work_dir, flash_path.replace('/', '.') + '.' + name + '.img')
-                        partition.set('image', img_path)
+                        gen_image = True
 
-            if gen_image:
-                img_path = os.path.join(work_dir, flash_path.replace('/', '.') + '.img')
-                flash_config.set('content/image', img_path)
-                flash_config.set('content/flash', flash_image)
+                        type_name = partition.get_str('type')
 
+                        if type_name not in ['hostfs'] and ((partition.get('files') is not None and len(partition.get('files').get_dict()) != 0) or (partition.get_str('root_dir'))):
+                            flash_image = True
+
+                        if type_name is not None:
+                            img_path = os.path.join(work_dir, flash_path.replace('/', '.') + '.' + name + '.img')
+                            partition.set('image', img_path)
+
+                if gen_image:
+                    img_path = os.path.join(work_dir, flash_path.replace('/', '.') + '.img')
+                    flash_config.set('content/gen_image', True)
+                    flash_config.set('content/image', img_path)
+                    flash_config.set('content/flash', flash_image)
 
             stim_format = flash_config.get_str("models/%s/stimuli/format" % self.args.platform)
 
@@ -118,13 +143,40 @@ class Runner(object):
                 flash_config.set("content/stimuli/format", stim_format)
                 flash_config.set("content/stimuli/file", file_path)
 
+            if flash_config.get('fs/encrypt') is not None:
+                flash_config.set('fs/encrypt', self.args.encrypt)
+                flash_config.set('fs/aes_key', self.args.aes_key)
+                flash_config.set('fs/aes_iv', self.args.aes_iv)
 
 
     def image(self):
+
+        # TODO
+        # At long term, all the image build, stimuli and so on should be handled by the
+        # system scripts. For now we just do it for efuse and keep the reset with the old
+        # mechanism
+        if self.args.py_target is not None:
+            if False:
+                spec = importlib.util.spec_from_file_location("target", self.args.py_target)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                module.get_config(options=self.args.config_items).gen_stimuli(self.config.get_str('gapy/work_dir'))
+            else:
+                class_name, module_name = self.args.py_target.split('@')
+                module = importlib.import_module(module_name)
+
+                if not callable(getattr(module, class_name, None)):
+                    raise RuntimeError('Unable to find target class (method: %s, filepath: %s)' % (class_name, module_name))
+
+                tools.runner.runner.Runner(None, 'top', options=self.args.config_items, target_class=getattr(module, class_name, None)).gen_stimuli(self.config.get_str('gapy/work_dir'))
+
         self.gen_stimuli()
         return 0
 
     def flash(self):
+        return 0
+
+    def gtkw(self):
         return 0
 
     def exec(self):
@@ -133,13 +185,27 @@ class Runner(object):
     def exec_prepare(self):
         return 0
 
-    def get_boot_mode(self):
-        return self.config.get_str('runner/boot/mode')
+    def get_boot_mode(self, target='runner'):
+        return self.config.get_str('%s/boot/mode' % target)
 
-    def get_boot_flash(self):
-        flash_path = self.config.get_str("runner/boot/device")
+    def get_flashs(self, target='runner', flash_device_prefix=None):
+        result = []
+        for flash_path in self.config.get_py(target + '/flash_devices'):
+            if flash_device_prefix is not None:
+                flash_path = flash_device_prefix + flash_path
+
+            result.append(self.config.get(flash_path))
+
+        return result
+
+
+    def get_boot_flash(self, target='runner', flash_device_prefix=None):
+        flash_path = self.config.get_str("%s/boot/device" % target)
         if flash_path is None:
             raise errors.InputError('The path to the flash device must be specified when booting from flash')
+
+        if flash_device_prefix is not None:
+            flash_path = flash_device_prefix + flash_path
 
         flash_config = self.config.get(flash_path)
         if flash_config is None:
@@ -161,10 +227,23 @@ class Runner(object):
 
 
     def gen_flash_images(self):
+
+        if  self.config.get('runner/targets') is None:
+            self.__gen_flash_images_for_target('runner')
+        else:
+            for target in self.config.get('runner/targets').get_dict():
+                self.__gen_flash_images_for_target(target + '/runner', flash_device_prefix=target + '/')
+
+        
+    def __gen_flash_images_for_target(self, target, flash_device_prefix=None):
+
         work_dir = self.config.get_str('gapy/work_dir')
 
         # Go through all the specified flashes to generate image and stimuli if needed
-        for flash_path in self.config.get_py('runner/flash_devices'):
+        for flash_path in self.config.get_py(target+ '/flash_devices'):
+
+            if flash_device_prefix is not None:
+                flash_path = flash_device_prefix + flash_path
 
             traces.info('Building stimuli for flash ' + flash_path)
 
@@ -172,23 +251,24 @@ class Runner(object):
             if flash_config is None:
                 raise errors.InputError('Invalid flash device: ' + flash_path)
 
-            if flash_config.get('content/partitions') is not None:
+            if flash_config.get_bool('content/gen_image'):
+                if flash_config.get('content/partitions') is not None:
 
-                for name, partition in flash_config.get('content/partitions').get_items().items():
+                    for name, partition in flash_config.get('content/partitions').get_items().items():
 
-                    type_name = partition.get_str('type')
+                        type_name = partition.get_str('type')
 
-                    if type_name is not None:
-                        if type_name == 'readfs':
-                            gen_readfs.main(config=self.config, partition_config=partition)
-                        elif type_name == 'lfs':
-                            gen_lfs.main(config=self.config, partition_config=partition)
-                        elif type_name == 'hostfs':
-                            work_dir = self.config.get_str('gapy/work_dir')
-                            for file in partition.get('files').get_dict():
-                                shutil.copy(file, work_dir)
-                        else:
-                            raise errors.InputError('Invalid partition type: ' + type_name)
+                        if type_name is not None:
+                            if type_name == 'readfs':
+                                gen_readfs.main(config=self.config, partition_config=partition)
+                            elif type_name == 'lfs':
+                                gen_lfs.main(config=self.config, partition_config=partition)
+                            elif type_name == 'hostfs':
+                                work_dir = self.config.get_str('gapy/work_dir')
+                                for file in partition.get('files').get_dict():
+                                    shutil.copy(file, work_dir)
+                            else:
+                                raise errors.InputError('Invalid partition type: ' + type_name)
 
-            if flash_config.get('content/image') is not None:
-                gen_flash_image.main(config=self.config, flash_config=flash_config)
+                if flash_config.get('content/image') is not None:
+                    gen_flash_image.main(config=self.config, flash_config=flash_config)

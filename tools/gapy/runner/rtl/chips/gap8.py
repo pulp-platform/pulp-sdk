@@ -21,9 +21,9 @@ import os
 
 class Runner(runner.rtl.rtl_runner.Runner, runner.chips.gap8.Runner):
 
-    def __init__(self, args, config):
-        runner.rtl.rtl_runner.Runner.__init__(self, args, config)
-        runner.chips.gap8.Runner.__init__(self, args, config)
+    def __init__(self, args, config, system):
+        runner.rtl.rtl_runner.Runner.__init__(self, args, config, system)
+        runner.chips.gap8.Runner.__init__(self, args, config, system)
 
         self.__process_args()
 

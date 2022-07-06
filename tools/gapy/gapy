@@ -60,7 +60,7 @@ def appendOperations(parser, subparsers, config):
     parserGenFlashImage = subparsers.add_parser(
         'gen_flash_image',
         help = 'Build a Gap flash image from binary files and partition images.')
-    if config:
+    if config and config.get_str("runner/boot/device") is not None:
         flashConfig = config.get(config.get_str("runner/boot/device"))
     else:
         flashConfig = None
@@ -125,7 +125,7 @@ def main(custom_commandline = None):
     #
     # Fetch target Json config
     #
-    config = common.importConfig(parser)
+    (config, system) = common.importConfig(parser)
     
     #
     # Append sub-commands
@@ -149,7 +149,7 @@ def main(custom_commandline = None):
         sys.exit(1)
     
     operationFunc = globals()[args.operation].operationFunc
-    operationFunc(args, config)
+    operationFunc(args, config, system)
     try:  # Clean up AddrFilenamePairAction files
         for address, argfile in args.addr_filename:
             argfile.close()

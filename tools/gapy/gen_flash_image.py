@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
-# PYTHON_ARGCOMPLETE_OK
 #
 # Copyright (C) 2019 GreenWaves Technologies
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +17,9 @@
 #
 # Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
 #
+
+#!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 import sys
 import os
@@ -251,6 +252,31 @@ def appendArgs(parser: argparse.ArgumentParser, flashConfig: js.config) -> None:
                         dest = 'flashStimuliFile',
                         help = "Flash stimuli file.",
                         **kwargs)
+
+    # AES
+    kwargs = { 'default': None }
+    if flashConfig:
+        kwargs['default'] = flashConfig.get_str("fs/encrypt")
+    parser.add_argument('--encryte',
+                        dest = 'encrypt',
+                        help = "Enable the encryption",
+                        **kwargs)
+
+    kwargs = { 'default': None }
+    if flashConfig:
+        kwargs['default'] = flashConfig.get_str("fs/aes_key")
+    parser.add_argument('--aes_key',
+                        dest = 'aes_key',
+                        help = "16 bytes (128 bits) aes key",
+                        **kwargs)
+
+    kwargs = { 'default': None }
+    if flashConfig:
+        kwargs['default'] = flashConfig.get_str("fs/aes_iv")
+    parser.add_argument('--aes_iv',
+                        dest = 'aes_iv',
+                        help = "8 bytes aes iv",
+                        **kwargs)
     
     # Output
     kwargs = { 'default': 'flash.img' }
@@ -262,16 +288,19 @@ def appendArgs(parser: argparse.ArgumentParser, flashConfig: js.config) -> None:
                         **kwargs)
 
 
-def operationFunc(args, flash_config=None):
+def operationFunc(args, flash_config=None, system = None):
 
     traces.info('Build flash image')
     
     flashImage = FlashImage(sectorSize = args.blockSize, flashType = args.flashType)
+    encrypt = flash_config.get_child_bool('fs/encrypt')
+    aes_key = flash_config.get('fs/aes_key')
+    aes_iv = flash_config.get('fs/aes_iv')
     
-    #
+    #                          
     # Bootloader
     #
-    endOfSSBLOffset = flashImage.appendBootloader(elf = args.boot_loader)
+    endOfSSBLOffset = flashImage.appendBootloader(elf = args.boot_loader, encrypt = encrypt, aesKey = aes_key, aesIv = aes_iv)
     traces.info("Partition boot loader size: 0x%X" % endOfSSBLOffset)
     
     #
@@ -475,7 +504,7 @@ def main(custom_commandline = None, config = None, flash_config = None):
     common.appendCommonOptions(parser)
     
     if config is None:
-        config = common.importConfig(parser)
+        (config, system) = common.importConfig(parser)
     
     if flash_config is None:
         flash_config = config.get(config.get_str("runner/boot/device"))
