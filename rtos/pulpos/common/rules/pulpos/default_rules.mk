@@ -283,10 +283,10 @@ conf:
 build: $(TARGETS)
 
 image:
-	gapy --target=$(GAPY_TARGET) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --image --binary=$(TARGETS) $(runner_args)
+	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --image --binary=$(TARGETS) $(runner_args)
 
 flash:
-	gapy --target=$(GAPY_TARGET) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --flash --binary=$(TARGETS) $(runner_args)
+	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --flash --binary=$(TARGETS) $(runner_args)
 
 all:: build image flash
 
@@ -295,13 +295,13 @@ clean::
 	$(V)rm -rf $(TARGET_BUILD_DIR)
 
 run.prepare:
-	gapy --target=$(GAPY_TARGET) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --binary=$(TARGETS) $(runner_args)
+	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --binary=$(TARGETS) $(runner_args)
 
 run.exec:
-	gapy --target=$(GAPY_TARGET) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec --binary=$(TARGETS) $(runner_args)
+	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec --binary=$(TARGETS) $(runner_args)
 
 run:
-	gapy --target=$(GAPY_TARGET) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --exec --binary=$(TARGETS) $(runner_args)
+	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --exec --binary=$(TARGETS) $(runner_args)
 
 dis:
 	$(PULP_OBJDUMP) $(PULP_ARCH_OBJDFLAGS) $(disopt) $(TARGETS)
@@ -319,7 +319,7 @@ size:
 	$(PULPOS_HOME)/bin/pos-size --binary=$(TARGETS) --depth=10
 
 profiler:
-	gapy --target=$(GAPY_TARGET) --platform=$(platform) --work-dir=$(BUILDDIR) $(config_args) $(gapy_args) --config-opt="gvsoc/events/gen_gtkw=false" run --image --flash --exec-prepare --binary=$(BIN) --event=.*@all.bin --event-format=raw $(runner_args)
+	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(BUILDDIR) $(config_args) $(gapy_args) --config-opt="gvsoc/events/gen_gtkw=false" run --image --flash --exec-prepare --binary=$(BIN) --event=.*@all.bin --event-format=raw $(runner_args)
 	cd $(BUILDDIR) && if [ -e all.bin ]; then rm all.bin; fi; mkfifo all.bin
 	cd $(BUILDDIR) && export PULP_CONFIG_FILE=$(BUILDDIR)/gvsoc_config.json && profiler $(BUILDDIR) $(BIN) gvsoc_config.json
 
