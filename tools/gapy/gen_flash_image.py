@@ -21,6 +21,10 @@
 #!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 
+#
+# Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
+#
+
 import sys
 import os
 import argcomplete
