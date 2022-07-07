@@ -1,6 +1,6 @@
-[submodule "tools/gvsoc/common"]
-	path = tools/gvsoc/common
-	url = ../gvsoc.git
 [submodule "tools/gvsoc/pulp"]
 	path = tools/gvsoc/pulp
 	url = ../gvsoc_pulp.git
+[submodule "tools/gvsoc/common"]
+	path = tools/gvsoc/common
+	url = git@github.com:GreenWaves-Technologies/gvsoc.git
