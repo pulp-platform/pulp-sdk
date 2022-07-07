@@ -33,6 +33,7 @@ class Cluster(object):
     has_ne16          = tp.get('cluster/peripherals/ne16') is not None
     has_hwacc         = tp.get('cluster/peripherals/hwacc') is not None
     has_ima           = tp.get('cluster/peripherals/ima') is not None
+    has_ne16          = tp.get('cluster/peripherals/ne16') is not None
     dma_irq_0         = tp.get('cluster/pe/irq').get_dict().index('dma_0')
     dma_irq_1         = tp.get('cluster/pe/irq').get_dict().index('dma_1')
     dma_irq_ext       = tp.get('cluster/pe/irq').get_dict().index('dma_ext')
@@ -62,6 +63,9 @@ class Cluster(object):
     if has_ima:
       ima_irq_0         = tp.get('cluster/pe/irq').get_dict().index('acc_2')
       ima_irq_1         = tp.get('cluster/pe/irq').get_dict().index('acc_3')
+
+    if has_ne16:
+      ne16_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
     if cluster_core is not None:
       core_conf = js.import_config_from_file("ips/riscv/%s.json" % cluster_core, find=True)
@@ -161,6 +165,11 @@ class Cluster(object):
         ("ima", get_mapping_area(tp.get_child_dict("cluster/peripherals/ima"), cluster_size, cluster_id, True))
       ]))
 
+    if has_ne16:
+      periph_ico_mappings.update(OrderedDict([
+      ("ne16", get_mapping_area(tp.get_child_dict("cluster/peripherals/ne16"), cluster_size, cluster_id, True))
+    ]))
+
     cluster.periph_ico = Component(properties=OrderedDict([
       ('@includes@', ["ips/interco/router.json"]),
       ('mappings', periph_ico_mappings)
@@ -237,8 +246,8 @@ class Cluster(object):
       l1_interleaver_nb_masters += 4
     if has_ima:
       l1_interleaver_nb_masters += ima_conf.get_int('nb_masters')
-
-    print(nb_l1_banks)
+    if has_ne16:
+      l1_interleaver_nb_masters += 1
 
     cluster.l1_ico.interleaver = Component(properties=OrderedDict([
       ('@includes@', ["ips/interco/l1_interleaver.json"]),
@@ -341,6 +350,11 @@ class Cluster(object):
         ('@includes@', ["ips/ima/ima_v%d.json" % tp.get_child_int('cluster/peripherals/ima/version')])
       ]))
 
+    if has_ne16:
+      cluster.ne16 = Component(properties=OrderedDict([
+        ('@includes@', ["ips/ne16/ne16.json"])
+      ]))
+
     cluster.icache_ctrl = Component(properties=OrderedDict([
       ('@includes@', ["ips/icache_ctrl/icache_ctrl_v2.json"])
     ]))
@@ -421,6 +435,9 @@ class Cluster(object):
       cluster.periph_ico.hwacc = cluster.hwacc.input
     if has_ima:
       cluster.periph_ico.ima = cluster.ima.input
+    if has_ne16:
+      cluster.periph_ico.ne16 = cluster.ne16.input
+
     cluster.periph_ico.event_unit = cluster.event_unit.input
     cluster.periph_ico.cluster_ctrl = cluster.cluster_ctrl.input
     cluster.periph_ico.timer = cluster.timer.input
@@ -443,6 +460,10 @@ class Cluster(object):
       for i in range(0, nb_pe):
         cluster.ima.irq_0 = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ima_irq_0, i))
         cluster.ima.irq_1 = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ima_irq_1, i))
+
+    if has_ne16:
+      for i in range(0, nb_pe):
+        cluster.ne16.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ne16_irq, i))
 
     for i in range(0, nb_pe):
       cluster.icache_ctrl.flush = cluster.get('pe%d' % i).flush_cache
@@ -546,6 +567,10 @@ class Cluster(object):
       for i in range(0, ima_conf.get_int('nb_masters')):
         cluster.ima.set('out_%d' % i, cluster.l1_ico.new_itf('ima_in_%d' % i))
         cluster.l1_ico.set('ima_in_%d' % i, cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + mchan_conf.get_int("nb_loc_ports") + i)))
+
+    if has_ne16:
+      cluster.ne16.set('out', cluster.l1_ico.new_itf('ne16_in'))
+      cluster.l1_ico.set('ne16_in', cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4)))
 
     for i in range(0, nb_pe):
       cluster.l1_ico.get('pe%d_ico' % i).dma = cluster.l1_ico.new_itf('dma_%d'%i)

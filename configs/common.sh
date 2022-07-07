@@ -23,7 +23,6 @@ export PYTHONPATH=$INSTALL_DIR/python:$PYTHONPATH
 
 # Gapy
 export PATH=$PULP_SDK_HOME/tools/gapy:$PATH
-export PYTHONPATH=$PULP_SDK_HOME/tools/gap-configs/python:$PYTHONPATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gapy:$PYTHONPATH
 export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_PATH
 
@@ -35,6 +34,8 @@ export GVSOC_INC_PATHS="$PULP_SDK_HOME/rtos/pulpos/gap_archi/include/archi/chips
 export GVSOC_ISS_PATH=$PULP_SDK_HOME/tools/gvsoc/common/models/cpu/iss
 export GVSOC_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/common
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/models:$PYTHONPATH
+export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/generators:$PYTHONPATH
+export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/common/generators:$PYTHONPATH
 
 # FPGA
 #export PULP_
