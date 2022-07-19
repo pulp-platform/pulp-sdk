@@ -73,7 +73,9 @@ void Neureka::streamout_setup() {
   if(this->quantization_bits == 8) {
     // std::cout<<"INSIDE QUANT 0 "<<this->use_relu<<std::endl;
     if(this->use_relu) {
-      xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 255);
+      xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 127);
+      if(!this->signed_activation)
+        xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 255);
       // std::cout<<"INSIDE QUANT 1 "<<this->use_relu<<std::endl;
     }
     else {
