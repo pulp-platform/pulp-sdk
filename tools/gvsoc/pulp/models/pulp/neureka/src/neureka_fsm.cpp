@@ -135,15 +135,15 @@ int Neureka::fsm() {
   auto latency = 0;
 
   this->x_buffer_traces = false;
-  this->x_buffer_traces_postload = true;
+  this->x_buffer_traces_postload = false;
   this->accum_traces_poststreamin = false;
   this->accum_traces = false;
-  this->accum_traces_postmatrixvec =true;
+  this->accum_traces_postmatrixvec =false;
   this->accum_traces_normquant = false;
   this->accum_traces_streamout = false;
   this->psum_block_traces = false;
   this->binconv_traces = false;
-  this->fsm_traces = true;
+  this->fsm_traces = false;
   if(this->trace_level == L1_ACTIV_INOUT) {
     this->x_buffer_traces_postload = true;
     this->accum_traces_streamout = true;
@@ -173,6 +173,7 @@ int Neureka::fsm() {
       this->activity.set(1);
       this->trace.msg(vp::trace::LEVEL_INFO, "Starting a job (id=%d) with the following configuration:\n", this->cxt_job_id[this->cxt_use_ptr]);
       this->printout();
+      this->reset_dw_weight_buffer();
 
       state_next = START_STREAMIN;
       break;
@@ -299,6 +300,7 @@ int Neureka::fsm() {
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before load_matrixvec cycle =%d\n", latency);
       // emulate 6 cycles of latency due to FIFOs + ctrl (10 for 1x1 layers)
       if(this->depthwise && this->dw_iter == 0) {
+
         latency += 34; // Depthwise weight offset cycles
       }
       else if(!this->depthwise) {

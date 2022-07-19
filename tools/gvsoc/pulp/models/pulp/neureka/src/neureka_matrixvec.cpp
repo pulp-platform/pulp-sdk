@@ -185,27 +185,17 @@ void Neureka::__weightoffs(
 void Neureka::depthwise_setup() {
   this->k_out_lim_dw = (this->k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN_S && this->subtile_rem_ki != 0) ? this->subtile_rem_ki : this->TP_IN_S;
   this->dw_lim = this->depthwise ? this->k_out_lim_dw : 1;
-  // this->dw_lim = this->depthwise ? 1 : 1;
   this->dw_iter = 0;
   this->mac_enable = xt::zeros<int32_t>({this->TP_IN});
 }
 
 void Neureka::depthwise_update_idx() {
   this->dw_iter++;
-  std::ostringstream stringStream;
-  stringStream << "dw_iter="<<this->dw_iter<<std::endl;
-  std::string copyOfStr = stringStream.str();
-  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
 }
 
 void Neureka::weightoffs() {
   if(this->depthwise) {
     xt::view(this->mac_enable, xt::all()) = 0;
-    // xt::view(this->mac_enable, xt::range(0,this->k_out_lim_dw)) = 1;
-    std::ostringstream stringStream;
-    stringStream << "mac_enable="<<this->mac_enable<<std::endl;
-    std::string copyOfStr = stringStream.str();
-    this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
     xt::view(this->mac_enable, this->dw_iter) = 1;
   }
   else {
@@ -233,10 +223,6 @@ void Neureka::matrixvec_setup() {
     false
   );
 
-  std::ostringstream stringStream;
-  stringStream <<"base_addr_W_dw="<<this->base_addr_W_dw-this->weights_ptr<<", word_length="<<this->subtile_nb_ki*this->qw<<", word_stride="<<this->weights_d0_stride<<", line_length="<<this->qw<<", line_stride="<<this->weights_d1_stride<<std::endl;
-  std::string copyOfStr = stringStream.str();
-  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
   
   // 3x3 mode: layout is (k_out, subtile_nb_ki*qw, 9, TP_IN/8)
   this->base_addr_W_3x3 = this->weights_ptr + (k_out_major*this->TP_OUT*this->subtile_nb_ki*this->qw + k_in_major*this->qw) * 8 * (this->TP_IN/8);
@@ -281,7 +267,29 @@ int Neureka::matrixvec_cycle() {
   auto k_out = this->depthwise ? this->dw_iter : this->mv_k_out_iter;
   // load and unpack weight bits
   int64_t cycles = 0;
-  xt::xarray<uint8_t> weight_ld = vld_W.ex(read_size*(this->TP_IN/8), this->weight_demux, cycles); // each packet is composed of read_size x 16 bit
+  bool fetch_weight;
+  xt::xarray<uint8_t> weight_ld;
+  
+  if((this->depthwise && (this->dw_iter==0)) || (!this->depthwise)){
+    weight_ld=vld_W.ex(read_size*(this->TP_IN/8), this->weight_demux, cycles);
+    if(this->depthwise)
+    {
+      if(this->mv_qw_iter==0){
+        this->reset_dw_weight_buffer();
+      }
+      xt::view(this->dw_weight_buffer, this->mv_qw_iter,xt::all()) = xt::view(weight_ld,xt::all());
+    }
+  }
+  else 
+  {
+    weight_ld = xt::view(this->dw_weight_buffer, this->mv_qw_iter, xt::all());
+  }
+
+  std::ostringstream stringStream;
+  stringStream << "Weight Read =" << xt::view(weight_ld, xt::all())<<"\n";
+  std::string copyOfStr = stringStream.str();
+  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
+
   auto shape = xt::adapt(weight_ld.shape());
 
   xt::xarray<uint8_t> weight_ld_transform = (this->fs == 3) ? __Weight_transform_28(weight_ld) : __Weight_transform_1x1(weight_ld);
@@ -292,22 +300,17 @@ int Neureka::matrixvec_cycle() {
   xt::xarray<int32_t> space = xt::logspace(0, 7, 8, 2);
   space = xt::reshape_view(space, {8, 1});
 
-  std::ostringstream stringStream;
-  stringStream << "mac_enable"<<xt::view(this->mac_enable, xt::all())<<std::endl;
-  std::string copyOfStr = stringStream.str();
-  this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
-
   this->__BinConvArray(weight, scale, k_out, this->row_enable, this->mac_enable, false, false, this->fs==1);
 
   return (int) cycles;
 }
 
+void Neureka::reset_dw_weight_buffer() {
+  this->dw_weight_buffer = xt::zeros<uint8_t>({8, 32});
+}
+
 bool Neureka::matrixvec_exit_idx() {
   if(this->mv_k_out_iter == this->mv_k_out_lim-1 && this->mv_qw_iter == this->mv_qw_lim-1) {
-    std::ostringstream stringStream;
-    stringStream << "mv_k_out_iter="<<this->mv_k_out_iter<<", mv_k_out_lim="<<this->mv_k_out_lim<<", mv_qw_iter="<<this->mv_qw_iter<<", mv_qw_lim="<<this->mv_qw_lim<<std::endl;
-    std::string copyOfStr = stringStream.str();
-    this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
     return true;
   }
   else {
@@ -327,10 +330,6 @@ void Neureka::matrixvec_update_idx() {
 
 bool Neureka::matrixvec_to_matrixvec_idx() {
   if((this->dw_iter == this->dw_lim-1)) {
-    std::ostringstream stringStream;
-    stringStream << "dw_iter="<<this->dw_iter<<", dw_lim="<<this->dw_lim<<std::endl;
-    std::string copyOfStr = stringStream.str();
-    this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
     return true;
   }
   else {
