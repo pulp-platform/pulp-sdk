@@ -112,11 +112,15 @@ xt::xarray<uint8_t> __WeightUnpack(
 xt::xarray<int64_t> __BinConvBlock(
   xt::xarray<uint8_t> w,
   xt::xarray<int8_t> x,
+  xt::xarray<uint8_t> ux,
+  bool signed_activation,
   int scale=0,
   int TP_IN=32
 ) {
-
-  return xt::sum(w * x, 0) * scale;
+  if(signed_activation)
+    return xt::sum(w * x, 0) * scale;
+  else 
+    return xt::sum(w * ux, 0) * scale;
 }
 
 void Neureka::__BinConvArray(
@@ -143,7 +147,7 @@ void Neureka::__BinConvArray(
         this->trace.msg(vp::trace::LEVEL_DEBUG, copyOfStr.c_str());
       }
       
-      xt::view(this->psum_block, c, r) = __BinConvBlock(xt::view(weight, r) * mac_enable, activ, scale_loc, this->TP_IN);
+      xt::view(this->psum_block, c, r) = __BinConvBlock(xt::view(weight, r) * mac_enable, activ, activ, this->signed_activation,  scale_loc, this->TP_IN);
       if(weight_shift && weight_invert) {
         xt::view(this->psum_block, c, r) = -xt::view(this->psum_block, c, r);
       }
