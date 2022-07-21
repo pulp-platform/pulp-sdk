@@ -59,7 +59,7 @@ typedef struct {
 typedef struct {
   //ompTask_t *taskPool;
   omp_team_t plainTeam;
-#ifdef __LLVM__
+#ifdef __clang__
   int numThreads;
 #endif
   unsigned short coreMask;

@@ -140,7 +140,7 @@ static void __pi_fs_free(pi_read_fs_t *fs)
 static void __pi_fs_mount_step(void *arg)
 {
     pi_read_fs_t *fs = (pi_read_fs_t *) arg;
-    const pi_partition_table_t partition_table = NULL;
+    pi_partition_table_t partition_table = NULL;
     const pi_partition_t *readfs_partition = NULL;
     pi_err_t rc;
     

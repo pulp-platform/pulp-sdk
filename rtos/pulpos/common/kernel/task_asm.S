@@ -80,6 +80,7 @@ pos_task_remote_enqueue:
     sw  a0, -12(sp)
     sw  a1, -16(sp)
     sw  a2, -20(sp)
+    sw  t0, -24(sp)
 
     li   x8, ARCHI_NB_CLUSTER
     la   x9, pos_cluster
@@ -129,6 +130,7 @@ pos_task_remote_enqueue_event_loop_cluster_continue:
     lw  a0, -12(sp)
     lw  a1, -16(sp)
     lw  a2, -20(sp)
+    lw  t0, -24(sp)
 
     mret
 

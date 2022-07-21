@@ -104,7 +104,7 @@ static void __rt_omp_init(int exec_main)
 
   initTeam(_this, &_this->plainTeam);
 
-#ifdef __LLVM__
+#ifdef __clang__
   _this->numThreads = 0;
 #endif
 

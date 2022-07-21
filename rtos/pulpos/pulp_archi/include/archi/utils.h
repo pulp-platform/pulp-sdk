@@ -50,7 +50,7 @@
 #define archi_read(add)          (*(volatile unsigned int *)(long)(add))
 
 
-#if defined(__riscv__) && !defined(__LLVM__) && !defined(RV_ISA_RV32)
+#if defined(__riscv__) && !defined(RV_ISA_RV32)
 #define ARCHI_WRITE_VOL(base, offset, value) __builtin_pulp_write_base_off_v((value), (base), (offset))
 #define ARCHI_WRITE(base, offset, value)     __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset))
 #define ARCHI_READ(base, offset)             __builtin_pulp_OffsetedRead((int *)(base), (offset))

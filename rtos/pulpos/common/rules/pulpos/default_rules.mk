@@ -29,6 +29,13 @@ ifdef PULP_RISCV_GCC_TOOLCHAIN
 PULP_CC := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_LD)
 PULP_AR := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_AR)
+PULP_CFLAGS += -fno-jump-tables -fno-tree-loop-distribute-patterns
+endif
+ifdef PULP_RISCV_LLVM_TOOLCHAIN
+PULP_CC := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/clang
+PULP_LD := /home/tagliavini/pulpnn-isa/pulp-riscv-gnu-toolchain/INSTALL/bin/$(PULP_LD)
+#PULP_LD := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_LD)
+PULP_AR := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_AR)
 endif
 endif
 endif
@@ -37,7 +44,6 @@ VPATH = $(PULPOS_HOME) $(PULPOS_MODULES)
 
 include $(PULPOS_HOME)/rules/pulpos/src.mk
 
-PULP_CFLAGS += -fno-jump-tables -fno-tree-loop-distribute-patterns
 
 ifeq '$(CONFIG_LIBC_MINIMAL)' '1'
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/lib/libc/minimal/include
