@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -25,6 +25,8 @@
 #include <vp/vp.hpp>
 #include <vp/itf/io.hpp>
 #include <vp/itf/wire.hpp>
+
+#include <memory>
 
 #ifdef USE_TRDB
 #define HAVE_DECL_BASENAME 1
@@ -49,11 +51,11 @@ public:
   static void fetch_grant(void *_this, vp::io_req *req);
   static void fetch_response(void *_this, vp::io_req *req);
 
-  static void exec_instr(void *__this, vp::clock_event *event);
-  static void exec_first_instr(void *__this, vp::clock_event *event);
-  void exec_first_instr(vp::clock_event *event);
-  static void exec_instr_check_all(void *__this, vp::clock_event *event);
-  static inline void exec_misaligned(void *__this, vp::clock_event *event);
+  static void exec_instr(void *__this, std::shared_ptr<vp::clock_event> event);
+  static void exec_first_instr(void *__this, std::shared_ptr<vp::clock_event> event);
+  void exec_first_instr(std::shared_ptr<vp::clock_event> event);
+  static void exec_instr_check_all(void *__this, std::shared_ptr<vp::clock_event> event);
+  static inline void exec_misaligned(void *__this, std::shared_ptr<vp::clock_event> event);
 
   static void irq_req_sync(void *__this, int irq);
   void debug_req();
@@ -69,7 +71,7 @@ public:
 
   void irq_check();
   void wait_for_interrupt();
-  
+
   void set_halt_mode(bool halted, int cause);
   void check_state();
 
@@ -128,15 +130,15 @@ public:
   vp::trace     insn_trace_event;
   vp::trace     misaligned_req_event;
 
-  static void ipc_stat_handler(void *__this, vp::clock_event *event);
+  static void ipc_stat_handler(void *__this, std::shared_ptr<vp::clock_event> event);
   void gen_ipc_stat(bool pulse=false);
   void trigger_ipc_stat();
   void stop_ipc_stat();
   int ipc_stat_nb_insn;
   vp::trace     ipc_stat_event;
-  vp::clock_event *ipc_clock_event;
+  std::shared_ptr<vp::clock_event> ipc_clock_event;
   int ipc_stat_delay;
-  
+
 #ifdef USE_TRDB
   trdb_ctx *trdb;
   struct list_head trdb_packet_list;
@@ -145,10 +147,10 @@ public:
 
 private:
 
-  vp::clock_event *current_event;
-  vp::clock_event *instr_event;
-  vp::clock_event *check_all_event;
-  vp::clock_event *misaligned_event;
+  std::shared_ptr<vp::clock_event> current_event;
+  std::shared_ptr<vp::clock_event> instr_event;
+  std::shared_ptr<vp::clock_event> check_all_event;
+  std::shared_ptr<vp::clock_event> misaligned_event;
 
   int irq_req;
 
@@ -195,7 +197,7 @@ inline void iss_wrapper::enqueue_next_instr(int64_t cycles)
   }
 }
 
-void iss_wrapper::exec_misaligned(void *__this, vp::clock_event *event)
+void iss_wrapper::exec_misaligned(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   iss_wrapper *_this = (iss_wrapper *)__this;
 
@@ -229,11 +231,11 @@ inline int iss_wrapper::data_req_aligned(iss_addr_t addr, uint8_t *data_ptr, int
   req->set_is_write(is_write);
   req->set_data(data_ptr);
   int err = data.req(req);
-  if (err == vp::IO_REQ_OK) 
+  if (err == vp::IO_REQ_OK)
   {
     this->cpu.state.insn_cycles += req->get_latency();
   }
-  else if (err == vp::IO_REQ_INVALID) 
+  else if (err == vp::IO_REQ_INVALID)
   {
     vp_warning_always(&this->warning, "Invalid access (pc: 0x%x, offset: 0x%x, size: 0x%x, is_write: %d)\n", this->cpu.current_insn->addr, addr, size, is_write);
   }

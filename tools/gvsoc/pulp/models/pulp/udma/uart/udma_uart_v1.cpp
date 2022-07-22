@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -25,6 +25,7 @@
 #include "archi/utils.h"
 #include "vp/itf/uart.hpp"
 
+#include <memory>
 
 Uart_periph_v1::Uart_periph_v1(udma *top, int id, int itf_id) : Udma_periph(top, id)
 {
@@ -39,7 +40,7 @@ Uart_periph_v1::Uart_periph_v1(udma *top, int id, int itf_id) : Udma_periph(top,
 
   uart_itf.set_sync_meth(&Uart_periph_v1::rx_sync);
 }
- 
+
 
 void Uart_periph_v1::reset(bool active)
 {
@@ -150,7 +151,7 @@ Uart_tx_channel::Uart_tx_channel(udma *top, Uart_periph_v1 *periph, int id, stri
 
 
 
-void Uart_tx_channel::handle_pending_word(void *__this, vp::clock_event *event)
+void Uart_tx_channel::handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Uart_tx_channel *_this = (Uart_tx_channel *)__this;
 

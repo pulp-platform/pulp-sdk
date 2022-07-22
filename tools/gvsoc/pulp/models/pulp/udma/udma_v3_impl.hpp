@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -36,6 +36,8 @@
 #include <string.h>
 #include <vector>
 #include "archi/udma/udma_v3.h"
+
+#include <memory>
 
 #ifdef HAS_HYPER
 #if HYPER_VERSION == 2
@@ -122,13 +124,13 @@ protected:
 private:
   virtual vp::io_req_status_e saddr_req(vp::io_req *req);
   virtual vp::io_req_status_e size_req(vp::io_req *req);
-  virtual vp::io_req_status_e cfg_req(vp::io_req *req); 
+  virtual vp::io_req_status_e cfg_req(vp::io_req *req);
   void enqueue_transfer();
   virtual void handle_ready_req(vp::io_req *req);
 
   uint32_t saddr;
   uint32_t size;
-  
+
   int transfer_size;
   bool continuous_mode;
 
@@ -136,7 +138,7 @@ private:
   string name;
   Udma_channel *next;
 
-  vp::clock_event *event;
+  std::shared_ptr<vp::clock_event> event;
 
   Udma_queue<Udma_transfer> *free_reqs;
   Udma_queue<Udma_transfer> *pending_reqs;
@@ -168,7 +170,7 @@ public:
   Udma_tx_channel(udma *top, int id, string name) : Udma_channel(top, id, name) {}
   bool is_tx() { return true; }
 
-  void handle_pending_word(void *__this, vp::clock_event *event);
+  void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
 
 };
 
@@ -208,7 +210,7 @@ private:
 
 
 
-class Udma_periph 
+class Udma_periph
 {
 public:
   Udma_periph(udma *top, int id);
@@ -219,7 +221,7 @@ public:
   int id;
 
   bool get_periph_status() { return is_on; }
-  
+
 protected:
   Udma_channel *channel0 = NULL;
   Udma_channel *channel1 = NULL;
@@ -244,14 +246,14 @@ public:
   void set_addr(unsigned int addr) { this->addr = addr; this->current_addr = addr; }
   void set_eot_event(int event) { this->eot_event = event; }
 
-private:  
+private:
   static void data_grant(void *_this, vp::io_req *req);
   static void data_response(void *_this, vp::io_req *req);
-  static void handle_pending_word(void *__this, vp::clock_event *event);
+  static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
   void check_state();
 
   vp::io_master io_itf;
-  vp::clock_event *pending_access_event;
+  std::shared_ptr<vp::clock_event> pending_access_event;
   vp::io_req *pending_req;
   vp::io_req io_req;
   unsigned int addr;
@@ -294,11 +296,11 @@ public:
 private:
   void reset(bool active);
   void check_state();
-  static void handle_pending_word(void *__this, vp::clock_event *event);
+  static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
 
   I2c_periph_v2 *periph;
 
-  vp::clock_event *pending_word_event;
+  std::shared_ptr<vp::clock_event> pending_word_event;
 
   uint32_t pending_word;
   int pending_bits;
@@ -411,11 +413,11 @@ public:
 private:
   void reset(bool active);
   void check_state();
-  static void handle_pending_word(void *__this, vp::clock_event *event);
+  static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
 
   Uart_periph_v1 *periph;
 
-  vp::clock_event *pending_word_event;
+  std::shared_ptr<vp::clock_event> pending_word_event;
 
   uint32_t pending_word;
   int pending_bits;
@@ -643,13 +645,13 @@ private:
 //   vp::io_req_status_e custom_req(vp::io_req *req, uint64_t offset);
 //   static void rx_sync(void *__this, int data);
 //   void reset(bool active);
-//   static void handle_pending_word(void *__this, vp::clock_event *event);
+//   static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
 //   void check_state();
 //   void handle_ready_reqs();
 
 // protected:
 //   vp::hyper_master hyper_itf;
-//   unsigned int *regs; 
+//   unsigned int *regs;
 //   int clkdiv;
 //   Hyper_tx_channel *tx_channel;
 //   Hyper_rx_channel *rx_channel;
@@ -660,7 +662,7 @@ private:
 //   vector<Udma_transfer *> pending_transfers;
 
 //   int pending_bytes;
-//   vp::clock_event *pending_word_event;
+//   std::shared_ptr<vp::clock_event> pending_word_event;
 //   int64_t next_bit_cycle;
 //   vp::io_req *pending_req;
 //   uint32_t pending_word;
@@ -696,7 +698,7 @@ private:
 //   vp::io_req_status_e custom_req(vp::io_req *req, uint64_t offset);
 //   static void rx_sync(void *__this, int data);
 //   void reset(bool active);
-//   static void handle_pending_word(void *__this, vp::clock_event *event);
+//   static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
 //   void check_state();
 //   void handle_ready_reqs();
 
@@ -717,7 +719,7 @@ private:
 
 //   int eot_event;
 //   int pending_bytes;
-//   vp::clock_event *pending_word_event;
+//   std::shared_ptr<vp::clock_event> pending_word_event;
 //   int64_t next_bit_cycle;
 //   vp::io_req *pending_req;
 //   uint32_t pending_word;
@@ -832,7 +834,7 @@ public:
   vp::io_req_status_e custom_req(vp::io_req *req, uint64_t offset, int id);
   static void rx_sync(void *__this, int data);
   void reset(bool active);
-  static void handle_pending_word(void *__this, vp::clock_event *event);
+  static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
   void check_state();
   void handle_ready_reqs();
 
@@ -854,7 +856,7 @@ public:
 protected:
   vp::hyper_master hyper_itf;
   unsigned int **regs;
-  unsigned int *common_regs; 
+  unsigned int *common_regs;
   int clkdiv;
   Hyper_v3_tx_channel *tx_channel;
   Hyper_v3_rx_channel *rx_channel;
@@ -865,7 +867,7 @@ private:
   vector<Udma_transfer *> pending_transfers;
 
   int pending_bytes;
-  vp::clock_event *pending_word_event;
+  std::shared_ptr<vp::clock_event> pending_word_event;
   int64_t next_bit_cycle;
   vp::io_req *pending_req;
   uint32_t pending_word;
@@ -957,13 +959,13 @@ public:
 
   void enqueue_ready(Udma_channel *channel);
 
-  static void channel_handler(void *__this, vp::clock_event *event);
+  static void channel_handler(void *__this, std::shared_ptr<vp::clock_event> event);
   void free_read_req(vp::io_req *req);
 
   void trigger_event(int event);
 
   vp::trace *get_trace() { return &this->trace; }
-  vp::clock_engine *get_periph_clock() { return this->periph_clock; }
+  std::shared_ptr<vp::clock_engine> get_periph_clock() { return this->periph_clock; }
 
 protected:
   vp::io_master l2_itf;
@@ -976,27 +978,27 @@ private:
   vp::io_req_status_e conf_req(vp::io_req *req, uint64_t offset);
   vp::io_req_status_e periph_req(vp::io_req *req, uint64_t offset);
   static vp::io_req_status_e req(void *__this, vp::io_req *req);
-  static void event_handler(void *__this, vp::clock_event *event);
+  static void event_handler(void *__this, std::shared_ptr<vp::clock_event> event);
   static void l2_grant(void *__this, vp::io_req *req);
   static void l2_response(void *__this, vp::io_req *req);
-  static void clk_reg(component *_this, component *clock);
+  +static void clk_reg(component *_this, std::shared_ptr<vp::clock_engine> clock);
 
   vp::trace     trace;
   vp::io_slave in;
   vp::clk_slave    periph_clock_itf;
-  vp::clock_engine *periph_clock;
-  
+  std::shared_ptr<vp::clock_engine> periph_clock;
+
   int nb_periphs;
   int l2_read_fifo_size;
   std::vector<Udma_periph *>periphs;
   Udma_queue<Udma_channel> *ready_rx_channels;
   Udma_queue<Udma_channel> *ready_tx_channels;
   uint32_t clock_gating;
-  vp::clock_event *event;
+  std::shared_ptr<vp::clock_event> event;
   Udma_queue<vp::io_req> *l2_read_reqs;
   Udma_queue<vp::io_req> *l2_write_reqs;
   Udma_queue<vp::io_req> *l2_read_waiting_reqs;
-  
+
   vp::wire_master<int>    event_itf;
 };
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -37,7 +37,7 @@
 #define HALT_CAUSE_ECALL     1
 #define HALT_CAUSE_ILLEGAL   2
 #define HALT_CAUSE_INVALID   3
-#define HALT_CAUSE_INTERRUPT 4 
+#define HALT_CAUSE_INTERRUPT 4
 #define HALT_CAUSE_HALT      15
 #define HALT_CAUSE_STEP      15
 
@@ -55,7 +55,7 @@ static inline void trdb_record_instruction(iss_wrapper *_this, iss_insn_t *insn)
   instr.iaddr = insn->addr;
   instr.instr = insn->opcode;
   instr.compressed = insn->size == 2;
-  
+
   if (trdb_compress_trace_step(_this->trdb, &_this->trdb_packet_list, &instr))
   {
     struct tr_packet *packet = trdb_get_packet(_this->trdb_packet_list.next, list);
@@ -131,14 +131,14 @@ void iss_wrapper::dump_debug_traces()
   }
 }
 
-void iss_wrapper::exec_instr(void *__this, vp::clock_event *event)
+void iss_wrapper::exec_instr(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   iss_t *_this = (iss_t *)__this;
 
   EXEC_INSTR_COMMON(_this, event, iss_exec_step_nofetch);
 }
 
-void iss_wrapper::exec_instr_check_all(void *__this, vp::clock_event *event)
+void iss_wrapper::exec_instr_check_all(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   iss_t *_this = (iss_t *)__this;
 
@@ -159,14 +159,14 @@ void iss_wrapper::exec_instr_check_all(void *__this, vp::clock_event *event)
   }
 }
 
-void iss_wrapper::exec_first_instr(vp::clock_event *event)
+void iss_wrapper::exec_first_instr(std::shared_ptr<vp::clock_event> event)
 {
   current_event = event_new(iss_wrapper::exec_instr);
   iss_start(this);
   exec_instr((void *)this, event);
 }
 
-void iss_wrapper::exec_first_instr(void *__this, vp::clock_event *event)
+void iss_wrapper::exec_first_instr(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   iss_t *_this = (iss_t *)__this;
   _this->exec_first_instr(event);
@@ -252,7 +252,7 @@ void iss_wrapper::stop_ipc_stat()
   this->ipc_stat_delay = 10;
 }
 
-void iss_wrapper::ipc_stat_handler(void *__this, vp::clock_event *event)
+void iss_wrapper::ipc_stat_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   iss_t *_this = (iss_t *)__this;
   _this->gen_ipc_stat();
@@ -334,7 +334,7 @@ void iss_wrapper::set_halt_mode(bool halted, int cause)
 
     this->halted.set(halted);
 
-    if (this->halt_status_itf.is_bound()) 
+    if (this->halt_status_itf.is_bound())
       this->halt_status_itf.sync(this->halted.get());
   }
 }
@@ -366,7 +366,7 @@ void iss_wrapper::halt_sync(void *__this, bool halted)
 
 void iss_wrapper::check_state()
 {
-  vp::clock_event *event = current_event;
+  std::shared_ptr<vp::clock_event> event = current_event;
 
   current_event = check_all_event;
 
@@ -443,7 +443,7 @@ int iss_wrapper::data_misaligned_req(iss_addr_t addr, uint8_t *data_ptr, int siz
   // during the next cycle
   int size0 = addr1 - addr;
   int size1 = size - size0;
-  
+
   misaligned_access.set(true);
 
   // Remember the access properties for the second access
@@ -510,7 +510,7 @@ bool iss_wrapper::user_access(iss_addr_t addr, uint8_t *buffer, iss_addr_t size,
   req->set_is_write(is_write);
   req->set_data(buffer);
   int err = data.req(req);
-  if (err != vp::IO_REQ_OK) 
+  if (err != vp::IO_REQ_OK)
   {
     if (err == vp::IO_REQ_INVALID)
       this->warning.fatal("Invalid IO response during debug request\n");
@@ -536,7 +536,7 @@ std::string iss_wrapper::read_user_string(iss_addr_t addr, int size)
     req->set_is_write(false);
     req->set_data(&buffer);
     int err = data.req(req);
-    if (err != vp::IO_REQ_OK) 
+    if (err != vp::IO_REQ_OK)
     {
       if (err == vp::IO_REQ_INVALID)
         return "";
@@ -747,7 +747,7 @@ void iss_wrapper::handle_ebreak()
 
       break;
     }
-    
+
     case GV_SEMIHOSTING_TRACE_ENABLE: {
       int id = this->cpu.regfile.regs[11];
       vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
@@ -760,9 +760,9 @@ void iss_wrapper::handle_ebreak()
         trace->set_active(this->cpu.regfile.regs[12]);
       }
 
-      break; 
+      break;
     }
-    
+
     case GV_SEMIHOSTING_VCD_CONFIGURE: {
       int enabled = this->cpu.regfile.regs[11];
       this->traces.get_trace_manager()->set_global_enable(enabled);
@@ -794,10 +794,10 @@ void iss_wrapper::handle_ebreak()
 
       break;
     }
-    
+
     case GV_SEMIHOSTING_VCD_CONF_TRACE:
     break;
-    
+
     case GV_SEMIHOSTING_VCD_DUMP_TRACE: {
       int id = this->cpu.regfile.regs[11];
       vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
@@ -820,9 +820,9 @@ void iss_wrapper::handle_ebreak()
         }
       }
 
-      break; 
+      break;
     }
-    
+
     case GV_SEMIHOSTING_VCD_DUMP_TRACE_STRING: {
       int id = this->cpu.regfile.regs[11];
       vp::trace *trace = this->traces.get_trace_manager()->get_trace_from_id(id);
@@ -845,7 +845,7 @@ void iss_wrapper::handle_ebreak()
       }
       break;
     }
-    
+
     default:
       this->warning.force_warning("Unknown ebreak call (id: %d)\n", id);
       break;
@@ -1040,7 +1040,7 @@ int iss_wrapper::build()
   power.new_trace("power_trace", &power_trace);
 
   this->new_reg("bootaddr", &this->bootaddr_reg, get_config_int("boot_addr"));
-  
+
   this->new_reg("fetch_enable", &this->fetch_enable_reg, get_js_config()->get("fetch_enable")->get_bool());
   this->new_reg("is_active", &this->is_active_reg, false);
   this->new_reg("stalled", &this->stalled, false);

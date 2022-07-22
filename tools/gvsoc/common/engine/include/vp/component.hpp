@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <memory>
 #include "gv/gvsoc.h"
 #include "vp/ports.hpp"
 #include "vp/config.hpp"
@@ -151,7 +152,7 @@ namespace vp {
         this->update(reg_offset, size, value, is_write);
       }
     }
-    
+
   protected:
     uint8_t reset_val;
 
@@ -207,7 +208,7 @@ namespace vp {
 
   protected:
     uint8_t reset_val;
-    
+
   private:
     uint8_t value;
 
@@ -260,7 +261,7 @@ namespace vp {
 
   protected:
     uint16_t reset_val;
-    
+
   private:
     uint16_t value;
 
@@ -313,7 +314,7 @@ namespace vp {
 
   protected:
     uint32_t reset_val;
-    
+
   private:
     uint32_t value;
 
@@ -372,9 +373,9 @@ namespace vp {
 
   protected:
     uint64_t reset_val;
-    
+
   private:
-    uint64_t value; 
+    uint64_t value;
 
   };
 
@@ -425,7 +426,7 @@ namespace vp {
 
     inline int64_t get_time();
 
-    virtual vp::time_engine *get_time_engine() ;
+    virtual std::shared_ptr<vp::time_engine> get_time_engine() ;
 
     string get_path() { return path; }
 
@@ -514,7 +515,7 @@ namespace vp {
     void bind_comps();
 
     std::map<std::string, void *> all_services;
- 
+
     std::vector<component *> childs;
     std::map<std::string, component *> childs_dict;
 
@@ -536,9 +537,9 @@ namespace vp {
 
     bool reset_done_from_itf;
 
-    time_engine *time_engine_ptr = NULL;
+    std::shared_ptr<time_engine> time_engine_ptr = NULL;
   };
 
-};  
+};
 
 #endif

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -25,6 +25,8 @@
 #include "vp/vp_data.hpp"
 #include "vp/component.hpp"
 #include "vp/time/time_engine.hpp"
+
+#include <memory>
 
 namespace vp {
 
@@ -38,19 +40,19 @@ namespace vp {
 
     clock_engine(js::config *config);
 
-    void cancel(clock_event *event);
+    void cancel(std::shared_ptr<clock_event> event);
 
     void reenqueue_to_engine();
 
     bool dequeue_from_engine();
 
     void apply_frequency(int frequency);
-    
-    inline clock_event *reenqueue(clock_event *event, int64_t cycles);
 
-    inline clock_event *reenqueue_ext(clock_event *event, int64_t cycles);
+    inline std::shared_ptr<clock_event> reenqueue(std::shared_ptr<clock_event> event, int64_t cycles);
 
-    inline clock_event *enqueue(clock_event *event, int64_t cycles)
+    inline std::shared_ptr<clock_event> reenqueue_ext(std::shared_ptr<clock_event> event, int64_t cycles);
+
+    inline std::shared_ptr<clock_event> enqueue(std::shared_ptr<clock_event> event, int64_t cycles)
     {
       vp_assert(!event->enqueued, 0, "Enqueueing already enqueued event\n");
 
@@ -69,33 +71,28 @@ namespace vp {
       return event;
     }
 
-    inline clock_event *enqueue_ext(clock_event *event, int64_t cycles)
+    inline std::shared_ptr<clock_event> enqueue_ext(std::shared_ptr<clock_event> event, int64_t cycles)
     {
       this->sync();
       return this->enqueue(event, cycles);
     }
 
-    clock_event *event_new(component_clock *comp, clock_event_meth_t *meth)
+    std::shared_ptr<clock_event> event_new(std::shared_ptr<component_clock> comp, clock_event_meth_t *meth)
     {
-      clock_event *event = new clock_event(comp, meth);
+      std::shared_ptr<clock_event> event = std::make_shared<clock_event>(comp, meth);
       return event;
     }
 
-    clock_event *event_new(component_clock *comp, void *_this, clock_event_meth_t *meth)
+    std::shared_ptr<clock_event> event_new(std::shared_ptr<component_clock> comp, void *_this, clock_event_meth_t *meth)
     {
-      clock_event *event = new clock_event(comp, _this, meth);
+      std::shared_ptr<clock_event> event = std::make_shared<clock_event>(comp, _this, meth);
       return event;
     }
 
     inline void retain() { engine->retain(); }
     inline void release() { engine->release(); }
 
-    vp::clock_event *get_next_event();
-
-    void event_del(component_clock *comp, clock_event *event)
-    {
-      delete event;
-    }
+    std::shared_ptr<vp::clock_event> get_next_event();
 
     int64_t exec();
 
@@ -103,9 +100,9 @@ namespace vp {
 
     void update();
 
-    void set_time_engine(vp::time_engine *engine) { this->engine = engine; }
+    void set_time_engine(std::shared_ptr<vp::time_engine> engine) { this->engine = engine; }
 
-    vp::time_engine *get_engine() { return engine; }
+    std::shared_ptr<vp::time_engine> get_engine() { return engine; }
 
     inline int64_t get_cycles() { return cycles; }
 
@@ -121,7 +118,7 @@ namespace vp {
 
     void flush_delayed_queue();
 
-    inline void enqueue_to_cycle(clock_event *event, int64_t cycles)
+    inline void enqueue_to_cycle(std::shared_ptr<clock_event> event, int64_t cycles)
     {
       // The position of one round of the circular buffer is always aligned
       // on the buffer size.
@@ -132,17 +129,17 @@ namespace vp {
       event->cycle = cycles + get_cycles();
     }
 
-    clock_event *enqueue_other(clock_event *event, int64_t cycles);
+    std::shared_ptr<clock_event> enqueue_other(std::shared_ptr<clock_event> event, int64_t cycles);
 
-    clock_event *event_queue[CLOCK_EVENT_QUEUE_SIZE];
-    clock_event *delayed_queue = NULL;
+    std::shared_ptr<clock_event> event_queue[CLOCK_EVENT_QUEUE_SIZE];
+    std::shared_ptr<clock_event> delayed_queue = NULL;
     int current_cycle = 0;
     int64_t period = 0;
     int64_t freq;
 
     // Gives the current cycle count of this engine.
     // It is always usable, whatever the state of the engine.
-    // It is updated either when events are executed or when the 
+    // It is updated either when events are executed or when the
     // engine is updated by an external interaction.
     int64_t cycles = 0;
 
@@ -161,12 +158,12 @@ namespace vp {
     bool must_flush_delayed_queue;
 
     vp::trace cycles_trace;
-  };    
+  };
 
 };
 
 
-inline vp::clock_event *vp::clock_engine::reenqueue(vp::clock_event *event, int64_t enqueue_cycles)
+inline std::shared_ptr<vp::clock_event> vp::clock_engine::reenqueue(std::shared_ptr<vp::clock_event> event, int64_t enqueue_cycles)
 {
   int64_t cycles = this->cycles + enqueue_cycles;
   if (event->is_enqueued())
@@ -181,7 +178,7 @@ inline vp::clock_event *vp::clock_engine::reenqueue(vp::clock_event *event, int6
   return event;
 }
 
-inline vp::clock_event *vp::clock_engine::reenqueue_ext(vp::clock_event *event, int64_t enqueue_cycles)
+inline std::shared_ptr<vp::clock_event> vp::clock_engine::reenqueue_ext(std::shared_ptr<vp::clock_event> event, int64_t enqueue_cycles)
 {
   this->sync();
   return this->reenqueue(event, enqueue_cycles);

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Nazareno Bruschi, Unibo (nazareno.bruschi@unibo.it)
  */
+
+#include <memory>
 
 /* IMA main FSM States */
 #define IMA_STATE_IDLE            0
@@ -127,8 +129,8 @@ public:
   void reset(bool active);
 
   static vp::io_req_status_e req(void *__this, vp::io_req *req);
-  static void job_handler(void *_this, vp::clock_event *event);
-  static void plot_handler(void *_this, vp::clock_event *event);
+  static void job_handler(void *_this, std::shared_ptr<vp::clock_event> event);
+  static void plot_handler(void *_this, std::shared_ptr<vp::clock_event> event);
   static void grant(void *_this, vp::io_req *req);
   static void response(void *_this, vp::io_req *req);
   void check_requests();
@@ -197,9 +199,9 @@ private:
 
   vp::wire_master<bool> irq;
 
-  vp::clock_event *job_event;
-  vp::clock_event *plot_event;
-  vp::clock_event *stream_event;
+  std::shared_ptr<vp::clock_event> job_event;
+  std::shared_ptr<vp::clock_event> plot_event;
+  std::shared_ptr<vp::clock_event> stream_event;
 
   int pending_req;
   int enqueued_req;

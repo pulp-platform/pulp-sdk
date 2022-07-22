@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -257,8 +257,8 @@ public:
   Event_unit_core_state_e get_state() { return state; }
   void set_state(Event_unit_core_state_e state) { this->state = state; }
   void irq_ack_sync(int irq, int core);
-  static void wakeup_handler(void *__this, vp::clock_event *event);
-  static void irq_wakeup_handler(void *__this, vp::clock_event *event);
+  static void wakeup_handler(void *__this, std::shared_ptr<vp::clock_event> event);
+  static void irq_wakeup_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
   vp::io_slave demux_in;
 
@@ -284,8 +284,8 @@ private:
   vp::wire_master<int>    irq_req_itf;
   vp::wire_slave<int>     irq_ack_itf;
 
-  vp::clock_event *wakeup_event;
-  vp::clock_event *irq_wakeup_event;
+  std::shared_ptr<vp::clock_event> wakeup_event;
+  std::shared_ptr<vp::clock_event> irq_wakeup_event;
 
   vp::reg_1  is_active;
 
@@ -407,7 +407,7 @@ vp::io_req_status_e Event_unit::sw_events_req(vp::io_req *req, uint64_t offset, 
   else
   {
     trace.warning("UNIMPLEMENTED at %s %d\n", __FILE__, __LINE__);
-    return vp::IO_REQ_INVALID;    
+    return vp::IO_REQ_INVALID;
   }
 
   return vp::IO_REQ_OK;
@@ -912,7 +912,7 @@ void Core_event_unit::reset()
   this->clock_itf.sync(1);
 }
 
-void Core_event_unit::wakeup_handler(void *__this, vp::clock_event *event)
+void Core_event_unit::wakeup_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Core_event_unit *_this = (Core_event_unit *)__this;
   _this->top->trace.msg("Replying to core after wakeup (core: %d)\n", _this->core_id);
@@ -922,7 +922,7 @@ void Core_event_unit::wakeup_handler(void *__this, vp::clock_event *event)
   _this->check_state();
 }
 
-void Core_event_unit::irq_wakeup_handler(void *__this, vp::clock_event *event)
+void Core_event_unit::irq_wakeup_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Core_event_unit *_this = (Core_event_unit *)__this;
   _this->top->trace.msg("IRQ wakeup\n");
@@ -1061,11 +1061,11 @@ vp::io_req_status_e Mutex_unit::req(vp::io_req *req, uint64_t offset, bool is_wr
   offset = offset - (id << 2);
   if (id >= nb_mutexes) return vp::IO_REQ_INVALID;
 
-  
+
   Mutex *mutex = &mutexes[id];
   Core_event_unit *evtUnit = &top->core_eu[core];
   top->trace.msg("Received mutex IO access (offset: 0x%x, mutex: %d, is_write: %d)\n", offset, id, is_write);
-  
+
   if (!is_write)
   {
     if (!mutex->locked)
@@ -1108,12 +1108,12 @@ vp::io_req_status_e Mutex_unit::req(vp::io_req *req, uint64_t offset, bool is_wr
           *(uint32_t *)waiting_req->get_data() = mutex->value;
 
           // And trigger the event to the core
-          top->trigger_event(1<<mutex_event, 1<<i); 
+          top->trigger_event(1<<mutex_event, 1<<i);
 
           break;
         }
       }
-    } 
+    }
     else
     {
       // No one waiting, just unlock the mutex
@@ -1225,7 +1225,7 @@ Dispatch_unit::Dispatch_unit(Event_unit *top)
               mask &= ~(1<<i);
 
               // And trigger the event to the core
-              top->trigger_event(1<<dispatch_event, 1<<i); 
+              top->trigger_event(1<<dispatch_event, 1<<i);
             }
             // Otherwise keep him sleeping and increase its index so that he will bypass this entry when he wakes up
             else
@@ -1247,7 +1247,7 @@ Dispatch_unit::Dispatch_unit(Event_unit *top)
           }
         }
 
-        return vp::IO_REQ_OK;        
+        return vp::IO_REQ_OK;
       }
       else
       {
@@ -1285,7 +1285,7 @@ Dispatch_unit::Dispatch_unit(Event_unit *top)
           return enqueue_sleep(dispatch, req, core_id);
         }
 
-        return vp::IO_REQ_OK;       
+        return vp::IO_REQ_OK;
       }
 
       return vp::IO_REQ_INVALID;
@@ -1324,7 +1324,7 @@ void Barrier_unit::check_barrier(int barrier_id)
 {
   Barrier *barrier = &barriers[barrier_id];
 
-  if (barrier->status == barrier->core_mask) 
+  if (barrier->status == barrier->core_mask)
   {
     trace.msg("Barrier reached, triggering event (barrier: %d, coreMask: 0x%x, targetMask: 0x%x)\n", barrier_id, barrier->core_mask, barrier->target_mask);
     barrier->status = 0;

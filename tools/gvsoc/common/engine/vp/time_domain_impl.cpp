@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -37,7 +37,7 @@ SC_MODULE(my_module)
 {
 
     SC_HAS_PROCESS(my_module);
-    my_module(sc_module_name nm, vp::time_engine * engine) : sc_module(nm), engine(engine)
+    my_module(sc_module_name nm, std::shared_ptr<vp::time_engine>  engine) : sc_module(nm), engine(engine)
     {
         SC_THREAD(run);
     }
@@ -47,7 +47,7 @@ SC_MODULE(my_module)
         engine->run_loop();
     }
 
-    vp::time_engine *engine;
+    std::shared_ptr<vp::time_engine> engine;
 };
 
 #endif
@@ -95,7 +95,7 @@ static void sigint_handler(int s)
 // so that the python world can properly close everything
 static void *signal_routine(void *arg)
 {
-    vp::time_engine *engine = (vp::time_engine *)arg;
+    std::shared_ptr<vp::time_engine> engine = std::shared_ptr<vp::time_engine> (static_cast<vp::time_engine *>(arg));
     sigset_t sigs_to_catch;
     int caught;
     sigemptyset(&sigs_to_catch);
@@ -111,7 +111,7 @@ static void *signal_routine(void *arg)
 #ifdef __VP_USE_SYSTEMC
 static void *engine_routine_sc_stub(void *arg)
 {
-    vp::time_engine *engine = (vp::time_engine *)arg;
+    std::shared_ptr<vp::time_engine> engine = std::shared_ptr<vp::time_engine> (static_cast<vp::time_engine *>(arg));
     my_module module("Hello", engine);
     engine->elab();
     while (1)
@@ -130,7 +130,7 @@ void set_sc_main_entry(void *(*entry)(void *), void *arg);
 
 static void *engine_routine(void *arg)
 {
-    vp::time_engine *engine = (vp::time_engine *)arg;
+    std::shared_ptr<vp::time_engine> engine = std::shared_ptr<vp::time_engine> (static_cast<vp::time_engine *>(arg));
 #ifdef __VP_USE_SYSTEMC
     set_sc_main_entry(&engine_routine_sc_stub, arg);
     sc_core::sc_elab_and_sim(0, NULL);
@@ -141,7 +141,7 @@ static void *engine_routine(void *arg)
     sigemptyset(&sigs_to_block);
     sigaddset(&sigs_to_block, SIGINT);
     pthread_sigmask(SIG_BLOCK, &sigs_to_block, NULL);
-    pthread_create(&sigint_thread, NULL, signal_routine, (void *)engine);
+    pthread_create(&sigint_thread, NULL, signal_routine, (void *)engine.get());
 
     signal(SIGINT, sigint_handler);
 
@@ -247,7 +247,7 @@ end:
 
 void engine_routine_sv_stub(void *arg)
 {
-    vp::time_engine *engine = (vp::time_engine *)arg;
+    std::shared_ptr<vp::time_engine> engine = std::shared_ptr<vp::time_engine> (static_cast<vp::time_engine *>(arg));
 
     engine->update(dpi_time_ps());
     engine->run_loop();
@@ -291,14 +291,14 @@ void vp::time_engine::wait_ready()
 
 void vp::time_engine::step(int64_t timestamp)
 {
-    time_engine_client *current = first_client;
+    std::shared_ptr<time_engine_client> current = first_client;
 
-    time_engine_client *client = first_client;
+    std::shared_ptr<time_engine_client> client = first_client;
 
     while (current && this->time <= timestamp)
     {
         current = first_client;
-        
+
         vp_assert(first_client->next_event_time >= get_time(), NULL, "event time is before vp time\n");
 
         first_client = current->next;
@@ -316,7 +316,7 @@ void vp::time_engine::step(int64_t timestamp)
             time += this->time;
         }
 
-        time_engine_client *next = first_client;
+        std::shared_ptr<time_engine_client> next = first_client;
 
         // Remove it, reenqueue it and continue with the next one.
         // We can optimize a bit the operation as we already know
@@ -325,7 +325,7 @@ void vp::time_engine::step(int64_t timestamp)
         if (time > 0)
         {
             current->next_event_time = time;
-            time_engine_client *client = first_client, *prev = NULL;
+            std::shared_ptr<time_engine_client> client = first_client, prev = NULL;
             while (client && client->next_event_time < time)
             {
                 prev = client;
@@ -373,7 +373,7 @@ void vp::time_engine::run_loop()
 
         pthread_mutex_unlock(&mutex);
 
-        time_engine_client *current = first_client;
+        std::shared_ptr<time_engine_client> current = first_client;
 
         if (current)
         {
@@ -403,7 +403,7 @@ void vp::time_engine::run_loop()
                 {
                     time += this->time;
                     current->next_event_time = time;
-                    time_engine_client *client = first_client, *prev = NULL;
+                    std::shared_ptr<time_engine_client> client = first_client, prev = NULL;
 
                     while (client && client->next_event_time < time)
                     {
@@ -479,7 +479,7 @@ void vp::time_engine::run_loop()
 
                 int64_t time = current->exec();
 
-                time_engine_client *next = first_client;
+                std::shared_ptr<time_engine_client> next = first_client;
 
                 // Shortcut to quickly continue with the same client
                 if (likely(time > 0))
@@ -511,7 +511,7 @@ void vp::time_engine::run_loop()
                 if (time > 0)
                 {
                     current->next_event_time = time;
-                    time_engine_client *client = next->next, *prev = next;
+                    std::shared_ptr<time_engine_client> client = next->next, prev = next;
                     while (client && client->next_event_time < time)
                     {
                         prev = client;

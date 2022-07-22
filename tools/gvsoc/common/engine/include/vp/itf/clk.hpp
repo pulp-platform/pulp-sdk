@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -25,9 +25,12 @@
 #include "vp/vp_data.hpp"
 #include "vp/ports.hpp"
 
+#include <memory>
+
 namespace vp {
 
   class component;
+  class clock_engine;
 
   typedef void (clk_reg_meth_t)(component *_this, component *clock);
 
@@ -39,7 +42,7 @@ namespace vp {
 
     clk_master() : ports(NULL) {}
 
-    void reg(component *clock);
+    void reg(std::shared_ptr<clock_engine> clock);
 
     void bind_to(vp::port *port, vp::config *config);
 

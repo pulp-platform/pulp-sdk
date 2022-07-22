@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -53,7 +53,7 @@ I2s_periph::I2s_periph(udma *top, int id, int itf_id) : Udma_periph(top, id)
   this->clkgen1_event = this->top->event_new(this, I2s_periph::clkgen_event_routine);
   this->clkgen1_event->get_args()[0] = (void *)1;
 }
- 
+
 
 void I2s_periph::reset(bool active)
 {
@@ -111,7 +111,7 @@ void I2s_periph::handle_clkgen_tick(int clkgen, int channel)
 
 
 
-void I2s_periph::clkgen_event_routine(void *__this, vp::clock_event *event)
+void I2s_periph::clkgen_event_routine(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   I2s_periph *_this = (I2s_periph *)__this;
 
@@ -305,7 +305,7 @@ vp::io_req_status_e I2s_periph::custom_req(vp::io_req *req, uint64_t offset)
   }
 
   if (err != vp::IO_REQ_OK)
-    goto error; 
+    goto error;
 
 
   return vp::IO_REQ_OK;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -70,7 +70,7 @@ void Spim_periph_v3::reset(bool active)
   }
 }
 
-  
+
 void Spim_periph_v3::slave_sync(void *__this, int data_0, int data_1, int data_2, int data_3, int mask)
 {
   Spim_periph_v3 *_this = (Spim_periph_v3 *)__this;
@@ -112,7 +112,7 @@ Spim_v3_tx_channel::Spim_v3_tx_channel(udma *top, Spim_periph_v3 *periph, int id
 
 
 
-void Spim_v3_tx_channel::handle_pending_word(void *__this, vp::clock_event *event)
+void Spim_v3_tx_channel::handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Spim_v3_tx_channel *_this = (Spim_v3_tx_channel *)__this;
 
@@ -210,7 +210,7 @@ void Spim_v3_cmd_channel::check_state()
   }
 }
 
-void Spim_periph_v3::handle_spi_pending_word(void *__this, vp::clock_event *event)
+void Spim_periph_v3::handle_spi_pending_word(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Spim_periph_v3 *_this = (Spim_periph_v3 *)__this;
   bool raised_edge = false;
@@ -280,7 +280,7 @@ void Spim_periph_v3::handle_spi_pending_word(void *__this, vp::clock_event *even
         _this->top->get_trace()->msg("End of word transfer, pushing word (value: 0x%x)\n", _this->rx_pending_word);
 
         (static_cast<Spim_v3_rx_channel *>(_this->channel0))->push_data((uint8_t *)&_this->rx_pending_word, 4);
-        
+
         _this->rx_counter_transf = 0;
         _this->rx_bit_offset = 0;
         _this->nb_received_bits = 0;
@@ -363,7 +363,7 @@ void Spim_periph_v3::handle_spi_pending_word(void *__this, vp::clock_event *even
   _this->check_state();
 }
 
-void Spim_v3_cmd_channel::handle_pending_word(void *__this, vp::clock_event *event)
+void Spim_v3_cmd_channel::handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Spim_v3_cmd_channel *_this = (Spim_v3_cmd_channel *)__this;
 

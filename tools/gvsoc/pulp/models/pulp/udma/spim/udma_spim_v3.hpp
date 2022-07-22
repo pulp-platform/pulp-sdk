@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -33,6 +33,8 @@
 #include <string.h>
 #include <vector>
 #include "archi/udma/udma_v3.h"
+
+#include <memory>
 
 /*
  * SPIM
@@ -69,15 +71,15 @@ private:
   void reset(bool active);
   Spim_periph_v3 *periph;
 
-  static void handle_pending_word(void *__this, vp::clock_event *event);
+  static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
   void handle_data(uint32_t data);
 
-  vp::clock_event *pending_word_event;
+  std::shared_ptr<vp::clock_event> pending_word_event;
 
   uint32_t tx_pending_word;       // Word received by last L2 req
   bool     has_tx_pending_word;   // Tell if a TX pending word is present
   vp::io_req *pending_req;
-  
+
 };
 
 
@@ -91,13 +93,13 @@ public:
 
 private:
   void reset(bool active);
-  static void handle_pending_word(void *__this, vp::clock_event *event);
+  static void handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
   void handle_eot(bool cs_keep);
   void handle_data(uint32_t data);
   bool push_tx_to_spi(uint32_t value, int nb_bits);
   bool push_rx_to_spi(int nb_bits);
 
-  vp::clock_event *pending_word_event;
+  std::shared_ptr<vp::clock_event> pending_word_event;
 
   Spim_periph_v3 *periph;
 
@@ -128,13 +130,13 @@ public:
   static void slave_sync(void *_this, int data_0, int data_1, int data_2, int data_3, int mask);
   void reset(bool active);
   vp::io_req_status_e custom_req(vp::io_req *req, uint64_t offset);
-  static void handle_spi_pending_word(void *__this, vp::clock_event *event);
+  static void handle_spi_pending_word(void *__this, std::shared_ptr<vp::clock_event> event);
   void check_state();
   bool push_tx_to_spi(uint32_t value, int nb_bits, int qpi, int lsb_first, int bitsword, int wordtrans);
   bool push_rx_to_spi(int nb_bits, int qpi, int lsb_first, int bitsword, int wordtrans);
 
 protected:
-  vp::clock_event *pending_spi_word_event;
+  std::shared_ptr<vp::clock_event> pending_spi_word_event;
 
   vp::qspim_master qspim_itf;
   int clkdiv;
@@ -163,7 +165,7 @@ protected:
 
   uint32_t spi_tx_pending_word;   // Word being flushed to spi pads
   int      spi_tx_pending_bits;   // Tell how many bits are ready to be sent to SPI pads
-  
+
   int      spi_rx_pending_bits;   // Tell how many bits should be received from spi pads
 
   int64_t next_bit_cycle;

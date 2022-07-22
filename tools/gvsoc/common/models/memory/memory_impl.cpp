@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -39,7 +39,7 @@ public:
 
 private:
 
-  static void power_callback(void *__this, vp::clock_event *event);
+  static void power_callback(void *__this, std::shared_ptr<vp::clock_event> event);
 
   vp::trace     trace;
   vp::io_slave in;
@@ -53,7 +53,7 @@ private:
 
   int64_t next_packet_start;
 
-  bool power_trigger; 
+  bool power_trigger;
 
   vp::power_trace power_trace;
   vp::power_source idle_power;
@@ -65,7 +65,7 @@ private:
   vp::power_source write_32_power;
   vp::power_source leakage_power;
 
-  vp::clock_event *power_event;
+  std::shared_ptr<vp::clock_event> power_event;
   int64_t last_access_timestamp;
 };
 
@@ -75,7 +75,7 @@ memory::memory(js::config *config)
 
 }
 
-void memory::power_callback(void *__this, vp::clock_event *event)
+void memory::power_callback(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   memory *_this = (memory *)__this;
   if (_this->last_access_timestamp < _this->get_time())

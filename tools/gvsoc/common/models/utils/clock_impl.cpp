@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -36,15 +36,15 @@ public:
 
 private:
 
-  static void edge_handler(void *__this, vp::clock_event *event);
+  static void edge_handler(void *__this, std::shared_ptr<vp::clock_event> event);
   void raise_edge();
 
   vp::clock_master    clock_itf;
-  vp::clock_event *event;
+  std::shared_ptr<vp::clock_event> event;
   int value;
 };
 
-void Clock::edge_handler(void *__this, vp::clock_event *event)
+void Clock::edge_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Clock *_this = (Clock *)__this;
   _this->raise_edge();
@@ -56,7 +56,7 @@ void Clock::raise_edge()
     this->get_trace()->msg("Changing clock level (level: %d)\n", value);
     this->clock_itf.sync(value);
     this->value ^= 1;
-    this->event_enqueue(this->event, 1); 
+    this->event_enqueue(this->event, 1);
   }
 }
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -39,7 +39,7 @@ I2c_periph_v2::I2c_periph_v2(udma *top, int id, int itf_id) : Udma_periph(top, i
 
   i2c_itf.set_sync_meth(&I2c_periph_v2::rx_sync);
 }
- 
+
 
 void I2c_periph_v2::reset(bool active)
 {
@@ -101,7 +101,7 @@ std::string get_command_name(unsigned int command)
 }
 
 
-void I2c_tx_channel::handle_pending_word(void *__this, vp::clock_event *event)
+void I2c_tx_channel::handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   I2c_tx_channel *_this = (I2c_tx_channel *)__this;
 
@@ -133,7 +133,7 @@ void I2c_tx_channel::handle_pending_word(void *__this, vp::clock_event *event)
           _this->periph->trace.msg("Sampled byte, pushing to channel (value: 0x%x)\n", _this->periph->pending_value & 0xff);
 
           (static_cast<I2c_rx_channel *>(_this->periph->channel0))->push_data((uint8_t *)&_this->periph->pending_value, 1);
-          
+
           _this->periph->gen_ack = true;
         }
       }

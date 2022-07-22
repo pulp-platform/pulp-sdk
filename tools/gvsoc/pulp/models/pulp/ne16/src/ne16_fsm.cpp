@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  */
 
 #include <ne16.hpp>
 
-void Ne16::fsm_start_handler(void *__this, vp::clock_event *event) {
+void Ne16::fsm_start_handler(void *__this, std::shared_ptr<vp::clock_event> event) {
   Ne16 *_this = (Ne16 *)__this;
   _this->state.set(START);
   if(_this->trace_level == L3_ALL) {
@@ -67,7 +67,7 @@ void Ne16::fsm_start_handler(void *__this, vp::clock_event *event) {
   // in 16-bit mode, k_in must be mult(2). sorry!
   assert((!_this->mode16) || (_this->k_in % 2 == 0));
   if(_this->mode16 && _this->mode_linear) {
-    _this->k_in = _this->k_in * 2; 
+    _this->k_in = _this->k_in * 2;
   }
 
   // in linear mode, Ho=Wo=1 and mode is set to 1x1 (?)
@@ -80,12 +80,12 @@ void Ne16::fsm_start_handler(void *__this, vp::clock_event *event) {
   _this->fsm_loop();
 }
 
-void Ne16::fsm_handler(void *__this, vp::clock_event *event) {
+void Ne16::fsm_handler(void *__this, std::shared_ptr<vp::clock_event> event) {
   Ne16 *_this = (Ne16 *)__this;
   _this->fsm_loop();
 }
 
-void Ne16::fsm_end_handler(void *__this, vp::clock_event *event) {
+void Ne16::fsm_end_handler(void *__this, std::shared_ptr<vp::clock_event> event) {
   Ne16 *_this = (Ne16 *)__this;
   int job_id = _this->cxt_job_id[_this->cxt_use_ptr];
   _this->job_running = 0;
@@ -153,7 +153,7 @@ int Ne16::fsm() {
   }
 
   switch(this->state.get()) {
-    
+
     case START:
       this->activity.set(1);
       this->trace.msg(vp::trace::LEVEL_INFO, "Starting a job (id=%d) with the following configuration:\n", this->cxt_job_id[this->cxt_use_ptr]);
@@ -161,7 +161,7 @@ int Ne16::fsm() {
 
       state_next = START_STREAMIN;
       break;
-    
+
     case START_STREAMIN:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State START_STREAMIN\n");
@@ -221,7 +221,7 @@ int Ne16::fsm() {
       // emulate 6 cycles of latency due to FIFOs + ctrl
       latency += 6;
       break;
-      
+
     case LOAD:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State LOAD\n");
@@ -288,7 +288,7 @@ int Ne16::fsm() {
       }
 
       break;
-    
+
     case MATRIXVEC:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State MATRIXVEC\n");
@@ -343,7 +343,7 @@ int Ne16::fsm() {
         this->matrixvec_update_idx();
       }
       break;
-      
+
     case NORMQUANT_SHIFT:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State NORMQUANT_SHIFT\n");
@@ -352,7 +352,7 @@ int Ne16::fsm() {
       this->normquant_mult_setup();
       state_next = NORMQUANT_MULT;
       break;
-    
+
     case NORMQUANT_MULT:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State NORMQUANT_MULT\n");
@@ -370,7 +370,7 @@ int Ne16::fsm() {
         this->normquant_mult_update_idx();
       }
       break;
-    
+
     case NORMQUANT_BIAS:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State NORMQUANT_BIAS\n");
@@ -388,7 +388,7 @@ int Ne16::fsm() {
         this->normquant_bias_update_idx();
       }
       break;
-    
+
     case STREAMOUT:
       if(this->fsm_traces) {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "State STREAMOUT\n");

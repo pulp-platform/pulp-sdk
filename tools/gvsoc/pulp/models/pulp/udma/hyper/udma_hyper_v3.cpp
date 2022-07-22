@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Nazareno Bruschi, Unibo (nazareno.bruschi@unibo.it)
  */
 
@@ -68,7 +68,7 @@ Hyper_periph_v3::Hyper_periph_v3(udma *top, int id, int itf_id) : Udma_periph(to
   this->cfg_setup = new bool[HYPER_NB_CHANNELS]{false};
   this->command_word = new bool[HYPER_NB_CHANNELS]{false};
 }
- 
+
 
 void Hyper_periph_v3::reset(bool active)
 {
@@ -98,15 +98,15 @@ void Hyper_periph_v3::rx_sync(void *__this, int data)
 }
 
 
-void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
-{   
+void Hyper_periph_v3::handle_pending_word(void *__this, std::shared_ptr<vp::clock_event> event)
+{
   Hyper_periph_v3 *_this = (Hyper_periph_v3 *)__this;
   uint8_t byte;
   int cs;
   int cs_value;
   bool send_byte = false;
   bool send_cs = false;
-  bool end = false;  
+  bool end = false;
 
   if (_this->state == HYPER_STATE_IDLE)
   {
@@ -122,20 +122,20 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
       }
       else
       {
-        _this->state = HYPER_STATE_CS;        
+        _this->state = HYPER_STATE_CS;
       }
       _this->ca_count = 6;
       _this->ca.low_addr = ARCHI_REG_FIELD_GET(_this->current_command->ex_addr, 0, 3);
-      _this->ca.high_addr = ARCHI_REG_FIELD_GET(_this->current_command->ex_addr, 3, 29);      
+      _this->ca.high_addr = ARCHI_REG_FIELD_GET(_this->current_command->ex_addr, 3, 29);
       _this->ca.burst_type = ARCHI_REG_FIELD_GET(_this->current_command->ca_setup, 0, 1);
       _this->ca.address_space = ARCHI_REG_FIELD_GET(_this->current_command->ca_setup, 1, 1);
-      _this->ca.read = ARCHI_REG_FIELD_GET(_this->current_command->ca_setup, 2, 1); 
+      _this->ca.read = ARCHI_REG_FIELD_GET(_this->current_command->ca_setup, 2, 1);
 
       if(!_this->command_mode)
       {
         if (_this->ca.read)
         {
-          _this->transfer_size = _this->rx_channel->current_cmd->size;         
+          _this->transfer_size = _this->rx_channel->current_cmd->size;
         }
         else
         {
@@ -196,7 +196,7 @@ void Hyper_periph_v3::handle_pending_word(void *__this, vp::clock_event *event)
     _this->transfer_size--;
 
     if (_this->transfer_size == 0)
-    {  
+    {
       _this->pending_bytes = 0;
       _this->state = HYPER_STATE_CS_OFF;
       /* To naturally conclude the transaction */
@@ -350,7 +350,7 @@ void Hyper_periph_v3::fetch_from_fifos()
     current_command = pending_fifo[channel_id]->pop();
     if(channel_id != current_command->channel_id)
     {
-      vp_warning_always(&trace, "Wrong request. Fetching from %d but it is request from %d\n", channel_id, current_command->channel_id);        
+      vp_warning_always(&trace, "Wrong request. Fetching from %d but it is request from %d\n", channel_id, current_command->channel_id);
     }
     trace.msg(vp::trace::LEVEL_INFO, "Fetching new request from %d (cfg_setup: %d, twd: %d, nb_tran: %d)\n", channel_id, current_command->cfg_setup, current_command->twd_act, get_nb_tran(id));
 
@@ -366,8 +366,8 @@ void Hyper_periph_v3::fetch_from_fifos()
     command_mode = current_command->cfg_setup;
     if(command_mode)
     {
-      pending_word = current_command->data;    
-      pending_bytes = current_command->size; 
+      pending_word = current_command->data;
+      pending_bytes = current_command->size;
     }
     else
     {
@@ -428,8 +428,8 @@ vp::io_req_status_e Hyper_periph_v3::access_common_regs(vp::io_req *req, uint64_
   {
     *(uint32_t *)(req->get_data()) = this->common_regs[reg_id];
   }
-  else 
-    this->common_regs[reg_id] = *(uint32_t *)(req->get_data());  
+  else
+    this->common_regs[reg_id] = *(uint32_t *)(req->get_data());
 
   return vp::IO_REQ_OK;
 }
@@ -443,7 +443,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
   }
   if (!req->get_is_write())
     *(uint32_t *)(req->get_data()) = this->regs[id][reg_id];
-  else 
+  else
     this->regs[id][reg_id] = *(uint32_t *)(req->get_data());
 
   if (offset == REG_RX_SADDR(0))
@@ -453,7 +453,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       trace.warning("Trying to access non-existing RX channel\n");
       return vp::IO_REQ_INVALID;
     }
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing RX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);    
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing RX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
     write_trans = false;
   }
   else if (offset == REG_RX_SIZE(0))
@@ -484,7 +484,7 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
       return vp::IO_REQ_INVALID;
     }
     trace.msg(vp::trace::LEVEL_DEBUG, "Accessing TX start address register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
-    write_trans = true;  
+    write_trans = true;
   }
   else if (offset == REG_TX_SIZE(0))
   {
@@ -508,37 +508,37 @@ vp::io_req_status_e Hyper_periph_v3::access_private_regs(vp::io_req *req, uint64
   }
   else if (offset == HYPER_CA_SETUP(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing CA setup register (value: 0x%x, cfg_setup: %d, id: %d)\n", *(uint32_t *)(req->get_data()), id);  
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing CA setup register (value: 0x%x, cfg_setup: %d, id: %d)\n", *(uint32_t *)(req->get_data()), id);
     command_word[id] = true;
   }
   else if (offset == REG_HYPER_CFG(0))
   {
     trace.msg(vp::trace::LEVEL_DEBUG, "Accessing hyper cfg register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
-    cfg_setup[id] = true;  
+    cfg_setup[id] = true;
   }
   else if (offset == TWD_ACT(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd activation register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd activation register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == TWD_COUNT(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd count register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd count register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == TWD_STRIDE(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd stride register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing twd stride register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == TWD_ACT_L2(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd activation register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd activation register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == TWD_COUNT_L2(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd count register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd count register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
   else if (offset == TWD_STRIDE_L2(0))
   {
-    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd stride register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id); 
+    trace.msg(vp::trace::LEVEL_DEBUG, "Accessing L2 twd stride register (value: 0x%x, id: %d)\n", *(uint32_t *)(req->get_data()), id);
   }
 
   return vp::IO_REQ_OK;
@@ -585,7 +585,7 @@ void Hyper_periph_v3::enqueue_transfer(int id)
   else
   {
     req->cfg_setup = false;
-    
+
     req->twd_act = (regs[id][(TWD_ACT(0))/4] == 1 || regs[id][(TWD_ACT_L2(0))/4] == 1) ? true : false;
     if (req->twd_act)
     {
@@ -613,7 +613,7 @@ void Hyper_periph_v3::enqueue_transfer(int id)
   }
 
   //req->extra_size = 0;
-  req->transfer_size = transfer_size_mode;      
+  req->transfer_size = transfer_size_mode;
   req->received_size = 0;
   req->continuous_mode = continuous_mode;
   req->is_write = write_trans;
@@ -651,13 +651,13 @@ int Hyper_periph_v3::unpack(int original_size)
     default:
       if(original_size < page_bound)
       {
-        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) but unpacking is not necessary (value: %d)\n", 
+        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) but unpacking is not necessary (value: %d)\n",
           page_bound == 0 ? 128 : page_bound == 1 ? 256 : page_bound == 2 ? 512 : page_bound == 3 ? 1024 : 0, original_size);
         return original_size;
       }
       else
       {
-        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) and unpacking is necessary (original: %d, new: %d)\n", 
+        trace.msg(vp::trace::LEVEL_DEBUG, "Page bound is considered (value: %d) and unpacking is necessary (original: %d, new: %d)\n",
           page_bound == 0 ? 128 : page_bound == 1 ? 256 : page_bound == 2 ? 512 : page_bound == 3 ? 1024 : 0, original_size, page_bound - original_size);
         return page_bound - original_size;
       }
@@ -694,7 +694,7 @@ void Hyper_periph_v3::transfer_splitter()
     current_command->current_addr += current_command->size;
   }
   /* twd_count is useful also when current_command will be resetted */
-  twd_count -= current_command->twd_count; 
+  twd_count -= current_command->twd_count;
 
   trace.msg(vp::trace::LEVEL_INFO, "Updating pointer for 2D transfer (addr: 0x%x, 1D remaining transfer: %d)\n", current_command->twd_is_l2 ? current_command->addr : current_command->ex_addr, twd_count);
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -112,7 +112,7 @@ public:
     void send_byte_done();
 
 private:
-    static void bw_limiter_handler(void *__this, vp::clock_event *event);
+    static void bw_limiter_handler(void *__this, std::shared_ptr<vp::clock_event> event);
     void send_byte();
     void check_end_of_command();
 
@@ -136,7 +136,7 @@ private:
     int64_t rx_timestamp;
     int received_bytes;
 
-    vp::clock_event *bw_limiter_event;
+    std::shared_ptr<vp::clock_event> bw_limiter_event;
 
     bool send_reply = false;
     int reply_index;
@@ -167,12 +167,12 @@ public:
     void set_cts(int cts);
 
     uint64_t baudrate;
-    vp::clock_engine *clock;
-    vp::clock_engine *tx_clock;
+    std::shared_ptr<vp::clock_engine> clock;
+    std::shared_ptr<vp::clock_engine> tx_clock;
 
     int tx_parity_en = 0;
     int tx_stop_bits = 1;
-    
+
 private:
 
     static void sync(void *__this, int data);
@@ -184,14 +184,14 @@ private:
 
     void uart_start_tx_sampling(int baudrate);
     void uart_stop_tx_sampling();
-    static void uart_sampling_handler(void *__this, vp::clock_event *event);
-    static void uart_tx_handler(void *__this, vp::clock_event *event);
+    static void uart_sampling_handler(void *__this, std::shared_ptr<vp::clock_event> event);
+    static void uart_tx_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
     void handle_received_byte(uint8_t byte);
     void send_bit();
 
-    static void clk_reg(vp::component *__this, vp::component *clock);
-    static void tx_clk_reg(vp::component *__this, vp::component *clock);
+    static void clk_reg(vp::component *__this, std::shared_ptr<vp::clock_engine> clock);
+    static void tx_clk_reg(vp::component *__this, std::shared_ptr<vp::clock_engine> clock);
 
     Testbench *top;
     int id;
@@ -206,8 +206,8 @@ private:
     bool uart_sampling_tx = false;
     uint8_t uart_byte;
 
-    vp::clock_event *uart_sampling_event;
-    vp::clock_event *uart_tx_event;
+    std::shared_ptr<vp::clock_event> uart_sampling_event;
+    std::shared_ptr<vp::clock_event> uart_tx_event;
     vp::clock_master clock_cfg;
     vp::clk_slave    clock_itf;
     vp::clock_master tx_clock_cfg;
@@ -316,7 +316,7 @@ Uart_flow_control_checker::Uart_flow_control_checker(Testbench *top, Uart *uart,
 }
 
 
-void Uart_flow_control_checker::bw_limiter_handler(void *__this, vp::clock_event *event)
+void Uart_flow_control_checker::bw_limiter_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
     Uart_flow_control_checker *_this = (Uart_flow_control_checker *)__this;
     _this->uart->set_cts(0);
@@ -335,7 +335,7 @@ void Uart_flow_control_checker::send_byte()
         }
     }
     else
-    {    
+    {
         this->uart->send_byte(this->rx_start);
         this->rx_start += this->rx_incr;
         this->rx_size--;
@@ -454,7 +454,7 @@ void Uart_flow_control_checker::handle_received_byte(uint8_t byte)
             this->tx_size--;
             this->check_end_of_command();
         }
-    
+
     }
 }
 
@@ -482,7 +482,7 @@ int Testbench::build()
     }
 
     this->gpios.resize(this->nb_gpio);
-    
+
     for (int i=0; i<this->nb_gpio; i++)
     {
         this->gpios[i].itf.set_sync_meth_muxed(&Testbench::gpio_sync, i);
@@ -490,7 +490,7 @@ int Testbench::build()
     }
 
     this->i2cs.resize(this->nb_i2c);
-    
+
     for (int i=0; i<this->nb_i2c; i++)
     {
         this->i2cs[i].conf(this, i);
@@ -602,21 +602,21 @@ Uart::Uart(Testbench *top, int id)
 }
 
 
-void Uart::tx_clk_reg(vp::component *__this, vp::component *clock)
+void Uart::tx_clk_reg(vp::component *__this, std::shared_ptr<vp::clock_engine> clock)
 {
     Uart *_this = (Uart *)__this;
-    _this->tx_clock = (vp::clock_engine *)clock;
+    _this->tx_clock = clock;
 }
 
 
-void Uart::clk_reg(vp::component *__this, vp::component *clock)
+void Uart::clk_reg(vp::component *__this, std::shared_ptr<vp::clock_engine> clock)
 {
     Uart *_this = (Uart *)__this;
-    _this->clock = (vp::clock_engine *)clock;
+    _this->clock = clock;
 }
 
 
-void Uart::uart_sampling_handler(void *__this, vp::clock_event *event)
+void Uart::uart_sampling_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
     Uart *_this = (Uart *)__this;
 
@@ -671,7 +671,7 @@ void Uart::set_cts(int cts)
 }
 
 
-void Uart::uart_tx_handler(void *__this, vp::clock_event *event)
+void Uart::uart_tx_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
     Uart *_this = (Uart *)__this;
     _this->send_bit();
@@ -759,7 +759,7 @@ void Uart::uart_start_tx_sampling(int baudrate)
 void Uart::uart_stop_tx_sampling(void)
 {
     this->uart_sampling_tx = 0;
-    
+
     if (this->uart_sampling_event->is_enqueued())
     {
         this->clock->cancel(this->uart_sampling_event);
@@ -910,7 +910,7 @@ void I2C::sync(int scl, int sda)
                     }
                     break;
                 }
-                
+
                 case I2C_STATE_ACK:
                 {
                     this->top->trace.msg(vp::trace::LEVEL_TRACE, "Generate I2C ack (id: %d)\n", id);

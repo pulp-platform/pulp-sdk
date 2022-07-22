@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Nazareno Bruschi, Unibo (nazareno.bruschi@unibo.it)
  */
 
@@ -82,7 +82,7 @@ void ima_v1::clear_ima()
   this->line_fetch_lfover = 0;
   this->line_store_lfover = 0;
 
-  /* Event cycles depend on analog time to perform the specific task and on the cluster frequency */ 
+  /* Event cycles depend on analog time to perform the specific task and on the cluster frequency */
   this->job->analog_latency    = (((this->get_frequency() * this->eval_time) / 1000000000) + 1);
   this->pw_req->latency        = (((this->get_frequency() * this->plot_write_time) / 1000000000) + 1);
   this->pr_req->latency        = (((this->get_frequency() * this->plot_read_time) / 1000000000) + 1);
@@ -93,7 +93,7 @@ void ima_v1::clear_ima()
 }
 
 /* Stream-in - Compute - Stream-out */
-void ima_v1::job_handler(void *__this, vp::clock_event *event)
+void ima_v1::job_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   ima_v1 *_this = (ima_v1 *)__this;
 
@@ -128,7 +128,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
       }
       else
       {
-        _this->extra_latency_in = 0;  
+        _this->extra_latency_in = 0;
       }
 
       _this->eval_state = IMA_EVAL_STATE_STREAM_IN;
@@ -209,7 +209,7 @@ void ima_v1::job_handler(void *__this, vp::clock_event *event)
 }
 
 /* Writing and Reading Crossbar */
-void ima_v1::plot_handler(void *__this, vp::clock_event *event)
+void ima_v1::plot_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   ima_v1 *_this = (ima_v1 *)__this;
 
@@ -217,7 +217,7 @@ void ima_v1::plot_handler(void *__this, vp::clock_event *event)
     _this->trace.msg("Entered plot handler\n");
   else
     _this->warning.force_warning("Invalid state (current_state: %s)\n", get_state_name(_this->state).c_str());
-  
+
   switch (_this->state)
   {
     case IMA_STATE_P_WR:
@@ -238,12 +238,12 @@ void ima_v1::plot_handler(void *__this, vp::clock_event *event)
           _this->trace.msg("Finish writing crossbar values (written %d values)", (plot->index_y) * (plot->index_x));
           plot->index_x = -1;
           plot->index_y = -1;
-          _this->set_state(IMA_STATE_IDLE); 
+          _this->set_state(IMA_STATE_IDLE);
         }
         else
         {
           plot->index_x = plot->start_x;
-        }   
+        }
       }
 
       port->resp(plot->pending_plot_req);
@@ -316,7 +316,7 @@ vp::io_req_status_e ima_v1::acquire_req(vp::io_req *req)
           this->trace.msg("IMA is ready\n");
           this->set_state(IMA_STATE_ACQUIRE);
           /* TODO: find the id of running task */
-          this->set_id(0);     
+          this->set_id(0);
         }
         break;
       }
@@ -352,7 +352,7 @@ vp::io_req_status_e ima_v1::trigger_req(vp::io_req *req, int new_state)
       this->remaining_jobs = this->job->jobs;
       this->enqueue_job();
     }
-    return vp::IO_REQ_OK; 
+    return vp::IO_REQ_OK;
   }
 
   return vp::IO_REQ_INVALID;
@@ -381,14 +381,14 @@ vp::io_req_status_e ima_v1::submit_req(vp::io_req *req, int new_state)
         this->enqueue_write();
         this->pw_req->pending_plot_req = req;
         port->grant(this->pw_req->pending_plot_req);
-        return vp::IO_REQ_PENDING; 
+        return vp::IO_REQ_PENDING;
       }
       else
       {
-        return vp::IO_REQ_DENIED; 
+        return vp::IO_REQ_DENIED;
       }
     }
-    return vp::IO_REQ_OK; 
+    return vp::IO_REQ_OK;
   }
 
   return vp::IO_REQ_INVALID;
@@ -416,14 +416,14 @@ vp::io_req_status_e ima_v1::read_req(vp::io_req *req, int new_state)
         this->enqueue_read();
         this->pr_req->pending_plot_req = req;
         port->grant(this->pr_req->pending_plot_req);
-        return vp::IO_REQ_PENDING; 
+        return vp::IO_REQ_PENDING;
       }
       else
       {
-        return vp::IO_REQ_DENIED; 
+        return vp::IO_REQ_DENIED;
       }
-      return vp::IO_REQ_OK; 
-    } 
+      return vp::IO_REQ_OK;
+    }
   }
 
   return vp::IO_REQ_INVALID;
@@ -514,7 +514,7 @@ vp::io_req_status_e ima_v1::ima_req(vp::io_req *req, int new_state)
         }
       }
     }
-    return vp::IO_REQ_OK;    
+    return vp::IO_REQ_OK;
   }
 
   return vp::IO_REQ_INVALID;
@@ -617,7 +617,7 @@ vp::io_req_status_e ima_v1::req(void *__this, vp::io_req *req)
       err = _this->ima_req(req, IMA_STATE_P_RREQ);
       break;
     }
- 
+
     case IMA_PR_VAL/4:
     {
       _this->trace.msg("Requesting new word to read in crossbar\n");
@@ -649,7 +649,7 @@ int8_t ima_v1::adc_clipping(float value)
   }
   else if(value <= -(((1 << (ADC_PRECISION - 1)) - 1)))
   {
-    value = -(((1 << (ADC_PRECISION - 1)) - 1)); 
+    value = -(((1 << (ADC_PRECISION - 1)) - 1));
   }
   /* Round float before casting */
   if(value >= 0)
@@ -833,7 +833,7 @@ void ima_v1::job_update()
       if(this->beta_in_count == job->beta_in_length)
         this->beta_in_count = 0;
     }
-    
+
     job->src_addr = this->regs[IMA_J_SRC_ADDR/4];
   }
 
@@ -918,7 +918,7 @@ int ima_v1::stream_update(int port, bool is_write)
 
         if(this->step_count >= job->line_length)
         {
-          this->trace.msg("Line %d is fetched\n", this->feat_count); 
+          this->trace.msg("Line %d is fetched\n", this->feat_count);
 
           this->port_id = -1;
           this->step_count = 0;
@@ -929,7 +929,7 @@ int ima_v1::stream_update(int port, bool is_write)
       if(this->feat_count == job->feat_length)
       {
         this->trace.msg("Feat is finished\n");
-        
+
         this->step_count = 0;
         this->feat_count = 0;
         this->roll_count++;
@@ -975,7 +975,7 @@ int ima_v1::stream_update(int port, bool is_write)
           this->line_fetch_lfover = job->line_length & 0x3;
         }
       }
-      
+
       if(this->feat_count == job->feat_length)
       {
         this->trace.msg("Feat is finished\n");
@@ -985,7 +985,7 @@ int ima_v1::stream_update(int port, bool is_write)
         this->roll_count++;
       }
     }
-    
+
     if(this->roll_count == job->roll_length)
     {
       this->trace.msg("Rolls are finished\n");
@@ -1000,7 +1000,7 @@ int ima_v1::stream_update(int port, bool is_write)
   return err;
 }
 
-/* Fetch/Store from/to L1 */ 
+/* Fetch/Store from/to L1 */
 void ima_v1::stream_reqs(bool is_write)
 {
   ima_job_t *job = this->job;

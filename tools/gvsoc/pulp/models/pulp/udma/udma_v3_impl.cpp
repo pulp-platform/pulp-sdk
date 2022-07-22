@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -464,7 +464,7 @@ void udma::push_l2_write_req(vp::io_req *req)
 }
 
 
-void udma::channel_handler(void *__this, vp::clock_event *event)
+void udma::channel_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   Udma_channel *channel = (Udma_channel *)event->get_args()[0];
   channel->event_handler();
@@ -482,7 +482,7 @@ void udma::enqueue_ready(Udma_channel *channel)
   check_state();
 }
 
-void udma::event_handler(void *__this, vp::clock_event *event)
+void udma::event_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   udma *_this = (udma *)__this;
 
@@ -657,10 +657,10 @@ void udma::l2_response(void *__this, vp::io_req *req)
   _this->trace.warning("UNIMPLEMENTED AT %s %d\n", __FILE__, __LINE__);
 }
 
-void udma::clk_reg(component *__this, component *clock)
+void udma::clk_reg(component *__this, std::shared_ptr<vp::clock_engine> clock)
 {
   udma *_this = (udma *)__this;
-  _this->periph_clock = (vp::clock_engine *)clock;
+  _this->periph_clock = clock;
 }
 
 int udma::build()
@@ -682,7 +682,7 @@ int udma::build()
   l2_itf.set_resp_meth(&udma::l2_response);
   l2_itf.set_grant_meth(&udma::l2_grant);
   new_master_port("l2_itf", &l2_itf);
- 
+
   new_master_port("event_itf", &event_itf);
 
   event = event_new(udma::event_handler);
@@ -869,7 +869,7 @@ int udma::build()
       }
     }
   }
-  
+
   return 0;
 }
 
@@ -924,4 +924,3 @@ extern "C" vp::component *vp_constructor(js::config *config)
 {
   return new udma(config);
 }
-

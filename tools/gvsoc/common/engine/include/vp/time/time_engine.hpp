@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -29,6 +29,8 @@
 #include <systemc.h>
 #endif
 
+#include <memory>
+
 namespace vp
 {
 
@@ -39,19 +41,19 @@ class time_engine : public component
 public:
     time_engine(js::config *config);
 
-    void start();
+    void start() override;
 
     void run_loop();
 
-    void step(int64_t timestamp);
+    void step(int64_t timestamp) override;
 
-    void run();
+    void run() override;
 
-    void quit();
+    void quit() override;
 
-    int join();
+    int join() override;
 
-    int64_t get_next_event_time();
+    int64_t get_next_event_time() ;
 
     inline void lock_step();
 
@@ -69,11 +71,11 @@ public:
 
     inline void pause();
 
-    inline vp::time_engine *get_time_engine() { return this; }
+    inline std::shared_ptr<vp::time_engine> get_time_engine() override { return std::shared_ptr<vp::time_engine>(this); }
 
-    bool dequeue(time_engine_client *client);
+    bool dequeue(std::shared_ptr<time_engine_client> client);
 
-    bool enqueue(time_engine_client *client, int64_t time);
+    bool enqueue(std::shared_ptr<time_engine_client> client, int64_t time);
 
     int64_t get_time() { return time; }
 
@@ -86,8 +88,10 @@ public:
 
     void wait_ready();
 
+    virtual ~time_engine() { }
+
 private:
-    time_engine_client *first_client = NULL;
+    std::shared_ptr<time_engine_client> first_client = NULL;
     bool locked = false;
     bool locked_run_req;
     bool run_req;
@@ -126,7 +130,7 @@ public:
 
     inline bool enqueue_to_engine(int64_t time)
     {
-        return engine->enqueue(this, time);
+        return engine->enqueue(std::shared_ptr<time_engine_client>(this), time);
     }
 
     inline int64_t get_time() { return engine->get_time(); }
@@ -134,7 +138,7 @@ public:
     virtual int64_t exec() = 0;
 
 protected:
-    time_engine_client *next;
+    std::shared_ptr<time_engine_client> next;
 
     // This gives the time of the next event.
     // It is only valid when the client is not the currently active one,
@@ -142,7 +146,7 @@ protected:
     // anymore or when the client is enqueued to the engine.
     int64_t next_event_time = 0;
 
-    vp::time_engine *engine;
+    std::shared_ptr<vp::time_engine> engine;
     bool running = false;
     bool is_enqueued = false;
 };

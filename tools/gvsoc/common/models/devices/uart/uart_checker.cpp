@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -66,7 +66,7 @@ private:
 
     static void sync(void *__this, int data);
 
-    static void event_handler(void *__this, vp::clock_event *event);
+    static void event_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
     uint64_t period;
     bool tx_wait_start = true;
@@ -100,7 +100,7 @@ private:
     std::mutex rx_mutex;
     vp::trace trace;
 
-    vp::clock_event *event;
+    std::shared_ptr<vp::clock_event> event;
     vp::clock_master clock_cfg;
 };
 
@@ -194,7 +194,7 @@ void Uart_checker::tx_sampling()
 }
 
 
-void Uart_checker::event_handler(void *__this, vp::clock_event *event)
+void Uart_checker::event_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
     Uart_checker *_this = (Uart_checker *)__this;
 
@@ -262,7 +262,7 @@ void Uart_checker::start_tx_sampling(int baudrate)
 void Uart_checker::stop_tx_sampling(void)
 {
     this->sampling_tx = 0;
-    
+
     if (this->event->is_enqueued())
     {
         this->event_cancel(this->event);

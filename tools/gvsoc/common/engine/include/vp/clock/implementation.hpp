@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -29,6 +29,8 @@
 #include "vp/clock/component_clock.hpp"
 #include "vp/clock/clock_engine.hpp"
 
+#include <memory>
+
 using namespace std;
 
 int64_t vp::component_clock::get_period() { return get_clock()->get_period(); }
@@ -40,52 +42,47 @@ inline int64_t vp::component_clock::get_time() { return clock->get_time(); }
 inline int64_t vp::component_clock::get_cycles() { return clock->get_cycles(); }
 
 
-inline void vp::component_clock::event_enqueue(vp::clock_event *event, int64_t cycles)
+inline void vp::component_clock::event_enqueue(std::shared_ptr<vp::clock_event> event, int64_t cycles)
 {
   clock->enqueue(event, cycles);
 }
 
-inline void vp::component_clock::event_enqueue_ext(vp::clock_event *event, int64_t cycles)
+inline void vp::component_clock::event_enqueue_ext(std::shared_ptr<vp::clock_event> event, int64_t cycles)
 {
   clock->enqueue_ext(event, cycles);
 }
 
-inline void vp::component_clock::event_cancel(vp::clock_event *event)
+inline void vp::component_clock::event_cancel(std::shared_ptr<vp::clock_event> event)
 {
   clock->cancel(event);
 }
 
-inline void vp::component_clock::event_reenqueue(vp::clock_event *event, int64_t cycles)
+inline void vp::component_clock::event_reenqueue(std::shared_ptr<vp::clock_event> event, int64_t cycles)
 {
   clock->reenqueue(event, cycles);
 }
 
-inline void vp::component_clock::event_reenqueue_ext(vp::clock_event *event, int64_t cycles)
+inline void vp::component_clock::event_reenqueue_ext(std::shared_ptr<vp::clock_event> event, int64_t cycles)
 {
   clock->reenqueue_ext(event, cycles);
 }
 
-inline vp::clock_event *vp::component_clock::event_new(vp::clock_event_meth_t *meth)
+inline std::shared_ptr<vp::clock_event> vp::component_clock::event_new(vp::clock_event_meth_t *meth)
 {
-  return clock->event_new(this, meth);
+  return clock->event_new(std::shared_ptr<vp::component_clock>(this), meth);
 }
 
-inline vp::clock_event *vp::component_clock::event_new(void *_this, vp::clock_event_meth_t *meth)
+inline std::shared_ptr<vp::clock_event> vp::component_clock::event_new(void *_this, vp::clock_event_meth_t *meth)
 {
-  return clock->event_new(this, _this, meth);
+  return clock->event_new(std::shared_ptr<vp::component_clock>(this), _this, meth);
 }
 
-inline void vp::component_clock::event_del(vp::clock_event *event)
-{
-  clock->event_del(this, event);
-}
-
-inline vp::clock_engine *vp::component_clock::get_clock()
+inline std::shared_ptr<vp::clock_engine> vp::component_clock::get_clock()
 {
   return clock;
 }
 
-inline vp::time_engine *vp::component_clock::get_engine()
+inline std::shared_ptr<vp::time_engine> vp::component_clock::get_engine()
 {
   return get_clock()->get_engine();
 }

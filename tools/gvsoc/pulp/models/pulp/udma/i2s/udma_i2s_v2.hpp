@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -26,6 +26,7 @@
 #include "../udma_impl.hpp"
 #include "archi/udma/i2s/udma_i2s_v2.h"
 
+#include <memory>
 
 /*
  * I2S
@@ -95,7 +96,7 @@ private:
   vp::io_req_status_e i2s_mst_setup_req(int reg_offset, int size, bool is_write, uint8_t *data);
   vp::io_req_status_e i2s_pdm_setup_req(int reg_offset, int size, bool is_write, uint8_t *data);
 
-  static void clkgen_event_routine(void *__this, vp::clock_event *event);
+  static void clkgen_event_routine(void *__this, std::shared_ptr<vp::clock_event> event);
   vp::io_req_status_e check_clkgen0();
   vp::io_req_status_e check_clkgen1();
   vp::io_req_status_e reset_clkgen0();
@@ -110,8 +111,8 @@ private:
   vp_udma_i2s_i2s_mst_setup     r_i2s_mst_setup;
   vp_udma_i2s_i2s_pdm_setup     r_i2s_pdm_setup;
 
-  vp::clock_event *clkgen0_event;
-  vp::clock_event *clkgen1_event;
+  std::shared_ptr<vp::clock_event> clkgen0_event;
+  std::shared_ptr<vp::clock_event> clkgen1_event;
 
   int sck[2];
   int current_channel;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -72,14 +72,14 @@ int clock_domain::build()
 
   this->traces.new_trace_event_real("cycles", &this->cycles_trace);
 
-  this->set_time_engine((vp::time_engine*)this->get_service("time"));
+  this->set_time_engine(std::shared_ptr<vp::time_engine> ((vp::time_engine*)this->get_service("time")));
 
   return 0;
 }
 
 void clock_domain::pre_start()
 {
-  out.reg(this);
+  out.reg(std::shared_ptr<clock_domain>(this));
 }
 
 

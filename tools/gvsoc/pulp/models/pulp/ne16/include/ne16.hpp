@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Francesco Conti, University of Bologna & GreenWaves Technologies (f.conti@unibo.it)
  *          Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
@@ -239,9 +239,9 @@ private:
     void debug_psum_block();
 
     // EVENT handlers
-    static void fsm_start_handler(void *__this, vp::clock_event *event);
-    static void fsm_handler(void *__this, vp::clock_event *event);
-    static void fsm_end_handler(void *__this, vp::clock_event *event);
+    static void fsm_start_handler(void *__this, std::shared_ptr<vp::clock_event> event);
+    static void fsm_handler(void *__this, std::shared_ptr<vp::clock_event> event);
+    static void fsm_end_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
     // MAIN FSM and LOOP
     int  fsm();
@@ -377,7 +377,7 @@ private:
     // internal functions
     void __BinConvArray(xt::xarray<uint8_t>&, int, int, xt::xarray<int32_t>, xt::xarray<int32_t>, xt::xarray<int32_t>, bool=false, bool=false, bool=false, bool=false, bool=false);
     void __weightoffs(int, xt::xarray<int32_t>, xt::xarray<int32_t>);
-    
+
     // NORMQUANT
     void normquant_shift_setup();
     int  normquant_shift_cycle();
@@ -389,7 +389,7 @@ private:
     int  normquant_bias_cycle();
     bool normquant_bias_exit_idx();
     void normquant_bias_update_idx();
-    
+
     // STREAMOUT
     void streamout_setup();
     int  streamout_cycle();
@@ -478,11 +478,9 @@ private:
     vp::io_slave in;
     vp::wire_master<bool> irq;
 
-    vp::clock_event *fsm_start_event;
-    vp::clock_event *fsm_event;
-    vp::clock_event *fsm_end_event;
+    std::shared_ptr<vp::clock_event> fsm_start_event;
+    std::shared_ptr<vp::clock_event> fsm_event;
+    std::shared_ptr<vp::clock_event> fsm_end_event;
 };
 
 #endif /* __NE16_HPP__ */
-
-

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -23,6 +23,8 @@
 #define __VP_CLOCK_EVENT_HPP__
 
 #include "vp/vp_data.hpp"
+
+#include <memory>
 
 namespace vp {
 
@@ -35,7 +37,7 @@ namespace vp {
   #define CLOCK_EVENT_QUEUE_SIZE 32
   #define CLOCK_EVENT_QUEUE_MASK (CLOCK_EVENT_QUEUE_SIZE - 1)
 
-  typedef void (clock_event_meth_t)(void *, clock_event *event);
+  typedef void (clock_event_meth_t)(void *, std::shared_ptr<vp::clock_event> event);
 
   class clock_event
   {
@@ -44,9 +46,9 @@ namespace vp {
 
   public:
 
-    clock_event(component_clock *comp, clock_event_meth_t *meth);
+    clock_event(std::shared_ptr<component_clock> comp, clock_event_meth_t *meth);
 
-    clock_event(component_clock *comp, void *_this, clock_event_meth_t *meth) 
+    clock_event(std::shared_ptr<component_clock> comp, void *_this, clock_event_meth_t *meth)
       : comp(comp), _this(_this), meth(meth), enqueued(false) {}
 
     inline int get_payload_size() { return CLOCK_EVENT_PAYLOAD_SIZE; }
@@ -62,13 +64,13 @@ namespace vp {
   private:
     uint8_t payload[CLOCK_EVENT_PAYLOAD_SIZE];
     void *args[CLOCK_EVENT_NB_ARGS];
-    component_clock *comp;
+    std::shared_ptr<component_clock> comp;
     void *_this;
     clock_event_meth_t *meth;
-    clock_event *next;
+    std::shared_ptr<clock_event> next;
     bool enqueued;
     int64_t cycle;
-  };    
+  };
 
 };
 

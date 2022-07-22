@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -26,6 +26,8 @@
 #include "vp/itf/clk.hpp"
 #include "vp/clock/clock_event.hpp"
 #include "vp/itf/implem/wire_class.hpp"
+
+#include <memory>
 
 using namespace std;
 
@@ -41,33 +43,31 @@ namespace vp {
 
   public:
 
-    static void clk_reg(component *_this, component *clock);
+    static void clk_reg(component *_this, std::shared_ptr<clock_engine> clock);
     static void reset_sync(void *_this, bool active);
 
-    inline void event_enqueue(clock_event *event, int64_t cycles);
+    inline void event_enqueue(std::shared_ptr<clock_event> event, int64_t cycles);
 
-    inline void event_reenqueue(clock_event *event, int64_t cycles);
+    inline void event_reenqueue(std::shared_ptr<clock_event> event, int64_t cycles);
 
-    inline void event_enqueue_ext(clock_event *event, int64_t cycles);
+    inline void event_enqueue_ext(std::shared_ptr<clock_event> event, int64_t cycles);
 
-    inline void event_reenqueue_ext(clock_event *event, int64_t cycles);
+    inline void event_reenqueue_ext(std::shared_ptr<clock_event> event, int64_t cycles);
 
-    inline void event_cancel(clock_event *event);
+    inline void event_cancel(std::shared_ptr<clock_event> event);
 
-    clock_event *event_new(clock_event_meth_t *meth);
+    std::shared_ptr<clock_event> event_new(clock_event_meth_t *meth);
 
-    clock_event *event_new(void *_this, clock_event_meth_t *meth);
+    std::shared_ptr<clock_event> event_new(void *_this, clock_event_meth_t *meth);
 
-    inline clock_event *event_new(clock_event_meth_t *meth, void *arg)
+    inline std::shared_ptr<clock_event> event_new(clock_event_meth_t *meth, void *arg)
     {
-      clock_event *event = event_new(meth);
+      std::shared_ptr<clock_event> event = event_new(meth);
       event->get_args()[0] = arg;
       return event;
     }
 
-    void event_del(clock_event *event);
-
-    inline clock_engine *get_clock();
+    inline std::shared_ptr<clock_engine> get_clock();
 
     inline int64_t get_time();
 
@@ -79,17 +79,17 @@ namespace vp {
 
     inline int64_t get_frequency();
 
-    inline time_engine *get_engine();
+    inline std::shared_ptr<time_engine> get_engine();
 
   protected:
-    clock_engine *clock = NULL;
+    std::shared_ptr<clock_engine> clock = NULL;
 
     clk_slave            clock_port;
     vp::wire_slave<bool> reset_port;
 
   };
 
-};  
+};
 
 
 #endif

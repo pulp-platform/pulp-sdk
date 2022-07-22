@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -46,7 +46,7 @@ private:
 
   static void response(void *_this, vp::io_req *req);
 
-  static void event_handler(void *__this, vp::clock_event *event);
+  static void event_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
   vp::io_req_status_e process_req(vp::io_req *req);
 
@@ -64,7 +64,7 @@ private:
   int output_align;
 
   vp::io_req *pending_req;
-  vp::clock_event *event;
+  std::shared_ptr<vp::clock_event> event;
 
   int64_t ready_cycle;
   int ongoing_size;
@@ -80,7 +80,7 @@ converter::converter(js::config *config)
 }
 
 
-void converter::event_handler(void *__this, vp::clock_event *event)
+void converter::event_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   converter *_this = (converter *)__this;
   vp::io_req *req = _this->pending_req;

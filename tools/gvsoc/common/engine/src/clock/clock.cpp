@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -31,12 +31,12 @@ void vp::clk_master::bind_to(vp::port *_port, vp::config *config)
 
 
 
-void vp::clk_master::reg(component *clock)
+void vp::clk_master::reg(std::shared_ptr<vp::clock_engine> clock)
 {
   clk_slave *port = ports;
   while (port)
   {
-    port->req((component *)port->get_context(), clock);
+    port->req((component *)port->get_context(), clock.get());
     port = port->next;
   }
 }

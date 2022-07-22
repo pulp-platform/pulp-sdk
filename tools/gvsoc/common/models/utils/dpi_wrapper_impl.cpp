@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -112,13 +112,13 @@ public:
 protected:
 
 private:
-  static void wait_handler(void *__this, vp::clock_event *event);
+  static void wait_handler(void *__this, std::shared_ptr<vp::clock_event> event);
   static void entry_stub(int id);
 
   dpi_wrapper *top;
   ucontext_t context;
   int id;
-  vp::clock_event *wait_evt;
+  std::shared_ptr<vp::clock_event> wait_evt;
   bool is_started;
   bool event_raised;
   dpi_task *next;
@@ -135,12 +135,12 @@ public:
 protected:
 
 private:
-  static void entry_stub(void *__this, vp::clock_event *event);
+  static void entry_stub(void *__this, std::shared_ptr<vp::clock_event> event);
 
   dpi_wrapper *top;
   int id;
   int64_t period;
-  vp::clock_event *wait_evt;
+  std::shared_ptr<vp::clock_event> wait_evt;
 };
 
 class dpi_wrapper : public vp::component
@@ -163,11 +163,11 @@ public:
   vp::trace *get_trace() { return &trace; }
   void enqueue_waiting_for_event(dpi_task *task);
 
-  vp::clock_event *delayed_evt;
+  std::shared_ptr<vp::clock_event> delayed_evt;
 
 private:
 
-  static void delayed_handler(void *__this, vp::clock_event *event);
+  static void delayed_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
   static void qspim_sync(void *__this, int sck, int data_0, int data_1, int data_2, int data_3, int mask, int id);
   static void qspim_sync_cycle(void *__this, int data_0, int data_1, int data_2, int data_3, int mask, int id);
@@ -179,7 +179,7 @@ private:
   static void i2s_sync(void *__this, int sck, int ws, int sd, int id);
   static void gpio_sync(void *__this, bool data, int id);
   static void cpi_sync(void *__this, int pclk, int href, int vsync, int data, int id);
-  static void wakeup_handler(void *__this, vp::clock_event *event);
+  static void wakeup_handler(void *__this, std::shared_ptr<vp::clock_event> event);
 
   vp::trace     trace;
 
@@ -192,7 +192,7 @@ private:
   vp::wire_master<uint32_t> chip_config_itf;
 
   bool event_raised = false;
-  vp::clock_event *wakeup_evt;
+  std::shared_ptr<vp::clock_event> wakeup_evt;
 };
 
 void dpi_task::wait_ps(int64_t t)
@@ -210,7 +210,7 @@ void dpi_task::wait_event()
   swapcontext(&this->context, &main_context);
 }
 
-void dpi_task::wait_handler(void *__this, vp::clock_event *event)
+void dpi_task::wait_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   dpi_task *_this = (dpi_task *)__this;
   active_task = _this;
@@ -243,7 +243,7 @@ void dpi_periodic_handler::start()
   this->top->event_enqueue(this->wait_evt, 1);
 }
 
-void dpi_periodic_handler::entry_stub(void *__this, vp::clock_event *event)
+void dpi_periodic_handler::entry_stub(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   dpi_periodic_handler *_this = (dpi_periodic_handler *)__this;
   _this->top->event_enqueue(_this->wait_evt, 1);
@@ -259,13 +259,13 @@ dpi_wrapper::dpi_wrapper(js::config *config)
 }
 
 
-void dpi_wrapper::delayed_handler(void *__this, vp::clock_event *event)
+void dpi_wrapper::delayed_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   dpi_wrapper *_this = (dpi_wrapper *)__this;
   _this->raise_event();
 }
 
-void dpi_wrapper::wakeup_handler(void *__this, vp::clock_event *event)
+void dpi_wrapper::wakeup_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   dpi_wrapper *_this = (dpi_wrapper *)__this;
   _this->raise_event();

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -99,7 +99,7 @@ public:
   void start();
 
   static void sector_erase(void *__this, int data_0, int data_1, int data_2, int data_3);
-  static void sector_erase_done(void *__this, vp::clock_event *event);
+  static void sector_erase_done(void *__this, std::shared_ptr<vp::clock_event> event);
   static void quad_read(void *__this, int data_0, int data_1, int data_2, int data_3);
   static void single_read(void *__this, int data_0, int data_1, int data_2, int data_3);
   static void write_any_register(void *__this, int data_0, int data_1, int data_2, int data_3);
@@ -122,7 +122,7 @@ private:
   void enqueue_bits(int data_0, int data_1, int data_2, int data_3);
   void send_bits();
 
-  
+
   vp::trace     trace;
 
   int size;
@@ -146,7 +146,7 @@ private:
 
   unsigned int current_addr;
 
-  vp::clock_event *sector_erase_event;
+  std::shared_ptr<vp::clock_event> sector_erase_event;
 
 };
 
@@ -155,9 +155,9 @@ private:
 static command_t commands_descs[] = {
   { CMD_READ_ID      , "read ID"             , NULL                          , NULL},
   { CMD_RDCR         , "read config"         , NULL                          , NULL},
-  { CMD_WREN         , "write enable"        , NULL                          , NULL}, 
+  { CMD_WREN         , "write enable"        , NULL                          , NULL},
   { CMD_WRR          , "write register"      , NULL                          , NULL},
-  { CMD_WRAR         , "write any register"  , &spiflash::write_any_register , NULL},    
+  { CMD_WRAR         , "write any register"  , &spiflash::write_any_register , NULL},
   { CMD_RDSR1        , "read status register", NULL                          , NULL},
   { CMD_P4E          , "parameter 4k erase"  , NULL                          , NULL},
   { CMD_PP           , "page program"        , &spiflash::page_program       , NULL},
@@ -201,7 +201,7 @@ void spiflash::page_program(void *__this, int data_0, int data_1, int data_2, in
   }
 }
 
-void spiflash::sector_erase_done(void *__this, vp::clock_event *event)
+void spiflash::sector_erase_done(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   spiflash *_this = (spiflash *)__this;
 
@@ -409,7 +409,7 @@ void spiflash::handle_data(int data_0, int data_1, int data_2, int data_3)
         return;
       }
       this->trace.msg(vp::trace::LEVEL_TRACE, "Received command (ID: 0x%x, name: %s)\n", this->pending_command_id, this->pending_command->desc.c_str());
- 
+
       if (this->pending_command->start_handler)
         this->pending_command->start_handler(this);
     }
@@ -439,7 +439,7 @@ void spiflash::sync_cycle(void *__this, int data_0, int data_1, int data_2, int 
 
 void spiflash::cs_sync(void *__this, bool active)
 {
-  spiflash *_this = (spiflash *)__this;  
+  spiflash *_this = (spiflash *)__this;
   _this->trace.msg(vp::trace::LEVEL_TRACE, "Received CS sync (value: %d)\n", active);
 
   if (active == false)
@@ -449,7 +449,7 @@ void spiflash::cs_sync(void *__this, bool active)
 
 
 }
-  
+
 int spiflash::build()
 {
   traces.new_trace("trace", &trace, vp::DEBUG);

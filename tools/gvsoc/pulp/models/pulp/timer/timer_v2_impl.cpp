@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -57,7 +57,7 @@ private:
   void check_state();
   uint64_t get_remaining_cycles(bool is_64, int counter);
   void check_state_counter(bool is_64, int counter);
-  static void event_handler(void *__this, vp::clock_event *event);
+  static void event_handler(void *__this, std::shared_ptr<vp::clock_event> event);
   uint64_t get_compare_value(bool is_64, int counter);
   uint64_t get_value(bool is_64, int counter);
   void set_value(bool is_64, int counter, uint64_t new_value);
@@ -82,7 +82,7 @@ private:
 
   int64_t sync_time;
 
-  vp::clock_event *event;
+  std::shared_ptr<vp::clock_event> event;
 };
 
 timer::timer(js::config *config)
@@ -131,7 +131,7 @@ uint64_t timer::get_compare_value(bool is_64, int counter)
 uint64_t timer::get_value(bool is_64, int counter)
 {
   if (is_64) return *(uint64_t *)value;
-  else 
+  else
     {
       return value[counter];
     }
@@ -182,7 +182,7 @@ void timer::check_state_counter(bool is_64, int counter)
   }
 }
 
-void timer::event_handler(void *__this, vp::clock_event *event)
+void timer::event_handler(void *__this, std::shared_ptr<vp::clock_event> event)
 {
   timer *_this = (timer *)__this;
   _this->sync();
@@ -246,7 +246,7 @@ vp::io_req_status_e timer::handle_configure(int counter, uint32_t *data, unsigne
     config[counter] = *data;
     depack_config(counter, config[counter]);
 
-    trace.msg("Modified configuration (timer: %d, enabled: %d, irq: %d, iem: %d, cmp-clr: %d, one-shot: %d, prescaler: %d, prescaler value: 0x%x, is64: %d)\n", 
+    trace.msg("Modified configuration (timer: %d, enabled: %d, irq: %d, iem: %d, cmp-clr: %d, one-shot: %d, prescaler: %d, prescaler value: 0x%x, is64: %d)\n",
       counter, is_enabled[counter], irq_enabled[counter], iem[counter], cmp_clr[counter], one_shot[counter], prescaler[counter], prescaler_value[counter], is_64);
 
     if ((config[counter] >> TIMER_CFG_LO_RESET_BIT) & 1) timer_reset(counter);

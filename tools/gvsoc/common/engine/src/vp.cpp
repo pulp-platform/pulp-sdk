@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <sys/prctl.h>
 
+#include <memory>
 
 extern "C" long long int dpi_time_ps();
 
@@ -61,23 +62,22 @@ extern "C" void dpi_raise_event();
 char vp_error[VP_ERROR_SIZE];
 
 
-
 class Gv_proxy
 {
   public:
     Gv_proxy(vp::component *top, int req_pipe, int reply_pipe): top(top), req_pipe(req_pipe), reply_pipe(reply_pipe) {}
     int open(int port, int *out_port);
     void stop();
-    
+
   private:
- 
+
 
     void listener(void);
     void proxy_loop(int);
-    
+
     int telnet_socket;
     int socket_port;
-    
+
     std::thread *loop_thread;
     std::thread *listener_thread;
 
@@ -115,7 +115,7 @@ bool vp::regmap::access(uint64_t offset, int size, uint8_t *value, bool is_write
             }
 
             x->access((offset - aliased_reg->offset), size, value, is_write);
-            
+
             if (aliased_reg->trace.get_active(vp::trace::LEVEL_DEBUG))
             {
                 std::string regfields_values = "";
@@ -132,7 +132,7 @@ bool vp::regmap::access(uint64_t offset, int size, uint8_t *value, bool is_write
 
                         regfields_values += y->name + "=" + std::string(buff);
                     }
-                    
+
                     regfields_values = "{ " + regfields_values + " }";
                 }
                 else
@@ -327,9 +327,9 @@ void vp::component::pre_start_all()
 
 
 
-void vp::component_clock::clk_reg(component *_this, component *clock)
+void vp::component_clock::clk_reg(component *_this, std::shared_ptr<clock_engine> clock)
 {
-    _this->clock = (clock_engine *)clock;
+    _this->clock = clock;
     for (auto &x : _this->childs)
     {
         x->clk_reg(x, clock);
@@ -395,14 +395,14 @@ int64_t vp::time_engine::get_next_event_time()
 }
 
 
-bool vp::time_engine::dequeue(time_engine_client *client)
+bool vp::time_engine::dequeue(std::shared_ptr<time_engine_client> client)
 {
     if (!client->is_enqueued)
         return false;
 
     client->is_enqueued = false;
 
-    time_engine_client *current = this->first_client, *prev = NULL;
+    std::shared_ptr<time_engine_client> current = this->first_client, prev = NULL;
     while (current && current != client)
     {
         prev = current;
@@ -416,7 +416,7 @@ bool vp::time_engine::dequeue(time_engine_client *client)
     return true;
 }
 
-bool vp::time_engine::enqueue(time_engine_client *client, int64_t time)
+bool vp::time_engine::enqueue(std::shared_ptr<time_engine_client> client, int64_t time)
 {
     vp_assert(time >= 0, NULL, "Time must be positive\n");
 
@@ -445,7 +445,7 @@ bool vp::time_engine::enqueue(time_engine_client *client, int64_t time)
 
     client->is_enqueued = true;
 
-    time_engine_client *current = first_client, *prev = NULL;
+    std::shared_ptr<time_engine_client> current = first_client, prev = NULL;
     client->next_event_time = full_time;
     while (current && current->next_event_time < client->next_event_time)
     {
@@ -466,14 +466,14 @@ bool vp::clock_engine::dequeue_from_engine()
     if (this->is_running() || !this->is_enqueued)
         return false;
 
-    this->engine->dequeue(this);
+    this->engine->dequeue(std::shared_ptr<vp::clock_engine>(this));
 
     return true;
 }
 
 void vp::clock_engine::reenqueue_to_engine()
 {
-    this->engine->enqueue(this, this->next_event_time);
+    this->engine->enqueue(std::shared_ptr<clock_engine>(this), this->next_event_time);
 }
 
 void vp::clock_engine::apply_frequency(int frequency)
@@ -533,7 +533,7 @@ void vp::clock_engine::update()
     }
 }
 
-vp::clock_event *vp::clock_engine::enqueue_other(vp::clock_event *event, int64_t cycle)
+std::shared_ptr<vp::clock_event> vp::clock_engine::enqueue_other(std::shared_ptr<vp::clock_event> event, int64_t cycle)
 {
     // Slow case where the engine is not running or we must enqueue out of the
     // circular buffer.
@@ -563,7 +563,7 @@ vp::clock_event *vp::clock_engine::enqueue_other(vp::clock_event *event, int64_t
         if (this->period != 0)
             enqueue_to_engine(cycle * period);
 
-        vp::clock_event *current = delayed_queue, *prev = NULL;
+        std::shared_ptr<vp::clock_event> current = delayed_queue, prev = NULL;
         int64_t full_cycle = cycle + get_cycles();
         while (current && current->cycle < full_cycle)
         {
@@ -580,7 +580,7 @@ vp::clock_event *vp::clock_engine::enqueue_other(vp::clock_event *event, int64_t
     return event;
 }
 
-vp::clock_event *vp::clock_engine::get_next_event()
+std::shared_ptr<vp::clock_event> vp::clock_engine::get_next_event()
 {
     // There is no quick way of getting the next event.
     // We have to first check if there is an event in the circular buffer
@@ -591,7 +591,7 @@ vp::clock_event *vp::clock_engine::get_next_event()
         for (int i = 0; i < CLOCK_EVENT_QUEUE_SIZE; i++)
         {
             int cycle = (current_cycle + i) & CLOCK_EVENT_QUEUE_MASK;
-            vp::clock_event *event = event_queue[cycle];
+            std::shared_ptr<vp::clock_event> event = event_queue[cycle];
             if (event)
             {
                 return event;
@@ -603,7 +603,7 @@ vp::clock_event *vp::clock_engine::get_next_event()
     return this->delayed_queue;
 }
 
-void vp::clock_engine::cancel(vp::clock_event *event)
+void vp::clock_engine::cancel(std::shared_ptr<vp::clock_event> event)
 {
     if (!event->is_enqueued())
         return;
@@ -613,7 +613,7 @@ void vp::clock_engine::cancel(vp::clock_event *event)
     // not found, look in the circular buffer
 
     // First the delayed queue
-    vp::clock_event *current = delayed_queue, *prev = NULL;
+    std::shared_ptr<vp::clock_event> current = delayed_queue, prev = NULL;
     while (current)
     {
         if (current == event)
@@ -633,7 +633,7 @@ void vp::clock_engine::cancel(vp::clock_event *event)
     // Then in the circular buffer
     for (int i = 0; i < CLOCK_EVENT_QUEUE_SIZE; i++)
     {
-        vp::clock_event *current = event_queue[i], *prev = NULL;
+        std::shared_ptr<vp::clock_event> current = event_queue[i], prev = NULL;
         while (current)
         {
             if (current == event)
@@ -664,7 +664,7 @@ end:
 
 void vp::clock_engine::flush_delayed_queue()
 {
-    clock_event *event = delayed_queue;
+    std::shared_ptr<clock_event> event = delayed_queue;
     this->must_flush_delayed_queue = false;
     while (event)
     {
@@ -675,7 +675,7 @@ void vp::clock_engine::flush_delayed_queue()
         if (cycle_diff >= CLOCK_EVENT_QUEUE_SIZE)
             break;
 
-        clock_event *next = event->next;
+        std::shared_ptr<clock_event> next = event->next;
 
         enqueue_to_cycle(event, cycle_diff);
 
@@ -705,7 +705,7 @@ int64_t vp::clock_engine::exec()
 
     // Now take all events available at the current cycle and execute them all without returning
     // to the main engine to execute them faster.
-    clock_event *current = event_queue[current_cycle];
+    std::shared_ptr<clock_event> current = event_queue[current_cycle];
 
     while (likely(current != NULL))
     {
@@ -756,16 +756,16 @@ int64_t vp::clock_engine::exec()
     }
 }
 
-vp::clock_event::clock_event(component_clock *comp, clock_event_meth_t *meth)
-    : comp(comp), _this((void *)static_cast<vp::component *>((vp::component_clock *)(comp))), meth(meth), enqueued(false)
+vp::clock_event::clock_event(std::shared_ptr<component_clock> comp, clock_event_meth_t *meth)
+    : comp(comp), _this((void *)static_cast<vp::component *>((comp.get()))), meth(meth), enqueued(false)
 {
 }
 
-vp::time_engine *vp::component::get_time_engine()
+std::shared_ptr<vp::time_engine> vp::component::get_time_engine()
 {
     if (this->time_engine_ptr == NULL)
     {
-        this->time_engine_ptr = (vp::time_engine*)this->get_service("time");
+        this->time_engine_ptr = std::shared_ptr<vp::time_engine> ( (vp::time_engine*)this->get_service("time") );
     }
 
     return this->time_engine_ptr;
@@ -1545,7 +1545,7 @@ void Gv_proxy::proxy_loop(int socket_fd)
     {
         char line[1024];
 
-        if (!fgets(line, 1024, sock)) 
+        if (!fgets(line, 1024, sock))
             return ;
 
         std::string s = std::string(line);
@@ -1828,7 +1828,7 @@ void Gvsoc_proxy::proxy_loop()
     {
         char line[1024];
 
-        if (!fgets(line, 1024, sock)) 
+        if (!fgets(line, 1024, sock))
             return ;
 
         std::string s = std::string(line);
@@ -1895,7 +1895,7 @@ int Gvsoc_proxy::open()
         // test in case the original parent exited just
         // before the prctl() call
         if (getppid() != ppid_before_fork) exit(1);
-        
+
         void *instance = gv_open(this->config_path.c_str(), true, NULL, this->req_pipe[0], this->reply_pipe[1]);
 
         int retval = gv_run(instance);
