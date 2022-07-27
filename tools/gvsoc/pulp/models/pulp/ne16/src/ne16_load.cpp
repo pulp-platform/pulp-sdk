@@ -48,8 +48,8 @@ void Ne16::load_setup() {
     this->trace.msg(vp::trace::LEVEL_DEBUG, "   w_size_in_hw=%d\n", this->w_size_in_hw);
   }
 
-  auto infeat_hom_iter = this->FILTER_SIZE * this->infeat_d1_stride;
-  auto infeat_wom_iter = this->FILTER_SIZE * this->infeat_d0_stride;
+  auto infeat_hom_iter = this->strided2x2 ? (this->FILTER_SIZE+1)*this->infeat_d1_stride : this->FILTER_SIZE * this->infeat_d1_stride;
+  auto infeat_wom_iter = this->strided2x2 ? (this->FILTER_SIZE+1)*this->infeat_d0_stride : this->FILTER_SIZE * this->infeat_d0_stride;
 
   auto base_addr_x = !this->mode_linear ? this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN :
                                           this->infeat_ptr + k_in_major*this->TP_IN*8 * (this->mode16 ? 2 : 2);
