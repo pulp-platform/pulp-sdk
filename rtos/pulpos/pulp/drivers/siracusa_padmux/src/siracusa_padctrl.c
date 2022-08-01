@@ -21,7 +21,7 @@
  */
 
 #include "siracusa_padctrl.h"
-#include "pulp.h"
+#include "hal/pulp.h"
 
 void padctrl_config_set(siracusa_padctrl_pad_e pad, siracusa_padctrl_cfg_t const *cfg) {
   const bitfield_field32_t drv_str_field = {.mask = 0xf, .index = SIRACUSA_PADS_FUNCTIONAL_CONFIG_PAD_GPIO00_CFG_DRV0_BIT};
