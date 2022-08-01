@@ -18,6 +18,7 @@
 #define __HAL_CHIPS_SIRACUSA_PULP_H__
 
 #include "hal/riscv/riscv_v5.h"
+#include "hal/bitfield.h"
 #include "hal/eu/eu_v3.h"
 #include "hal/itc/itc_v1.h"
 #include "hal/dma/mchan_v7.h"
