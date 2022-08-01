@@ -17,7 +17,7 @@ PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
 PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9
 endif
 
-PULP_CFLAGS    += -D__riscv__ -fdata-sections -ffunction-sections -include pos/chips/siracusa/config.h -I$(PULPOS_PULP_HOME)/include/pos/chips/siracusa -I$(PULP_EXT_LIBS)/include
+PULP_CFLAGS    += -D__riscv__ -fdata-sections -ffunction-sections -include pos/chips/siracusa/config.h -I$(PULPOS_PULP_HOME)/include/pos/chips/siracusa -I$(PULPOS_PULP_HOME)/drivers/i3c/include -I$(PULPOS_PULP_HOME)/drivers/siracusa_padmux/include -I$(PULP_EXT_LIBS)/include
 
 ifeq '$(CONFIG_OPENMP)' '1'
 PULP_CFLAGS    += -fopenmp -mnativeomp
@@ -61,6 +61,16 @@ CONFIG_PAD=1
 # FLL
 PULP_SRCS     += kernel/chips/siracusa/pll.c
 PULP_SRCS     += kernel/chips/siracusa/soc.c
+
+# I3C driver
+PULP_SRCS     += drivers/i3c/src/cdn_print.c
+PULP_SRCS     += drivers/i3c/src/command_list.c
+PULP_SRCS     += drivers/i3c/src/i3c.c
+PULP_SRCS     += drivers/i3c/src/i3c_obj_if.c
+PULP_SRCS     += drivers/i3c/src/cps_impl.c
+
+# Padmultiplexing
+PULP_SRCS     += drivers/siracusa_padmux/src/siracusa_padctrl.c
 
 
 include $(PULPOS_HOME)/rules/pulpos/configs/default.mk
