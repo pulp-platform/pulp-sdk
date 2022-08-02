@@ -10,7 +10,11 @@ APP_CFLAGS += -DNUM_CORES=1
 endif
 endif
 
+ifeq '$(platform)' 'rtl'
+APP_CFLAGS    += -DRTL_PLATFORM=1
+endif
+
 APP_CFLAGS += -Os -g
 APP_LDFLAGS += -Os -g
-
+$(info APP_CFLAGS=${APP_CFLAGS})
 include $(RULES_DIR)/pmsis_rules.mk

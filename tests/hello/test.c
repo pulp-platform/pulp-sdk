@@ -9,8 +9,9 @@
  */
 
 #include "pmsis.h"
-#include "siracusa_padctrl.h"
-
+#if defined(RTL_PLATFORM)
+    #include "siracusa_padctrl.h"
+#endif
 #if defined(CLUSTER)
 void pe_entry(void *arg)
 {
@@ -56,7 +57,9 @@ static void test_kickoff(void *arg)
 
 int main()
 {
-    padctrl_mode_set(PAD_GPIO42, PAD_MODE_UART0_TX);
-    padctrl_mode_set(PAD_GPIO41, PAD_MODE_UART0_RX);
+    #if defined(RTL_PLATFORM)
+        padctrl_mode_set(PAD_GPIO42, PAD_MODE_UART0_TX);
+        padctrl_mode_set(PAD_GPIO41, PAD_MODE_UART0_RX);
+    #endif
     return pmsis_kickoff((void *)test_kickoff);
 }
