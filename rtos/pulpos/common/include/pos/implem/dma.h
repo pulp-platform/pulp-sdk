@@ -38,17 +38,16 @@ static inline void __cl_dma_flush()
 static inline void __cl_dma_wait_safe(pi_cl_dma_cmd_t *copy)
 {
   uint32_t counter = copy->id;
+#if MCHAN_VERSION == 7
   plp_dma_wait(counter);
-
-#if IDMA_VERSION == 1
-  uint32_t status = plp_dma_status();
+#elif IDMA_VERSION == 1
   for (int i = 0; i < PULPOPEN_IDMA_NUM_BACKENDS; i++) {
-    
-    if (~((status>>i) & 1)) continue;
-    plp_dma_wait(i<<28 | (0x0fffffff & (counter-1)));
+    plp_dma_wait(i<<28 | (0x0fffffff & (counter)));
   }
+#else
+#error DMA Version not specified
 #endif
-  copy->id = -1;
+  // copy->id = -1;
 }
 
 
@@ -56,43 +55,31 @@ static inline void __cl_dma_wait(pi_cl_dma_cmd_t *copy)
 {
   uint32_t counter = copy->id;
 
-  eu_mutex_lock_from_id(0);
 
 #if MCHAN_VERSION == 7
+  eu_mutex_lock_from_id(0);
   while(DMA_READ(MCHAN_STATUS_OFFSET) & (1 << counter)) {
-#elif IDMA_VERSION == 1
-  while(!pulp_idma_tx_cplt(counter)) {
-#else
-#error DMA Version not specified
-#endif
     eu_mutex_unlock_from_id(0);
     eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
     eu_mutex_lock_from_id(0);
   }
-
-#if MCHAN_VERSION == 7
   plp_dma_counter_free(counter);
-#endif
-
-#if IDMA_VERSION == 1
-  uint32_t status = plp_dma_status();
-#endif
   eu_mutex_unlock_from_id(0);
 
-#if IDMA_VERSION == 1
+#elif IDMA_VERSION == 1
   for (int i = 0; i < PULPOPEN_IDMA_NUM_BACKENDS; i++) {
-    if (~((status>>i) & 1)) continue;
-
     eu_mutex_lock_from_id(0);
-    while(!pulp_idma_tx_cplt(i<<28 | (0x0fffffff & (counter-1)))) {
+    while(!pulp_idma_tx_cplt(i<<28 | (0x0fffffff & (counter)))) {
       eu_mutex_unlock_from_id(0);
       eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
       eu_mutex_lock_from_id(0);
     }
     eu_mutex_unlock_from_id(0);
   }
+#else
+#error DMA Version not specified
 #endif
-  copy->id = -1;
+  // copy->id = -1;
 }
 
 
