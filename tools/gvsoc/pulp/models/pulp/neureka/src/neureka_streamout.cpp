@@ -70,7 +70,7 @@ void Neureka::streamout_setup() {
   this->streamout_j_out_iter = 0;
 
   // relu is here because of easier modeling
-  if(this->quantization_bits == 8) {
+  if(this->quantization_bits == 8 & (this->output_quant)) {
     if(this->use_relu) {
       if(!this->signed_activation){
         xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 255);
@@ -83,7 +83,7 @@ void Neureka::streamout_setup() {
       xt::view(this->accum, xt::all()) = xt::clip(this->accum, -128, 127);
     }
   }
-  else if(this->use_relu) {
+  else if(this->use_relu & (this->output_quant)) {
     xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 0xffffffff);
   }
   if(this->accum_traces) {
