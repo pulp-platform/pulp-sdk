@@ -48,3 +48,21 @@ void Neureka::high_update_idx() {
     this->k_in_major_iter = 0;
   }
 }
+
+void Neureka::next_high_update_idx() {
+  if(this->next_j_major == this->subtile_nb_wo-1 && this->next_i_major == this->subtile_nb_ho-1) {
+    this->next_k_out_major++;
+    this->next_i_major = 0;
+    this->next_j_major = 0;
+    this->next_k_in_major_iter = 0;
+  }
+  else if(this->next_j_major == this->subtile_nb_wo-1) {
+    this->next_i_major++;
+    this->next_j_major = 0;
+    this->next_k_in_major_iter = 0;
+  }
+  else {
+    this->next_j_major++;
+    this->next_k_in_major_iter = 0;
+  }
+}

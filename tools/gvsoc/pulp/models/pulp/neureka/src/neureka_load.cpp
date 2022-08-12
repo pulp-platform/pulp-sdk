@@ -52,64 +52,40 @@ void Neureka::load_setup() {
   auto infeat_hom_iter = this->H_SIZE * this->infeat_d1_stride;
   auto infeat_wom_iter = this->W_SIZE * this->infeat_d0_stride;
 
-  auto base_addr_x = !this->mode_linear ? (this->fs==1) ? this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN : this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN_S :
-                                          this->infeat_ptr + k_in_major*this->TP_IN_S*8 * (this->mode16 ? 2 : 2);
+  auto base_addr_x = (this->fs==1) ? this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN : this->infeat_ptr + this->i_major*infeat_hom_iter + this->j_major*infeat_wom_iter + k_in_major*this->TP_IN_S;
 
   this->vld_x = NeurekaVectorLoad<uint8_t>(
     this,
     base_addr_x, // base_addr
-    this->mode_linear ? (this->mode16 ? 32 : 16) : this->h_size_in_X_w_size_in, // word_length
+    this->h_size_in_X_w_size_in, // word_length
     this->infeat_d0_stride, // word_stride
-    this->mode_linear ? (this->mode16 ? 32 : 16) : this->w_size_in, // line_length
+    this->w_size_in, // line_length
     this->infeat_d1_stride, // line_stride
-    this->mode_linear ? -1 : this->h_size_in_X_w_size_in, // block_length
+    this->h_size_in_X_w_size_in, // block_length
     this->infeat_d2_stride, // block_stride
     false
   );
 
-  if(!this->mode_linear) {
-    // NOTE: this looks very reasonable, but different from the v1 model
-    this->load_i_fbuf_lim = this->h_size_in;
-    this->load_j_fbuf_lim = this->w_size_in;
+  this->load_i_fbuf_lim = this->h_size_in;
+  this->load_j_fbuf_lim = this->w_size_in;
 
-    this->load_k_in_lim = this->TP_IN;
-    this->load_padding = {0, 0}; // std::vector<uint32_t>
+  this->load_k_in_lim = this->TP_IN;
+  this->load_padding = {0, 0}; // std::vector<uint32_t>
 
-    if(k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN) { // last k_in tile, only if it requires padding
-      this->load_k_in_lim = this->subtile_rem_ki;
-      this->load_padding = {0, static_cast<uint32_t>(this->TP_IN-this->subtile_rem_ki)};
-    }
-
-    this->load_i_fbuf = 0;
-    this->load_j_fbuf = 0;
+  if(k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN) { // last k_in tile, only if it requires padding
+    this->load_k_in_lim = this->subtile_rem_ki;
+    this->load_padding = {0, static_cast<uint32_t>(this->TP_IN-this->subtile_rem_ki)};
   }
-  else {
-    this->load_fbuf_lim = this->mode16 ? 2*this->TP_IN : this->TP_IN;
-    this->load_k_in_lim = this->mode16 ? 2*this->TP_IN : this->TP_IN;
-    this->load_padding = {0, 0};
-    if(k_in_major == this->subtile_nb_ki-1 && this->subtile_rem_ki != this->TP_IN && this->subtile_rem_ki != 0) { // last k_in tile, only if it requires padding
-       this->load_k_in_lim = this->subtile_rem_ki;
-       this->load_fbuf_lim = this->mode16 ? 2*this->subtile_rem_ki : this->subtile_rem_ki;
-    }
-    this->load_i_fbuf = 0;
-    this->load_j_fbuf = 0;
-  }
+
+  this->load_i_fbuf = 0;
+  this->load_j_fbuf = 0;
 
   xt::view(this->x_buffer, xt::all()) = 0;
-  xt::view(this->x_buffer_linear, xt::all()) = 0;
-  
 }
 
 int Neureka::load_cycle() { // not linear
   int64_t cycles = 0;
   xt::view(this->x_buffer, this->load_i_fbuf, this->load_j_fbuf, xt::all()) = xt::pad(this->vld_x.ex(this->load_k_in_lim, false, cycles), this->load_padding);
-  return (int) cycles;
-}
-
-int Neureka::load_cycle_linear() {
-  int64_t cycles = 0;
-  auto x = xt::pad(this->vld_x.ex(this->TP_IN, false, cycles), this->load_padding);
-  xt::view(this->x_buffer_linear, this->load_i_fbuf, xt::all()) = x;
   return (int) cycles;
 }
 
@@ -176,15 +152,7 @@ void Neureka::load_do_padding() { // not linear
 
 void Neureka::load_do_extract() {
   // extract x_array from x_buffer
-  if(this->mode_linear) {
-    xt::view(this->x_array, xt::all()) = 0;
-    for(auto i=0; i<(this->mode16 ? 4 : 2); i++) { // spatial loop - implemented as a set of muxes
-      for(auto j=0; j<8; j++) {
-        xt::view(this->x_array, i, j, xt::all()) = xt::view(this->x_buffer_linear, i*8+j);
-      }
-    }
-  }
-  else if(this->fs == 3) {
+  if(this->fs == 3) {
     for(auto i_col=0; i_col<this->NR_COLUMN; i_col++) { // spatial loop - implemented as a set of muxes
       auto i = i_col / this->H_SIZE;
       auto j = i_col % this->W_SIZE;
@@ -225,35 +193,20 @@ void Neureka::load_filter_masking() {
 }
 
 bool Neureka::load_exit_idx() {
-  if(this->mode_linear) {
-    if(this->load_i_fbuf == this->load_fbuf_lim-1) {
-      return true;
-    }
-    else {
-      return false;
-    }
+  if(this->load_i_fbuf == this->load_i_fbuf_lim-1 && this->load_j_fbuf == this->load_j_fbuf_lim-1) {
+    return true;
   }
   else {
-    if(this->load_i_fbuf == this->load_i_fbuf_lim-1 && this->load_j_fbuf == this->load_j_fbuf_lim-1) {
-      return true;
-    }
-    else {
-      return false;
-    }
+    return false;
   }
 }
 
 void Neureka::load_update_idx() {
-  if(this->mode_linear) {
+  if(this->load_j_fbuf == this->load_j_fbuf_lim-1) {
+    this->load_j_fbuf = 0;
     this->load_i_fbuf++;
   }
   else {
-    if(this->load_j_fbuf == this->load_j_fbuf_lim-1) {
-      this->load_j_fbuf = 0;
-      this->load_i_fbuf++;
-    }
-    else {
-      this->load_j_fbuf++;
-    }
+    this->load_j_fbuf++;
   }
 }

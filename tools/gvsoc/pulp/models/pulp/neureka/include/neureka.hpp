@@ -70,7 +70,8 @@
 
 #define NEUREKA_SPECIAL_TRACE_REG NEUREKA_NB_REG
 #define NEUREKA_SPECIAL_FORMAT_TRACE_REG NEUREKA_NB_REG+1
-#define DEFAULT_TRACE_LEVEL L0_CONFIG
+// #define DEFAULT_TRACE_LEVEL L0_CONFIG
+#define DEFAULT_TRACE_LEVEL LEVEL_DEBUG
 
 enum NeurekaState {
     IDLE,
@@ -349,6 +350,7 @@ private:
     xt::xarray<int8_t> x_buffer_linear; // feature buffer (*actual storage* in NEUREKA -- representation for linear case)
     xt::xarray<int8_t> x_array;     // reordered feature array (no actual storage in NEUREKA)
     xt::xarray<uint8_t> weight;      // input weight stream
+    xt::xarray<uint8_t> dw_weight_buffer;//fake weight buffer to save dw weight without refetching it continuously
 
     // CLEAR
     void clear_all();
@@ -377,13 +379,14 @@ private:
     void depthwise_update_idx();
     void weightoffs();
     void matrixvec_setup();
+    void reset_dw_weight_buffer();
     int  matrixvec_cycle();
     bool matrixvec_exit_idx();
     void matrixvec_update_idx();
     bool matrixvec_to_load_idx();
     bool matrixvec_to_matrixvec_idx();
     // internal functions
-    void __BinConvArray(xt::xarray<uint8_t>&, int, int, xt::xarray<int32_t>, xt::xarray<int32_t>, xt::xarray<int32_t>, bool=false, bool=false, bool=false, bool=false, bool=false);
+    void __BinConvArray(xt::xarray<uint8_t>&, int, int, xt::xarray<int32_t>, xt::xarray<int32_t>, bool=false, bool=false, bool=false);
     void __weightoffs(int, xt::xarray<int32_t>, xt::xarray<int32_t>);
     
     // NORMQUANT
@@ -408,6 +411,7 @@ private:
     // INDEX
     void k_in_major_update_idx();
     void high_update_idx();
+    void next_high_update_idx();
 
     // INDEX state
     int k_out_major;
@@ -426,6 +430,14 @@ private:
     int k_out_lim_dw;
     int dw_lim;
     int dw_iter;
+
+    // INDEX next_iter
+    int next_k_in_major;
+    int next_k_out_major;
+    int next_i_major;
+    int next_j_major;
+    int next_k_in_major_iter;
+
 
     // STREAMIN state
     int streamin_ij_out;

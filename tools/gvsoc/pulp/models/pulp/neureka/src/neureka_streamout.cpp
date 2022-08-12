@@ -70,22 +70,21 @@ void Neureka::streamout_setup() {
   this->streamout_j_out_iter = 0;
 
   // relu is here because of easier modeling
-  if(this->quantization_bits == 8) {
-    // std::cout<<"INSIDE QUANT 0 "<<this->use_relu<<std::endl;
+  if(this->quantization_bits == 8 & (this->output_quant)) {
     if(this->use_relu) {
-      xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 255);
-      // std::cout<<"INSIDE QUANT 1 "<<this->use_relu<<std::endl;
+      if(!this->signed_activation){
+        xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 255);
+      }
+      else {
+        xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 127);
+      }
     }
     else {
-      // std::cout<<std::hex<<xt::view(this->accum, xt::all())<<std::endl;
       xt::view(this->accum, xt::all()) = xt::clip(this->accum, -128, 127);
-      // std::cout<<"INSIDE QUANT 2 "<<this->use_relu<<std::endl;
-      // std::cout<<std::hex<<xt::view(this->accum, xt::all())<<std::endl;
     }
   }
-  else if(this->use_relu) {
+  else if(this->use_relu & (this->output_quant)) {
     xt::view(this->accum, xt::all()) = xt::clip(this->accum, 0, 0xffffffff);
-    // std::cout<<"INSIDE QUANT 3 "<<this->use_relu<<std::endl;
   }
   if(this->accum_traces) {
     this->debug_accum();
@@ -147,8 +146,8 @@ int Neureka::streamout_cycle() {
 }
 
 bool Neureka::streamout_exit_idx() {
-  auto h_size_out = this->mode_linear ? 1 : this->h_size_out;
-  auto w_size_out = this->mode_linear ? 1 : this->w_size_out;
+  auto h_size_out = this->h_size_out;
+  auto w_size_out = this->w_size_out;
   if(this->streamout_i_out_iter == h_size_out-1 && this->streamout_j_out_iter == w_size_out-1 && this->streamout_k_out_iter == this->streamout_k_out_lim-1) {
     return true;
   }
