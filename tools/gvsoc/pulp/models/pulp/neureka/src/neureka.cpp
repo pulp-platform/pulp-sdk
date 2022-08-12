@@ -55,9 +55,9 @@ void Neureka::reset(bool active)
     this->psum_column     = xt::zeros<int64_t>({this->NR_COLUMN});
     this->accum           = xt::zeros<int64_t>({this->TP_OUT, this->NR_COLUMN});
     this->x_buffer        = xt::zeros<uint8_t>({this->F_BUFFER_SIZE, this->F_BUFFER_SIZE, this->TP_IN});
-    this->x_buffer_linear = xt::zeros<uint8_t>({32, this->TP_IN});
     this->x_array         = xt::zeros<uint8_t>({this->NR_COLUMN, this->COLUMN_SIZE, this->TP_IN}); 
     this->weight          = xt::zeros<uint8_t>({this->FILTER_SIZE*this->FILTER_SIZE, (this->TP_IN/8)});
+    this->dw_weight_buffer= xt::zeros<uint8_t>({8, 32});//<8 bits of weight so 8 cycles, 32*8 is the bw offered>
     this->nqs             = xt::zeros<uint8_t>({this->TP_OUT});
     this->job_id          = 0;
     this->cxt_job_id[0] = this->cxt_job_id[1] = -1;
@@ -161,7 +161,7 @@ int Neureka::build()
     this->fsm_event = this->event_new(&Neureka::fsm_handler);//private in hpp
     this->fsm_end_event = this->event_new(&Neureka::fsm_end_handler);//private in hpp
     this->trace_level = L0_CONFIG;//public in hpp
-    this->trace_format = 1;//public in hpp
+    this->trace_format = 0;//public in hpp
 
     return 0;
 }

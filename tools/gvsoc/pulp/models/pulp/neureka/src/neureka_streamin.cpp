@@ -111,8 +111,8 @@ int Neureka::streamin_cycle() {
 }
 
 bool Neureka::streamin_exit_idx() {
-  auto h_size_out = this->mode_linear ? 1 : this->h_size_out;
-  auto w_size_out = this->mode_linear ? 1 : this->w_size_out;
+  auto h_size_out = this->h_size_out;
+  auto w_size_out = this->w_size_out;
   if(this->streamin_i_out_iter == h_size_out-1 && this->streamin_j_out_iter == w_size_out-1 && this->streamin_k_out_iter == this->streamin_k_out_lim-1) {
     return true;
   }

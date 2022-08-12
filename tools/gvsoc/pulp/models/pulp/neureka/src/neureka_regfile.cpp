@@ -341,6 +341,8 @@ void Neureka::printout() {
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) strided2x2=%s\n", this->strided2x2 ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) qw=%d\n", this->qw); //int
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) depthwise=%s\n", this->depthwise ? "true" : "false"); //bool
+  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) weight_demux=%s\n", this->weight_demux ? "true" : "false"); //bool
+  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) signed_activation=%s\n", this->signed_activation ? "true" : "false"); //bool
   // CONVENIENCE configuration
   this->trace.msg(vp::trace::LEVEL_DEBUG, "(model) h_out=%d\n", this->h_out);
   this->trace.msg(vp::trace::LEVEL_DEBUG, "(model) w_out=%d\n", this->w_out);
