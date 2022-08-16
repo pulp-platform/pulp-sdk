@@ -127,7 +127,7 @@ void Neureka::fsm_loop() {
     // this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event before enque with cycles=%d\n", this->fsm_event->get_cycle());
     this->event_enqueue(this->fsm_event, latency);
     // std::cout<<"FSM Event enqueued "<<this->fsm_event->get_cycle()<<std::endl;
-    // this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event enqueued with cycles=%d\n", this->fsm_event->get_cycle());
+    this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event enqueued with cycles=%d\n", this->fsm_event->get_cycle());
   }
 }
 
@@ -261,7 +261,7 @@ int Neureka::fsm() {
       }
       if(this->load_exit_idx()) {
         if(this->fs == 1) {
-          latency += 9 - (this->load_i_fbuf_lim)*(this->load_j_fbuf_lim);
+          latency += this->H_SIZE*this->W_SIZE - (this->load_i_fbuf_lim)*(this->load_j_fbuf_lim) + 6;
           // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After load cycle 1x1=%d\n", latency);
         }
         this->load_do_padding();
@@ -412,6 +412,7 @@ int Neureka::fsm() {
         this->debug_accum();
       }
       if(this->normquant_bias_exit_idx()) {
+        latency += 8;
         this->streamout_setup();
         state_next = STREAMOUT;
       }
@@ -433,7 +434,7 @@ int Neureka::fsm() {
       if(this->streamout_exit_idx()) {
 
         if(this->fs == 1) {
-          latency += 9 - (this->streamout_i_out_iter+1)*(this->streamout_j_out_iter+1) * (this->output_quant ? this->quantization_bits/8 : 4);
+          latency += 3;
           this->trace.msg(vp::trace::LEVEL_DEBUG, "  After streamout cycle adjust =%d\n", latency);
         }
         if(this->accum_traces_streamout) {
@@ -468,5 +469,8 @@ int Neureka::fsm() {
   }
 
   this->state.set(state_next);
+  std::cout<<"***************END******************"<<std::endl;
+
+  std::cout<<"Total latency="<<latency<<std::endl;
   return latency;
 }
