@@ -340,6 +340,9 @@ private:
     int w_in_int;
     int h_in;
     int w_in;
+    int start_cycles;
+    int end_cycles;
+
 
     // STATEFUL BUFFERS
     xt::xarray<int64_t> psum_block;  // partial sums at the output of a BinConv Block  (no actual storage in NEUREKA)
