@@ -253,18 +253,56 @@ xt::xarray<T> NeurekaVectorStore<T>::ex(xt::xarray<T> data, int width, int64_t& 
   for(auto i=0; i<width; i++) {
     *(T *)(store_data + i*sizeof(T)) = data(i);
   }
+
   auto width_bytes = width*sizeof(T);
+  /* To handle misaligned address*/
+  auto addr_start = addr;
+  auto addr_end   = addr + width_bytes;
+
+  auto addr_start_aligned = 4*((addr_start+(addr_start%4 ? 4:0))/4);
+  auto addr_end_aligned   = 4*(addr_end/4);
+
+  auto misaligned_start_byte =  (width_bytes < 4 ) ? width_bytes : addr_start_aligned - addr_start;
+  auto misaligned_end_byte = (width_bytes < 4 ) ?  0 : addr_end - addr_end_aligned;
+
+  auto width_words = (addr_end_aligned> addr_start_aligned) ? (addr_end_aligned - addr_start_aligned)/4 : 0;
+
+  // std::cout<<std::hex<<"addr_start_aligned="<<addr_start_aligned<<", addr_end_aligned="<<addr_end_aligned<<std::endl;
+  // std::cout<<std::hex<<"addr_start="<<addr_start<<", addr_end="<<addr_end<<std::endl;
+
+  // std::cout<<std::hex<<"misaligned_start_byte="<<misaligned_start_byte<<", misaligned_end_byte="<<misaligned_end_byte<<std::endl;
+
   int64_t max_latency = 0;
   if(enable) {
-    for(auto i=0; i<width_bytes; i++) {
+    // std::cout<<std::dec<<"Width="<<width<<", width_bytes="<<width_bytes<<", width_words="<<width_words<<", addr="<<addr<<", sizeof(T)="<<sizeof(T)<<std::endl;
+    for(auto i=0; i<width_words+misaligned_start_byte+misaligned_end_byte; i++) {
       this->neureka->io_req.init();
-      this->neureka->io_req.set_addr(addr+i & NE16_STREAM_L1_MASK);
-      this->neureka->io_req.set_size(1);
-      this->neureka->io_req.set_data(store_data+i);
+
+      // if((i<misaligned_start_byte) ||((i>=width_words+misaligned_start_byte)))
+      if((i<misaligned_start_byte))
+      {
+        // std::cout<<i<<" Head of misaligned "<<((addr_start+i) & NE16_STREAM_L1_MASK)<<std::endl;
+        this->neureka->io_req.set_addr((addr_start+i) & NE16_STREAM_L1_MASK);
+        this->neureka->io_req.set_size(1);
+        this->neureka->io_req.set_data(store_data+i);
+      }
+      else if(i>=misaligned_start_byte+width_words){
+        // std::cout<<i<<" Tail of misaligned "<<((addr_start+misaligned_start_byte + 4*width_words+(i- misaligned_start_byte - width_words)) & NE16_STREAM_L1_MASK)<<std::endl;
+        this->neureka->io_req.set_addr((addr_start+misaligned_start_byte + 4*width_words+(i- misaligned_start_byte - width_words)) & NE16_STREAM_L1_MASK);
+        this->neureka->io_req.set_size(1);
+        this->neureka->io_req.set_data(store_data+misaligned_start_byte + 4*width_words+(i- misaligned_start_byte - width_words));
+      }
+      else
+      {
+        // std::cout<<i<<" Aligned "<<((addr_start_aligned+4*(i - misaligned_start_byte)) & NE16_STREAM_L1_MASK)<<std::endl;
+        this->neureka->io_req.set_addr((addr_start_aligned+4*( i- misaligned_start_byte)) & NE16_STREAM_L1_MASK);
+        this->neureka->io_req.set_size(4);
+        this->neureka->io_req.set_data(store_data+misaligned_start_byte+4*(i-misaligned_start_byte));
+      } 
       this->neureka->io_req.set_is_write(true);
       int err = this->neureka->out.req(&this->neureka->io_req);
       if (err == vp::IO_REQ_OK) {
-        if(i%4 == 0) {  // apparently, for non-aligned bytes we get garbage latency
+        if((i>=misaligned_start_byte) && (i<width_words+misaligned_start_byte)) {  // apparently, for non-aligned bytes we get garbage latency
           int64_t latency = this->neureka->io_req.get_latency();
           if (latency > max_latency) {
             max_latency = latency;
@@ -296,6 +334,7 @@ xt::xarray<T> NeurekaVectorStore<T>::ex(xt::xarray<T> data, int width, int64_t& 
     }
   }
   cycles += max_latency + 1;
+  
   return data;
 }
 
