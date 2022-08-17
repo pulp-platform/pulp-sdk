@@ -63,6 +63,8 @@ void Neureka::reset(bool active)
     this->cxt_job_id[0] = this->cxt_job_id[1] = -1;
     this->running_job_id  = 0;
     this->job_running     = 0;
+    this->start_cycles    = 0;
+    this->end_cycles      = 0x7FFFFFFF;
 }
 
 // The `hwpe_slave` member function models an access to the NEUREKA SLAVE interface
