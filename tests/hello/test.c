@@ -58,8 +58,6 @@ static void test_kickoff(void *arg)
 int main()
 {
     #if defined(RTL_PLATFORM)
-        // padctrl_mode_set(PAD_GPIO42, PAD_MODE_UART0_TX);
-        // padctrl_mode_set(PAD_GPIO41, PAD_MODE_UART0_RX);
         padctrl_mode_set(PAD_GPIO32, PAD_MODE_UART0_RX);
         padctrl_mode_set(PAD_GPIO33, PAD_MODE_UART0_TX);
     #endif
