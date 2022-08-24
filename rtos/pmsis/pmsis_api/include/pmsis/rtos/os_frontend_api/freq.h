@@ -18,9 +18,16 @@
 #define __PMSIS_FREQ_H__
 
 typedef enum {
+#if PULP_CHIP_FAMILY == CHIP_KRAKEN
+  PI_FREQ_DOMAIN_FC     = 0,
+  PI_FREQ_DOMAIN_PERIPH = 1,
+  PI_FREQ_DOMAIN_CL = 2,
+  PI_FREQ_DOMAIN_EHWPE = 3
+  #else
   PI_FREQ_DOMAIN_FC     = 0,
   PI_FREQ_DOMAIN_CL     = 1,
   PI_FREQ_DOMAIN_PERIPH = 2
+  #endif
 } pi_freq_domain_e;
 
 /**

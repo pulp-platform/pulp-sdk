@@ -36,6 +36,18 @@ VEGA_SRC = \
   $(BSP_SPIFLASH_SRC) \
   $(BSP_RAM_SRC)
 
+
+KRAKEN_SRC = \
+  $(COMMON_SRC) \
+  bsp/kraken.c \
+  camera/camera.c \
+  camera/himax/himax.c \
+  $(BSP_HYPERFLASH_SRC) \
+  $(BSP_HYPERRAM_SRC) \
+  $(BSP_SPIRAM_SRC) \
+  $(BSP_SPIFLASH_SRC) \
+  $(BSP_RAM_SRC)
+
 GAP9_SRC = \
   $(COMMON_SRC) \
   eeprom/24XX1025.c \

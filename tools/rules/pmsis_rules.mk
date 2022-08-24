@@ -14,6 +14,9 @@ endif
 ifeq '$(TARGET_CHIP)' 'PULP'
 export USE_PULPOS=1
 endif
+ifeq '$(TARGET_CHIP)' 'KRAKEN'
+export USE_PULPOS=1
+endif
 endif
 
 ifndef USE_PULPOS

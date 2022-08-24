@@ -29,6 +29,11 @@
 
 
 
+#if PULP_CHIP_FAMILY == CHIP_KRAKEN && __PLATFORM__ == ARCHI_PLATFORM_BOARD
+#define UART_PAD (8)
+#endif
+
+
 #if defined(POS_CONFIG_IO_UART) && POS_CONFIG_IO_UART == 1
 static int pos_io_uart_enabled;
 static PI_FC_TINY struct pi_device pos_io_uart;
@@ -550,6 +555,11 @@ int pos_io_start()
 {
 #if defined(POS_CONFIG_IO_UART) && POS_CONFIG_IO_UART == 1
     struct pi_uart_conf conf;
+
+#if PULP_CHIP == CHIP_KRAKEN && __PLATFORM__ == ARCHI_PLATFORM_BOARD
+    kraken_padframe_aon_pad_gpiob_mux_set(UART_PAD, KRAKEN_PADFRAME_AON_PAD_GPIOB_group_UART0_port_TX);
+    kraken_padframe_aon_pad_gpiob_mux_set(UART_PAD+1, KRAKEN_PADFRAME_AON_PAD_GPIOB_group_UART0_port_RX);
+#endif
 
     pi_uart_conf_init(&conf);
 

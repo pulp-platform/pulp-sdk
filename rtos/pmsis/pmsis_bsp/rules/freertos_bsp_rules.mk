@@ -32,6 +32,8 @@ else ifeq ($(BOARD_NAME), vega)
 PMSIS_BSP_SRC = $(GAP9_SRC)
 else ifeq ($(BOARD_NAME), gap9_v2)
 PMSIS_BSP_SRC = $(GAP9_SRC)
+else ifeq ($(BOARD_NAME), kraken)
+PMSIS_BSP_SRC = $(KRAKEN_SRC)
 endif
 
 EXCLUDE_FROM_SRCS= transport/transport.c transport/nina_w10/nina_w10.c

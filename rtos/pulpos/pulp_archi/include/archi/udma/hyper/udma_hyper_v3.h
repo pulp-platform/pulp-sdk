@@ -63,10 +63,18 @@
 #define ARCHI_UDMA_HYPER_EOT_TX_EVT       3
 
 /* Start from periph id*4 */
+#ifndef ARCHI_SOC_EVENT_HYPER_RX
 #define ARCHI_SOC_EVENT_HYPER_RX      32
+#endif
+#ifndef ARCHI_SOC_EVENT_HYPER_TX
 #define ARCHI_SOC_EVENT_HYPER_TX      33
+#endif
+#ifndef ARCHI_SOC_EVENT_HYPER_EOT_RX
 #define ARCHI_SOC_EVENT_HYPER_EOT_RX  34
+#endif
+#ifndef ARCHI_SOC_EVENT_HYPER_EOT_TX
 #define ARCHI_SOC_EVENT_HYPER_EOT_TX  35
+#endif
 
 
 /* Common registers offsets
