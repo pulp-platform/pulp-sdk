@@ -1,9 +1,0 @@
-run_benchmark_on_fc("vanilla", maxpool_benchmark_vanilla); 1188460ns
-Overall execution time (from FC point of view) including UART printf: 683920 ns
-Overall execution time (from FC point of view) including UART printf: 48160 ns
-Benchmarking function optimized_indexing_multicore Perf CYCLES: 5546 - 8cores
-Benchmarking function optimized_indexing_multicore single core Perf CYCLES: 33603
-
-
-
-
