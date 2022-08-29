@@ -14,7 +14,7 @@ ifeq '$(platform)' 'rtl'
 APP_CFLAGS    += -DRTL_PLATFORM=1
 endif
 
-APP_CFLAGS += -Os -g -DSKIP_PLL_INIT
-APP_LDFLAGS += -Os -g
+APP_CFLAGS += -O3 -g -DSKIP_PLL_INIT
+APP_LDFLAGS += -O3 -g
 $(info APP_CFLAGS=${APP_CFLAGS})
 include $(RULES_DIR)/pmsis_rules.mk
