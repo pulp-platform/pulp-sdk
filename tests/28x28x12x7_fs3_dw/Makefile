@@ -1,1 +1,0 @@
-/scratch/prasadar/GVSOC/siracusa_port/pulp-sdk/neureka_gvsoc_tb/template/Makefile
