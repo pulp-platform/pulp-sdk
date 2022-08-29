@@ -68,7 +68,38 @@ void pos_task_handle()
     }
 }
 
+void pos_task_handle_polling()
+{
+    pi_task_t *task = pos_sched_first;
 
+    if (unlikely(task == NULL))
+    {
+        // Pop first event from the queue. Loop until we pop a null event
+        // We must always read again the queue head, as the executed
+        // callback can modify the queue 
+        hal_irq_enable();
+        hal_irq_disable();
+        task = *((pi_task_t * volatile *)&pos_sched_first);
+    }
+
+    while (likely(task != NULL))
+    {
+        pos_sched_first = task->next;
+
+        // Read event information and put it back in the scheduler
+
+        void (*callback)(void *) = (void (*)(void *))task->arg[0];
+        void *arg = (void *)task->arg[1];
+
+        // Finally execute the event with interrupts enabled
+        hal_irq_enable();
+        callback(arg);
+        hal_irq_disable();
+
+        task = pos_sched_first;
+
+    }
+}
 
 void pos_sched_init()
 {
