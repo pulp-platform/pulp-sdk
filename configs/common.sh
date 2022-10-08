@@ -36,6 +36,7 @@ export GVSOC_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/common
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/models:$PYTHONPATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/generators:$PYTHONPATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/common/generators:$PYTHONPATH
+export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/common/engine/python:$PYTHONPATH
 
 # FPGA
 #export PULP_
