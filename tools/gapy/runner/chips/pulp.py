@@ -18,5 +18,5 @@ import traces
 
 class Runner(object):
 
-    def __init__(self, args, config):
+    def __init__(self, args, config, system):
         pass

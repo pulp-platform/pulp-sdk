@@ -5,6 +5,8 @@ ifndef platform
 ifdef PMSIS_PLATFORM
 platform = $(PMSIS_PLATFORM)
 endif
+else
+platform=gvsoc
 endif
 
 ifeq '$(PMSIS_OS)' 'pulpos'
@@ -50,6 +52,20 @@ endif
 ifdef runner_args
 export GVSOC_OPTIONS=$(runner_args)
 endif
+
+ifdef GAPY_PY_TARGET
+ifeq '$(platform)' 'gvsoc'
+use_py_target=1
+endif
+endif
+
+# FS config
+READFS_FLASH ?= flash
+
+override config_args += $(foreach file, $(READFS_FILES), --config-opt=**/$(READFS_FLASH)/content/partitions/readfs/files=$(file))
+override config_args += $(foreach file, $(HOSTFS_FILES), --config-opt=**/flash/content/partitions/hostfs/files=$(file))
+
+GAPY_TARGET_OPT = --py-target=$(GAPY_PY_TARGET)
 
 ifeq '$(PMSIS_OS)' 'freertos'
 

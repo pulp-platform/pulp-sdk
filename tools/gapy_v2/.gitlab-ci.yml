@@ -1,0 +1,7 @@
+test:
+  script:
+    - pip install pylint prettytable pyelftools
+    - pylint ./bin ./targets
+
+  only:
+  - merge_requests

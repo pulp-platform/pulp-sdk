@@ -533,7 +533,7 @@
     "pad_hyper_rx": {
       "id": 0,
       "position": null,
-      "alternates": [ 
+      "alternates": [
         {},
         {},
         {},
@@ -544,7 +544,7 @@
     "pad_hyper_tx": {
       "id": 0,
       "position": null,
-      "alternates": [ 
+      "alternates": [
         {},
         {},
         {},

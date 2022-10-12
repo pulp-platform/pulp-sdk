@@ -20,9 +20,9 @@ import os
 
 class Runner(runner.chips.vega.Runner, runner.rtl.rtl_runner.Runner):
 
-    def __init__(self, args, config):
-        runner.chips.vega.Runner.__init__(self, args, config)
-        runner.rtl.rtl_runner.Runner.__init__(self, args, config)
+    def __init__(self, args, config, system):
+        runner.chips.vega.Runner.__init__(self, args, config, system)
+        runner.rtl.rtl_runner.Runner.__init__(self, args, config, system)
 
         #self.set_arg('-gSPI_FLASH_LOAD_MEM=3')
         self.set_arg('-gHYPER_FLASH_LOAD_MEM=1')

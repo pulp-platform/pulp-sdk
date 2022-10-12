@@ -1,14 +1,14 @@
-#!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
+
 #
 # Copyright (C) 2019 GreenWaves Technologies
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
-# http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,12 +46,12 @@ def appendArgs(parser: argparse.ArgumentParser, config: js.config) -> None:
     """
     Append specific module arguments.
     """
-    
+
     # Image
     parser.add_argument("image",
                         type = argparse.FileType('rb'),
                         help = "RAW image to flash on the device.")
-    
+
     # JTAG cable
     kwargs = {}
     if config:
@@ -60,7 +60,7 @@ def appendArgs(parser: argparse.ArgumentParser, config: js.config) -> None:
                         required = not config,
                         help = 'JTAG cable.',
                         **kwargs)
-    
+
     # Chip target
     kwargs = {}
     if config:
@@ -81,28 +81,28 @@ def operationFunc(args, config = None):
 
 def main(custom_commandline = None, config = None):
     """Main function for flash image.
-    
+
 custom_commandline - Optional override for default arguments parsing (that uses sys.argv), can be a list of custom arguments
     as strings.Arguments and their values need to be added as individual items to the list e.g."-b 115200" thus
     becomes['-b', '115200'].
     """
-    
+
     parser = argparse.ArgumentParser(
         description = 'Flash a RAW flash image files to a flash device. - v%s' % __version__,
         prog = 'flash',
         fromfile_prefix_chars = '@',
         formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    
+
     common.appendCommonOptions(parser)
-    
+
     if config is None:
-        config = common.importConfig(parser)
-    
+        (config, system) = common.importConfig(parser)
+
     appendArgs(parser, config)
-    
+
     argcomplete.autocomplete(parser)
     args = parser.parse_args(custom_commandline)
-    
+
     try:
         operationFunc(args, config)
     finally:

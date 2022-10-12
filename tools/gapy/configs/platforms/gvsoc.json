@@ -9,6 +9,11 @@
     "debug-mode": false,
     "sa-mode": true,
 
+    "proxy": {
+        "enabled": false,
+        "port": 42951
+    },
+
     "launchers": {
         "default": "gvsoc_launcher",
         "debug": "gvsoc_launcher_debug"
@@ -24,6 +29,7 @@
 
     "events": {
         "enabled": false,
+        "include_raw": [],
         "include_regex": [],
         "exclude_regex": [],
         "format": "fst",
@@ -35,6 +41,7 @@
         "files": [ ],
         "traces": {},
         "tags" : [ "overview" ],
-        "gtkw": false
+        "gtkw": false,
+        "level": 0
     }
 }
