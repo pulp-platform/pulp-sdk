@@ -28,6 +28,7 @@ gvsoc.build.deps: json-tools.all gap-configs.all pulp-debug-bridge.all dpi-model
 gvsoc.build: ext/xtensor
 	for gv_module in $$GVSOC_MODULES; do \
 		make -C $$gv_module build BUILD_DIR=$(BUILD_DIR)/gvsoc INSTALL_DIR=$(INSTALL_DIR) TARGET_INSTALL_DIR=$(GAP_SDK_HOME)/install; \
+		if [ $$? -ne 0 ]; then exit 1; fi; \
 	done
 	
 gvsoc.clean:
