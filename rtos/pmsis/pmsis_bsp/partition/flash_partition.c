@@ -84,16 +84,19 @@ pi_err_t flash_partition_table_verify(const flash_partition_table_t *table)
     const flash_partition_info_t *partition_table = table->partitions;
     MD5_CTX context;
     uint8_t digest[16];
+    printf("flash_partition_table_verify 0\n");
 
     // Check magic number for each partition
     for (uint8_t num_parts = 0; num_parts < header->nbr_of_entries; num_parts++)
     {
         part = partition_table + num_parts;
+        printf("magic_bytes=%x, PI_PARTITION_MAGIC=%x\n", part->magic_bytes, PI_PARTITION_MAGIC);
         if (part->magic_bytes != PI_PARTITION_MAGIC)
         {
             return PI_ERR_INVALID_STATE;
         }
     }
+    printf("flash_partition_table_verify 1\n");
 
     if (header->crc_flags)
     {
@@ -107,6 +110,7 @@ pi_err_t flash_partition_table_verify(const flash_partition_table_t *table)
             return PI_ERR_INVALID_CRC;
         }
     }
+    printf("flash_partition_table_verify 2\n");
 
     return PI_OK;
 }
@@ -119,12 +123,14 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
     uint32_t _table_offset;
     flash_partition_table_t *table = NULL;
     flash_partition_info_t *partitions = NULL;
+    printf("flash_partition_table_load 0\n");
 
     if(partition_table == NULL)
     {
         PARTITION_TRACE_ERR("Table argument is NULL");
         return PI_ERR_INVALID_ARG;
     }
+    printf("flash_partition_table_load 1\n");
 
 // Alloc table containing header
     table = pi_l2_malloc(sizeof(*table));
@@ -134,6 +140,7 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
         rc = PI_ERR_L2_NO_MEM;
         goto mount_error;
     }
+    printf("flash_partition_table_load 2\n");
 
     table_offset_l2 = pi_l2_malloc(sizeof(*table_offset_l2));
     if(table_offset_l2 == NULL)
@@ -142,6 +149,7 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
         rc = PI_ERR_L2_NO_MEM;
         goto mount_error;
     }
+    printf("flash_partition_table_load 3\n");
 
     pi_flash_read(flash, 0, table_offset_l2, 4);
     if(*table_offset_l2 == 0)
@@ -150,14 +158,19 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
         rc = PI_ERR_NOT_FOUND;
         goto mount_error;
     }
+    printf("flash_partition_table_load 4\n");
 
     PARTITION_TRACE_TRC("Partition table offset 0x%lx", *table_offset_l2);
+    printf("flash_partition_table_load 5\n");
     _table_offset = *table_offset_l2;
     pi_l2_free(table_offset_l2, sizeof(*table_offset_l2));
+    printf("flash_partition_table_load 6\n");
     table_offset_l2 = NULL;
+    printf("flash_partition_table_load 7\n");
 
     // Load table header
     pi_flash_read(flash, _table_offset, &table->header, sizeof(flash_partition_table_header_t));
+    printf("flash_partition_table_load 8\n");
 
     //print_partition_header(&table->header);
 
@@ -167,6 +180,7 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
         rc = PI_ERR_NOT_FOUND;
         goto mount_error;
     }
+    printf("flash_partition_table_load 9\n");
 
     if(table->header.format_version != PI_PARTITION_TABLE_FORMAT_VERSION)
     {
@@ -176,6 +190,7 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
         rc = PI_ERR_INVALID_VERSION;
         goto mount_error;
     }
+    printf("flash_partition_table_load 10\n");
 
     // Alloc partition entries
     table->partitions = pi_l2_malloc(sizeof(flash_partition_info_t) * table->header.nbr_of_entries);
@@ -185,9 +200,12 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
         rc = PI_ERR_L2_NO_MEM;
         goto mount_error;
     }
+    printf("flash_partition_table_load 11\n");
 
     pi_flash_read(flash, _table_offset + PI_PARTITION_HEADER_SIZE, table->partitions,
                   sizeof(flash_partition_info_t) * table->header.nbr_of_entries);
+
+    printf("flash_partition_table_load 12\n");
 
 
     if(table->header.crc_flags)
@@ -200,6 +218,7 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
             goto mount_error;
         }
     }
+    printf("flash_partition_table_load 13\n");
 
     table->flash = flash;
 
