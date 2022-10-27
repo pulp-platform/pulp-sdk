@@ -251,6 +251,8 @@ void Neureka::regfile_cxt() {
         this->streamin = ((value >> 14) & 0x1) ? true : false;
         // [13:12] normalization bits (00=8-bits, 01=16-bits, 10=32-bits)
         this->normalization_bits = 8 << ((value >> 12) & 0x3);
+        // [10] activation_prefetch -> if set to 1, activation is prefetched for the next tile.
+        this->activation_prefetch = ((value >> 10) & 0x1) ? true : false; 
         // [9] weight_demux -> if set to 1, weight is fetched from the wmem else it is fetched from L1
         this->weight_demux       = ((value >> 9) & 0x1) ? true : false; 
         // [8] strided 2x2 mode (0=normal operation, 1=strided mode)
@@ -341,6 +343,7 @@ void Neureka::printout() {
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) strided2x2=%s\n", this->strided2x2 ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) qw=%d\n", this->qw); //int
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) depthwise=%s\n", this->depthwise ? "true" : "false"); //bool
+  this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) activation_prefetch=%s\n", this->activation_prefetch ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) weight_demux=%s\n", this->weight_demux ? "true" : "false"); //bool
   this->trace.msg(vp::trace::LEVEL_INFO, "(cfg) signed_activation=%s\n", this->signed_activation ? "true" : "false"); //bool
   // CONVENIENCE configuration

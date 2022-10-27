@@ -326,8 +326,11 @@ private:
     bool mode_linear;
     bool strided2x2;
     bool weight_demux;
+    bool activation_prefetch;
     int qw;
     bool depthwise;
+    int matrixvec_latency;
+    int load_latency;
 
     // CONVENIENCE configuration
     int h_out;
