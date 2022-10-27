@@ -39,28 +39,37 @@ void pi_fs_conf_init(struct pi_fs_conf *conf)
 
 int32_t pi_fs_mount(struct pi_device *device)
 {
+  printf("FS 1\n");
   struct pi_fs_conf *conf = (struct pi_fs_conf *)device->config;
+  printf("FS 2\n");
   pi_fs_api_t *api = conf->api;
+  printf("FS 3\n");
 
   if (api == NULL)
   {
+    printf("FS 4\n");
     switch (conf->type)
     {
       case PI_FS_READ_ONLY:
         api = &__pi_read_fs_api;
+        printf("FS 5\n");
         break;
 
       case PI_FS_HOST:
         api = &__pi_host_fs_api;
+        printf("FS 6\n");
         break;
 
       default:
+        printf("FS 7\n");
         return -1;
     }
+    printf("FS 8\n");
   }
 
+  printf("FS 9\n");
   device->api = (struct pi_device_api *)api;
-
+  printf("FS 10\n");
   return api->mount(device);
 }
 

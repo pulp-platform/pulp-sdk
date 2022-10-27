@@ -11,6 +11,9 @@ ifeq '$(PULP_CC_VERSION)' '9.2.0'
 PULP_ARCH_CFLAGS ?=  -march=rv32imc_zfinx_xpulpv3
 PULP_ARCH_LDFLAGS ?=  -march=rv32imc_zfinx_xpulpv3
 PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imc_zfinx_xpulpv3
+# PULP_ARCH_CFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
+# PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
+# PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9
 else
 PULP_ARCH_CFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
 PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
