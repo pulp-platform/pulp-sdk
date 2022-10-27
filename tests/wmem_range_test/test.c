@@ -46,64 +46,26 @@ void initialize_data(int size, int start){
 }
 
 int test_entry() {
-
+  initialize_data(SIZE, 0);
   uint32_t* weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET; 
   uint32_t* weight_end_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+SIZE-4; 
-  initialize_data(SIZE, 0);
-  #ifdef DEBUG_PRINTF
-    printf("***************Before copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-    printf("Copying L2->WMEM weight starting at addr=%x, with size=%x\n", weight_start_ptr, SIZE);
-  #endif
-  memcpy(weight_start_ptr,(uint32_t*)data,sizeof(data));
-  #ifdef DEBUG_PRINTF
-    printf("***************After copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-  #endif 
-  weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+SIZE;
-  weight_end_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+2*SIZE-4; 
-  #ifdef DEBUG_PRINTF
-    printf("***************Before copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-    printf("Copying L2->WMEM weight starting at addr=%x, with size=%x\n", weight_start_ptr, SIZE);
-  #endif
-  memcpy(weight_start_ptr,(uint32_t*)data,sizeof(data));
-  #ifdef DEBUG_PRINTF
-    printf("***************After copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-  #endif
-  weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+2*SIZE;
-  weight_end_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+3*SIZE-4;
-  #ifdef DEBUG_PRINTF
-    printf("***************Before copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-    printf("Copying L2->WMEM weight starting at addr=%x, with size=%x\n", weight_start_ptr, SIZE);
-  #endif
-  memcpy(weight_start_ptr,(uint32_t*)data,sizeof(data));
-  #ifdef DEBUG_PRINTF
-    printf("***************After copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-  #endif
-  weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+3*SIZE;
-  weight_end_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+4*SIZE-4;
-  #ifdef DEBUG_PRINTF
-    printf("***************Before copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-    printf("Copying L2->WMEM weight starting at addr=%x, with size=%x\n", weight_start_ptr, SIZE);
-  #endif
-  memcpy(weight_start_ptr,(uint32_t*)data,sizeof(data));
-  #ifdef DEBUG_PRINTF
-    printf("***************After copying****************************\n");;
-    printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
-    printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
-  #endif
+
+  for(int i=0; i<8; i++){
+    weight_start_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+i*SIZE;
+    weight_end_ptr = WEIGHT_MEM_BASE+MRAM_OFFSET+(i+1)*SIZE-4; 
+    #ifdef DEBUG_PRINTF
+      printf("***************Before copying****************************\n");;
+      printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
+      printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
+      printf("Copying L2->WMEM weight starting at addr=%x, with size=%x\n", weight_start_ptr, SIZE);
+    #endif
+    memcpy(weight_start_ptr,(uint32_t*)data,sizeof(data));
+    #ifdef DEBUG_PRINTF
+      printf("***************After copying****************************\n");;
+      printf("data=%x at addr=%x\n", *weight_start_ptr, weight_start_ptr);
+      printf("data=%x at addr=%x\n", *weight_end_ptr, weight_end_ptr);
+    #endif 
+  }
 
   return 0;
 }
