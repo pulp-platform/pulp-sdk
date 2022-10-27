@@ -43,7 +43,7 @@
   "cluster": {
     "base": "0x10000000",
     "alias": "0x00000000",
-    "size": "0x00800000",
+    "size": "0x00C00000",
     "core": "ri5ky_v2_6_sfloat_single_regfile",
     "version": 5,
     "json_file": "cluster_v5_fpu",
@@ -80,7 +80,7 @@
 
     "wmem": {
       "base": "0x10400000",
-      "size"  : "0x00400000"
+      "size"  : "0x00800000"
     },
 
     "peripherals": {
