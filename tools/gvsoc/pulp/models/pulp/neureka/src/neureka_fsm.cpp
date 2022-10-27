@@ -139,6 +139,7 @@ void Neureka::fsm_loop() {
 int Neureka::fsm() {
   auto state_next = this->state.get();
   auto latency = 0;
+  auto k_in_major_lim = 0;
 
   this->x_buffer_traces = false;
   this->x_buffer_traces_postload = false;
@@ -242,10 +243,13 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  load_k_in_lim=%d\n", this->load_k_in_lim);
       }
       state_next = LOAD;
+      this->load_latency = 0;
 
       // emulate 6 cycles of latency due to FIFOs + ctrl
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before streamin load cycle=%d\n", latency);
       latency += 6;
+      if(this->activation_prefetch)
+        this->load_latency = 3;
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After streamin load cycle=%d\n", latency);
       break;
       
@@ -261,6 +265,7 @@ int Neureka::fsm() {
       }
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before load cycle=%d\n", latency);
       latency = this->load_cycle();
+      
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After load cycle=%d\n", latency);
       if(this->x_buffer_traces) {
         this->debug_x_buffer();
@@ -279,6 +284,8 @@ int Neureka::fsm() {
       else {
         this->load_update_idx();
       }
+      if(this->activation_prefetch)
+        this->load_latency += latency;
       break;
 
     case LOAD_MATRIXVEC:
@@ -303,15 +310,27 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  mv_qw_lim=%d\n", mv_qw_lim); // was simply qw
       }
       state_next = MATRIXVEC;
+      if((this->matrixvec_latency > this->load_latency) && this->activation_prefetch)
+        latency += this->matrixvec_latency - this->load_latency;
+      this->matrixvec_latency = 0;
 
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before load_matrixvec cycle =%d\n", latency);
       // emulate 6 cycles of latency due to FIFOs + ctrl (10 for 1x1 layers)
       if(this->depthwise && this->dw_iter == 0) {
 
         latency += 34; // Depthwise weight offset cycles
+        if(this->activation_prefetch)
+          this->matrixvec_latency = 34;
       }
       else if(!this->depthwise) {
-        latency += this->fs == 1 ? 10 : 6;
+        if(this->activation_prefetch){
+          this->matrixvec_latency = this->fs == 1 ? 7 : 6;
+          latency += this->fs == 1 ? 7 : 6;
+        }
+        else{
+          latency += this->fs == 1 ? 10 : 6;
+
+        }
       }
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After load_matrixvec cycle =%d\n", latency);
 
@@ -325,8 +344,19 @@ int Neureka::fsm() {
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  mv_qw_iter=%d\n", mv_qw_iter); // was simply qw
         this->trace.msg(vp::trace::LEVEL_DEBUG, "  mv_qw_lim=%d\n", mv_qw_lim); // was simply qw
       }
+      k_in_major_lim = this->depthwise ? 1 : this->subtile_nb_ki;
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  Before matrixvec cycle =%d\n", latency);
-      latency = this->matrixvec_cycle();//computes for 1 cycle in dw mode, 1 mac is enabled
+      latency =  this->matrixvec_cycle();//computes for 1 cycle in dw mode, 1 mac is enabled
+      if(this->weight_demux)
+        latency = 1; // assume 1 cycle latency for weight from WMEM
+      // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After matrixvec cycle =%d\n", latency);
+
+      this->trace.msg(vp::trace::LEVEL_DEBUG, "  j_major =%d, i_major=%d, subtile_nb_wo=%d, subtile_nb_ho=%d, k_in_major_iter=%d, k_in_major_lim=%d\n", this->j_major, this->i_major, this->subtile_nb_wo, this->subtile_nb_ho, this->k_in_major_iter, k_in_major_lim);
+      if(this->activation_prefetch && !((this->j_major == this->subtile_nb_wo-1) && (this->i_major == this->subtile_nb_ho-1) && (this->k_in_major_iter == k_in_major_lim-1))){
+        this->matrixvec_latency += latency;
+        this->trace.msg(vp::trace::LEVEL_DEBUG,"REACHED HERE WITH MATRIXVEC LATENCY=%d, LATENCY=%d\n", this->matrixvec_latency, latency);
+        latency = 0;  
+      }
       // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After matrixvec cycle =%d\n", latency);
       if(this->psum_block_traces) {
         this->debug_psum_block();
@@ -339,6 +369,10 @@ int Neureka::fsm() {
         // emulate 6 cycles of latency due to FIFOs + ctrl
         if(!this->depthwise) {
           latency += this->fs == 3 ? 8 : 0; // MATRIXVEC_OVERHEAD and UPDATEIDX
+          if(this->activation_prefetch && !((this->j_major == this->subtile_nb_wo-1) && (this->i_major == this->subtile_nb_ho-1) && (this->k_in_major_iter == k_in_major_lim-1))){
+            this->matrixvec_latency += this->fs == 3 ? 8 : 0;
+            latency = 0;
+          }  
           // this->trace.msg(vp::trace::LEVEL_DEBUG, "  After matrixvec depthwise cycle =%d\n", latency);
         }
 
@@ -474,6 +508,10 @@ int Neureka::fsm() {
       break;
 
   }
+
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "LOAD LATENCY= %d\n", this->load_latency);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "MATRIXVEC LATENCY= %d\n", this->matrixvec_latency);
+  this->trace.msg(vp::trace::LEVEL_DEBUG, "LATENCY= %d\n", latency);
 
   this->state.set(state_next);
   return latency;
