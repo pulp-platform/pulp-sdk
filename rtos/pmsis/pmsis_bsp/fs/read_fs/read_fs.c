@@ -250,11 +250,8 @@ static int32_t __pi_read_fs_mount(struct pi_device *device)
     // a long time due to flash access in case of synchronous mode.
     
     //pi_trace(pi_trace_DEV_CTRL, "[FS] Mounting file-system (device: %s)\n", dev_name);
-    printf("FS mount 0\n");
     pi_read_fs_t *fs = pmsis_l2_malloc(sizeof(pi_read_fs_t));
-    printf("FS mount 1\n");
     if(fs == NULL) goto error;
-    printf("FS mount 2\n");
     pi_task_t task;
     
     // Initialize all fields where something needs to be closed in case of error
@@ -264,31 +261,23 @@ static int32_t __pi_read_fs_mount(struct pi_device *device)
     fs->fs_data.cluster_reqs_first = NULL;    
     fs->pi_fs_l2 = pmsis_l2_malloc(sizeof(pi_fs_l2_t));
     if(fs->pi_fs_l2 == NULL) goto error;
-    printf("FS mount 3\n");
     fs->mount_step = 1;
     fs->pi_fs_info = NULL;
     fs->pending_event = pi_task_block(&task);
     fs->partition_name = conf->partition_name;
-    printf("FS mount 4\n");
     device->data = (void *) fs;
-    printf("FS mount 5\n");
     // This function will take care of either blocking the thread if we are in blocking mode
     // or will just execute it asynchronously
     __pi_fs_mount_step((void *) fs);
-    printf("FS mount 6\n");
 
     pi_task_wait_on(&task);
-    printf("FS mount 7\n");
     if(fs->error)
         goto error;
     
     return 0;
-    printf("FS mount 8\n");
     error:  
     //__pi_fs_error(FS_MOUNT_MEM_ERROR);
     __pi_fs_free(fs);
-    printf("FS mount 9\n");
-
     return -1;
 }
 
