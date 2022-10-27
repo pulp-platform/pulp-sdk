@@ -19,7 +19,6 @@ from generators.v1.comp_gen import *
 import math
 
 def get_config(tp, cluster_id):
-  # print("****************************Start get_config from cluster**************************")
   cluster_id        = cluster_id
   cluster_size      = tp.get_child_int("cluster/size")
   nb_pe             = tp.get_child_int('cluster/nb_pe')
@@ -41,14 +40,6 @@ def get_config(tp, cluster_id):
     job_fifo_irq    = tp.get('cluster/pe/irq').get_dict().index('job_fifo')
   except:
     job_fifo_irq    = None
-  #if tp.get('cluster/alias') is not None:
-  #  alias = tp.get_child_str('cluster/alias')
-  #else:
-  #  alias = "0x00000000"
-  # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-  # print(has_wmem)
-  # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-  # f"********************{has_wmem}****************************"
 
   if has_hwce:
     hwce_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
@@ -68,10 +59,9 @@ def get_config(tp, cluster_id):
   nb_l1_banks = 1<<int(math.log(nb_pe * l1_banking_factor, 2.0))
   l1_bank_size = int(tp.get_child_int('cluster/l1/size') / nb_l1_banks)
 
-# Assign the memory value equivalent to the L1. later it can be modified according to the properties.
   if has_wmem:
     nb_wmem_banks = nb_l1_banks  
-    wmem_bank_size = l1_bank_size
+    wmem_bank_size = int(tp.get_child_int('cluster/wmem/size') / nb_l1_banks)
 
 
   cluster = Component(properties=OrderedDict([
@@ -605,7 +595,6 @@ def get_config(tp, cluster_id):
       ('latency', 2),
       ('mappings', OrderedDict([
         ("wmem_translated_address", get_mapping_area(tp.get_child_dict("cluster/wmem"), cluster_size, cluster_id, True))
-        # ("neureka_mapping", get_mapping_area(tp.get_child_dict("cluster/peripherals/neureka"), cluster_size, cluster_id, True))
       ]))
     ]))
 
@@ -623,22 +612,6 @@ def get_config(tp, cluster_id):
       ('nb_banks', nb_wmem_banks),
     ]))
     wmem_interleaver_nb_masters = 1 
-    # cluster.wmem_ico.interleaver = Component(properties=OrderedDict([
-    #   ('@includes@', ["ips/wmem/wmem_interleaver.json"]),
-    #   ('nb_slaves', nb_wmem_banks),
-    #   ('nb_masters', wmem_interleaver_nb_masters),
-    #   ('interleaving_bits', 2)
-    # ]))
-    # cluster.interleaver_wrap = Component(properties=OrderedDict([
-    #   ('vp_class', None),
-    #   ('vp_component', ""),
-    # ]))
-    # cluster.interleaver_wrap.interleaver = Component(properties=OrderedDict([
-    #   ('@includes@', ["ips/wmem/wmem_interleaver.json"]),
-    #   ('nb_slaves', nb_wmem_banks),
-    #   ('nb_masters', wmem_interleaver_nb_masters),
-    #   ('interleaving_bits', 2)
-    # ]))
 
     cluster.interleaver = Component(properties=OrderedDict([
       ('@includes@', ["ips/wmem/wmem_interleaver.json"]),
@@ -660,13 +633,8 @@ def get_config(tp, cluster_id):
         ]))
       )
     for i in range(0,wmem_interleaver_nb_masters):
-      # cluster.wmem_ico.wmem_translated_address = cluster.wmem_ico.interleaver.new_itf('in_%d' % i) 
-      # cluster.wmem_ico.wmem_translated_address = cluster.interleaver_wrap.interleaver.new_itf('in_%d' % i) 
       cluster.wmem_ico.wmem_translated_address = cluster.interleaver.new_itf('in_%d' % i) 
-      # cluster.wmem_ico.set('wmem_translated_address', cluster.interleaver_wrap.interleaver.new_itf('in_%d' % i)) 
     for i in range(0, nb_wmem_banks):
-      # cluster.wmem_ico.interleaver.set('out_%d'%i, cluster.wmem.new_itf('in_%d' % i))
-      # cluster.interleaver_wrap.interleaver.set('out_%d'%i, cluster.wmem.new_itf('in_%d' % i))
       cluster.interleaver.set('out_%d'%i, cluster.wmem.new_itf('in_%d' % i))
       cluster.wmem.set('in_%d'%i, cluster.wmem.get('bank%d'%i).input)
 
