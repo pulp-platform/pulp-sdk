@@ -32,7 +32,7 @@
 
 
 
-#if defined(__OPTIMIZE__) && defined(CORE_PULP_BUILTINS) && !defined(__LLVM__)
+#if defined(__OPTIMIZE__) && defined(CORE_PULP_BUILTINS)
 
 static inline unsigned int hal_spr_read_then_clr(unsigned int reg, unsigned int val)
 {
@@ -56,10 +56,6 @@ static inline unsigned int hal_spr_read(unsigned int reg)
 
 #else
 
-#if defined(__LLVM__)
-
-#else
- 
 #define hal_spr_read_then_clr(reg,val) \
   ({ \
     int state; \
@@ -86,29 +82,11 @@ do { \
   result; \
 })
 
-#endif
 
 #endif
 
 
-
-
-
-#if defined(__LLVM__)
-
-#define csr_read(csr)           \
-({                \
-  register unsigned int __v;       \
-  __asm__ __volatile__ ("csrr %0, " #csr      \
-            : "=r" (__v));      \
-  __v;              \
-})
-
-#define hal_mepc_read() csr_read(0x341)
-
-#else
 #define hal_mepc_read() hal_spr_read(RV_CSR_MEPC)
-#endif
 
 static inline unsigned int core_id() {
   int hart_id;
@@ -222,23 +200,6 @@ static inline __attribute__((always_inline)) unsigned int hal_is_fc() {
 
 
 
-#if defined(__LLVM__)
-
-static inline int hal_irq_disable()
-{
-  return 0;
-}
-
-static inline void hal_irq_restore(int state)
-{
-}
-
-static inline void hal_irq_enable()
-{
-}
-
-#else
-
 static inline int hal_irq_disable()
 {
   int irq = hal_spr_read_then_clr(0x300, 0x1<<3);
@@ -261,7 +222,6 @@ static inline void hal_irq_enable()
   hal_spr_read_then_set(0x300, 0x1<<3);
 }
 
-#endif
 
 /*
  * PERFORMANCE COUNTERS

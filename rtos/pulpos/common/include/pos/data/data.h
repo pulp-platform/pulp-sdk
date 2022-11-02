@@ -38,7 +38,7 @@
 #ifndef LANGUAGE_ASSEMBLY
 
 // We cannot use tiny attribute if we use a generic riscv toolchain or LLVM or we there is fc specific memeory (TCDM or L2)
-#if (defined(ARCHI_HAS_FC_TCDM) || defined(ARCHI_HAS_L2_ALIAS)) && !defined(__LLVM__) && !defined(__RISCV_GENERIC__) && defined(CONFIG_NO_STD_RELOC)
+#if (defined(ARCHI_HAS_FC_TCDM) || defined(ARCHI_HAS_L2_ALIAS)) && !defined(__RISCV_GENERIC__) && defined(CONFIG_NO_STD_RELOC)
 #define POS_FC_TINY_ATTRIBUTE __attribute__ ((tiny))
 #else
 #define POS_FC_TINY_ATTRIBUTE

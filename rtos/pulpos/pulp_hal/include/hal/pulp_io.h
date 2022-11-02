@@ -24,7 +24,7 @@
 #define pulp_write32(add, val_) (*(volatile unsigned int *)(long)(add) = val_)
 #define pulp_write(add, val_) (*(volatile unsigned int *)(long)(add) = val_)
 
-#if 1
+#if !defined(__clang__)
 
 #define pulp_read8(add) (*(volatile unsigned char *)(long)(add))
 #define pulp_read16(add) (*(volatile unsigned short *)(long)(add))
@@ -37,7 +37,6 @@ static inline uint8_t pulp_read8(uint32_t add)
 {
   __asm__ __volatile__ ("" : : : "memory");
   uint8_t result = *(volatile uint8_t *)add;
-  asm volatile("l.nop;");
   __asm__ __volatile__ ("" : : : "memory");
   return result;
 }
@@ -46,7 +45,6 @@ static inline uint16_t pulp_read16(uint32_t add)
 {
   __asm__ __volatile__ ("" : : : "memory");
   uint16_t result = *(volatile uint16_t *)add;
-  asm volatile("nop;");
   __asm__ __volatile__ ("" : : : "memory");
   return result;
 }
@@ -55,7 +53,6 @@ static inline uint32_t pulp_read32(uint32_t add)
 {
   __asm__ __volatile__ ("" : : : "memory");
   uint32_t result = *(volatile uint32_t *)add;
-  asm volatile("nop;");
   __asm__ __volatile__ ("" : : : "memory");
   return result;
 }
@@ -64,14 +61,13 @@ static inline uint32_t pulp_read(uint32_t add)
 {
   __asm__ __volatile__ ("" : : : "memory");
   uint32_t result = *(volatile uint32_t *)add;
-  asm volatile("nop;");
   __asm__ __volatile__ ("" : : : "memory");
   return result;
 }
 
 #endif
 
-#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
+#if defined(__riscv__) && !defined(RV_ISA_RV32)
 #define IP_WRITE_VOL(base, offset, value) __builtin_pulp_write_base_off_v((value), (base), (offset))
 #define IP_WRITE(base, offset, value) __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset))
 #if !defined(CONFIG_PULP)

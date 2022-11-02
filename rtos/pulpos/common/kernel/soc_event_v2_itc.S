@@ -41,6 +41,7 @@
     sw  x10, 8(sp)
     sw  x11, 12(sp)
     sw  x12, 16(sp)
+    sw  t0, 20(sp)
 
 
 
@@ -125,5 +126,6 @@ pos_soc_event_handler_end_asm:
     lw  x10, 8(sp)
     lw  x11, 12(sp)
     lw  x12, 16(sp)
+    lw  t0, 20(sp)
     add sp, sp, 128
     mret

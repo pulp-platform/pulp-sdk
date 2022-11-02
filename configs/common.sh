@@ -4,7 +4,13 @@ if [ -n "$PULP_RISCV_GCC_TOOLCHAIN_BASE" ]; then
     export PULP_RISCV_GCC_TOOLCHAIN=$PULP_RISCV_GCC_TOOLCHAIN_BASE/1.3
 fi
 
-export PATH="$PULP_RISCV_GCC_TOOLCHAIN/bin":"$PULP_SDK_HOME/tools/bin":$PATH
+if [ -n "$PULP_RISCV_GCC_TOOLCHAIN" ]; then
+    export PATH="$PULP_RISCV_GCC_TOOLCHAIN/bin":"$PULP_SDK_HOME/tools/bin":$PATH
+fi
+
+if [ -n "$PULP_RISCV_LLVM_TOOLCHAIN" ]; then
+    export PATH="$PULP_RISCV_LLVM_TOOLCHAIN/bin":"$PULP_SDK_HOME/tools/bin":$PATH
+fi
 
 # keep compatibility with gap_sdk
 export GAP_SDK_HOME=$PULP_SDK_HOME

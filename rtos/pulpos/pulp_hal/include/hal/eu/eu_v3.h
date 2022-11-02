@@ -35,12 +35,13 @@
   \param offset The offset in the event unit where to load from. Depending on this offset, this will trigger different behaviors (barrier, wait, wait&clear, etc).
   \return       The loaded value, after the core has been waken-up. This value depends on the feature which is accessed.
   */
-#if defined(__OPTIMIZE__)
 static inline unsigned int evt_read32(unsigned int base, unsigned int offset)
 {
   unsigned int value;
-  #if !defined(__LLVM__) && ((defined(OR1K_VERSION) && OR1K_VERSION >= 5) || (defined(RISCV_VERSION) && RISCV_VERSION >= 4)) && !defined(CONFIG_PULP)
-  value = __builtin_pulp_event_unit_read_fenced((int *)base, offset);
+  #if ((defined(OR1K_VERSION) && OR1K_VERSION >= 5) || (defined(RISCV_VERSION) && RISCV_VERSION >= 4)) && !defined(CONFIG_PULP)
+  __asm__ __volatile__ ("" : : : "memory");
+  value = __builtin_pulp_event_unit_read((int *)base, offset);
+  __asm__ __volatile__ ("" : : : "memory");
   #else
   __asm__ __volatile__ ("" : : : "memory");
   value = pulp_read32(base + offset);
@@ -48,20 +49,6 @@ static inline unsigned int evt_read32(unsigned int base, unsigned int offset)
   #endif
   return value;
 }
-#else
-#define evt_read32(base,offset) \
-  ({ \
-    unsigned int value; \
-#if !defined(CONFIG_PULP)
-    value = __builtin_pulp_event_unit_read_fenced((int *)base, offset); \
-#else
-  __asm__ __volatile__ ("" : : : "memory"); \
-  value = pulp_read32(base + offset); \
-  __asm__ __volatile__ ("" : : : "memory"); \
-#endif
-    value; \
-  })
-#endif
 
 /** Get event status. 
   Return the value of the event status register. This register contains one bit per event, 1 means the event is set. Note that this register is actually used

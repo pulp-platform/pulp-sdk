@@ -21,7 +21,7 @@
 static inline unsigned int __attribute__ ((always_inline)) ExtInsMaskFast_archi(unsigned int Size, unsigned int Offset) { return ((((Size-1))<<5)|(Offset)); }
 static inline unsigned int __attribute__ ((always_inline)) ExtInsMaskSafe_archi(unsigned int Size, unsigned int Offset) { return ((((Size-1)&0x1F)<<5)|(Offset&0x1F)); }
 
-#if defined(__riscv__) && !defined(__LLVM__) && !defined(RV_ISA_RV32)
+#if defined(__riscv__) && !defined(RV_ISA_RV32)
 #define GAP_WRITE_VOL(base, offset, value) __builtin_pulp_write_base_off_v((value), (base), (offset))
 #define GAP_WRITE(base, offset, value)     __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset))
 #define GAP_READ(base, offset)             __builtin_pulp_OffsetedRead((int *)(base), (offset))
