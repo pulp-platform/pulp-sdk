@@ -9,14 +9,7 @@ else
 platform=gvsoc
 endif
 
-ifeq '$(PMSIS_OS)' 'pulpos'
-ifeq '$(TARGET_CHIP)' 'GAP9_V2'
 export USE_PULPOS=1
-endif
-ifeq '$(TARGET_CHIP)' 'PULP'
-export USE_PULPOS=1
-endif
-endif
 
 ifndef USE_PULPOS
 ifeq ($(BOARD_NAME), gapoc_a)
