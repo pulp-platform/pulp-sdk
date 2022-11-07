@@ -17,15 +17,26 @@ export BUILD_DIR
 include rules/json-tools.mk
 include rules/gap-configs.mk
 include rules/pulp-debug-bridge.mk
-include rules/dpi-models.mk
-include rules/gvsoc.mk
 include rules/pulpos.mk
 
-build: gvsoc.build.all
+CMAKE_FLAGS ?= -j 6
 
-clean: gvsoc.clean
+build:
+	cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DTARGET=$(GAPY_V2_TARGET) \
+		-DTARGET_OPT="$(GAPY_NEW_TARGET_OPT)" \
+		-DCMAKE_INSTALL_PREFIX=$(PULP_SDK_HOME)/install/workstation
+	cmake --build build $(CMAKE_FLAGS)
+	cmake --install build
+
+
+clean:
+	rm -rf build install
 
 checkout:
 	git submodule update --recursive --init
 
 all: checkout build
+
+
+.PHONY: build

@@ -23,7 +23,7 @@ export PULPOS_BOARD_PROFILE=pulp
 export PULPOS_TARGET=pulp
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp
-export GAPY_V2_TARGET=pulp.pulp-open
+export GAPY_V2_TARGET=pulp-open
 export GVSOC_PULP_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/pulp
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
