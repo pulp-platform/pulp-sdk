@@ -39,6 +39,7 @@ export XTENSOR_INCLUDE_DIR=$PULP_SDK_HOME/ext/xtensor/include
 export GVSOC_INC_PATHS="$PULP_SDK_HOME/rtos/pulpos/gap_archi/include/archi/chips/$TARGET_NAME $PULP_SDK_HOME/rtos/pulpos/gap_archi/include $PULP_SDK_HOME/rtos/pulpos/pulp_archi/include"
 export GVSOC_ISS_PATH=$PULP_SDK_HOME/tools/gvsoc/common/models/cpu/iss
 export GVSOC_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/common
+export GVSOC_PULP_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/pulp
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/models:$PYTHONPATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/generators:$PYTHONPATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/common/generators:$PYTHONPATH

@@ -317,6 +317,7 @@ override runner_args += --flash-property=boot@flash:rom:boot \
 GAPY_CMD = $(PULP_SDK_HOME)/tools/gapy_v2/bin/gapy $(GAPY_TARGET_OPT) \
 	--platform=$(platform) \
 	--work-dir=$(TARGET_BUILD_DIR) \
+	--binary=$(TARGETS) \
 	$(config_args) $(gapy_args) $(runner_args)
 
 image:
