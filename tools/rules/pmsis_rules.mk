@@ -53,10 +53,24 @@ endif
 endif
 
 # FS config
-READFS_FLASH ?= flash
 
+ifdef PULPOS_PLATFORM
+platform=$(PULPOS_PLATFORM)
+endif
+
+ifndef platform
+platform=gvsoc
+endif
+
+ifeq '$(platform)' 'gvsoc'
+READFS_FLASH ?= hyperflash
+override runner_args += $(foreach file, $(READFS_FILES), --flash-property=$(file)@$(READFS_FLASH):readfs:files)
+override runner_args += $(foreach file, $(HOSTFS_FILES), --flash-property=$(file)@$(READFS_FLASH):hostfs:files)
+else
+READFS_FLASH ?= flash
 override config_args += $(foreach file, $(READFS_FILES), --config-opt=**/$(READFS_FLASH)/content/partitions/readfs/files=$(file))
 override config_args += $(foreach file, $(HOSTFS_FILES), --config-opt=**/flash/content/partitions/hostfs/files=$(file))
+endif
 
 GAPY_TARGET_OPT = --py-target=$(GAPY_PY_TARGET)
 
