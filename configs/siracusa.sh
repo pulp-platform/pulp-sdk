@@ -24,7 +24,6 @@ export PULPOS_TARGET=siracusa
 export PULPOS_SYSTEM=siracusa
 export GAPY_TARGET=siracusa
 export GAPY_V2_TARGET=siracusa
-export GVSOC_PULP_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/pulp
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 
