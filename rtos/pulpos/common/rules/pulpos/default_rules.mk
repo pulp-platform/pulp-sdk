@@ -65,16 +65,16 @@ override disopt ?= -d
 PULP_CFLAGS += -D__PULPOS2__
 
 ifeq '$(platform)' 'gvsoc'
-PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_GVSOC
+PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_GVSOC -D__PLATFORM_GVSOC__
 endif
 ifeq '$(platform)' 'board'
-PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_BOARD
+PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_BOARD -D__PLATFORM_BOARD__
 endif
 ifeq '$(platform)' 'rtl'
-PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_RTL
+PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_RTL -D__PLATFORM_RTL__
 endif
 ifeq '$(platform)' 'fpga'
-PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_FPGA
+PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_FPGA -D__PLATFORM_FPGA__
 endif
 
 ifdef io
@@ -331,6 +331,15 @@ exec:
 
 run: build
 	$(GAPY_CMD) image flash run
+
+gvsoc.prepare:
+	$(GAPY_CMD) prepare
+
+gvsoc.run:
+	cd $(TARGET_BUILD_DIR) && gvsoc_launcher --config=gvsoc_config.json
+
+gvsoc.run_debug:
+	cd $(TARGET_BUILD_DIR) && gvsoc_launcher_debug --config=gvsoc_config.json
 
 else
 
