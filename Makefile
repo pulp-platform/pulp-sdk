@@ -20,14 +20,15 @@ include rules/pulp-debug-bridge.mk
 include rules/pulpos.mk
 
 CMAKE_FLAGS ?= -j 6
+CMAKE ?= cmake
 
 build:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	$(CMAKE) -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 		-DTARGET=$(GAPY_V2_TARGET) \
 		-DTARGET_OPT="$(GAPY_NEW_TARGET_OPT)" \
 		-DCMAKE_INSTALL_PREFIX=$(PULP_SDK_HOME)/install/workstation
-	cmake --build build $(CMAKE_FLAGS)
-	cmake --install build
+	$(CMAKE) --build build $(CMAKE_FLAGS)
+	$(CMAKE) --install build
 
 
 clean:
