@@ -39,6 +39,11 @@
 #endif
 
 /*
+ * ENABLE CLOCK GATING WORKAROUND FOR pi_cluster_open
+ */
+#define _PULP_WORKAROUND_CLUSTER_CG_
+
+/*
  * MEMORIES
  */ 
 

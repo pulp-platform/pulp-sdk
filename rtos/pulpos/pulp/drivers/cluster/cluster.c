@@ -93,6 +93,20 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 {
     struct pi_cluster_conf *conf = (struct pi_cluster_conf *)cluster_dev->config;
     int cid = conf->id;
+
+
+    /*
+      The top-level cluster clock gate is supposed to be turned on by an incoming AXI request, so that the
+      request can access L1 memory. On some chips (namely Kraken) there is a problem with this: The clock gate
+      is turned on 2 cycles too late, which leads to the AW/AR beat getting forwarded by the CDC AXI slice
+      into an unclocked FIFO which acknowledges it but does not actually forward it. The ugly workaround for
+      now is to disable automatic cluster clock-gating...
+    */
+#ifdef _PULP_WORKAROUND_CLUSTER_CG_
+    /* Activate cluster top level clock gating */
+    cluster_ctrl_unit_clock_gate_set(ARCHI_CLUSTER_PERIPHERALS_GLOBAL_ADDR(cid) + ARCHI_CLUSTER_CTRL_OFFSET, 0);
+#endif
+
     pos_cluster_t *cluster = &pos_cluster[cid];
 
     CL_TRACE(POS_LOG_INFO, "Opening cluster (id: %d)\n", cid);
@@ -135,8 +149,11 @@ int pi_cluster_open(struct pi_device *cluster_dev)
     }
 #endif
 
+// if the cluster clock gating enable by incoming AXI requests works fine, we can turn it on here
+#ifndef _PULP_WORKAROUND_CLUSTER_CG_
     /* Activate cluster top level clock gating */
     cluster_ctrl_unit_clock_gate_set(ARCHI_CLUSTER_PERIPHERALS_GLOBAL_ADDR(cid) + ARCHI_CLUSTER_CTRL_OFFSET, 1);
+#endif
 
     // Initialize cluster global variables
     pos_init_cluster_data(cid, conf);
