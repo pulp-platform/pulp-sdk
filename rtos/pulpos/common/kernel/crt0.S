@@ -134,6 +134,7 @@ _start:
 pos_illegal_instr:
     j pos_illegal_instr
 
+    .global pos_no_irq_handler
 pos_no_irq_handler:
     mret
 
