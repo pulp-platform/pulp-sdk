@@ -26,7 +26,7 @@ pos_init_entry:
 
     # Performance counters are active after reset, deactivate them to let the
     # user control when they should start counting
-    csrw    0x7A1, x0
+    csrw    0xCC1, x0
 
 #ifdef ARCHI_HAS_CLUSTER
 

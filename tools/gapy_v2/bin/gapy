@@ -78,7 +78,10 @@ try:
     # Instantiate the specified target or if no target is specified, instantiate an empty one
     # since we need a target to handle commands
     if args.target is not None:
-        target = gapylib.target.get_target(args.target)(options=args.config_opt + args.target_opt)
+        target = gapylib.target.get_target(args.target)(
+            parser=parser,
+            options=args.config_opt + args.target_opt
+        )
     else:
         target = gapylib.target.Target()
 

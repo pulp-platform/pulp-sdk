@@ -63,12 +63,6 @@ class RawSection(FlashSection):
     def __init__(self, parent: Flash, name, section_id: int):
         super().__init__(parent, name, section_id)
 
-        self.declare_property(name='size', value=-1,
-            description="Size in bytes of the whole raw section " \
-                "(-1 to cover flash remaining space)."
-        )
-
-
     def set_content(self, offset: int, content_dict: dict):
         """Set the content of the section.
 
@@ -84,7 +78,7 @@ class RawSection(FlashSection):
         # Just add a structure with an array to occupy the specified space
         top_struct = CStructParent('readfs', parent=self)
 
-        size = content_dict.get('properties').get('size')
+        size = self.get_property('size')
 
         # Size is a string to be converted if it comes from command-line
         if isinstance(size, str):
@@ -97,4 +91,7 @@ class RawSection(FlashSection):
         RawHeader('header', parent=top_struct, size=size)
 
     def get_partition_type(self) -> int:
+        return 0x1
+
+    def get_partition_subtype(self) -> int:
         return 0x80
