@@ -27,7 +27,30 @@ from prettytable import PrettyTable
 
 from gapylib.flash import FlashSection
 
-
+def compute_crc(init : int, buff: bytes):
+    """
+    Compute crc of a byte from stringified scalar
+    Parameters
+    -----------
+    init : int
+        init value for CRC computation
+    buff : byes
+        bytes buffer of stringified bytes
+    Returns
+    -------
+    crc : int
+        crc of the scalar bytes
+    """
+    crc = init
+    for _, data in enumerate(buff):
+        crc = crc ^ data
+        for _ in range(7, -1, -1):
+            if crc & 1 == 1:
+                mask = 0xffffffff
+            else:
+                mask = 0
+            crc = (crc >> 1) ^ (0xEDB88320 & mask)
+    return crc ^ 0xffffffff
 
 class CStructField():
     """
@@ -73,7 +96,6 @@ class CStructField():
         """
         self.value = value
 
-
 class CStructScalar(CStructField):
     """
     Class for scalar fields.
@@ -96,6 +118,17 @@ class CStructScalar(CStructField):
             table.add_row([f'0x{self.get_offset():x}', self.name, f'0x{self.size:x}',
                 f'0x{self.value:x}'])
 
+    def get_bytes(self) -> bytes:
+        """Get field value.
+
+        Get the value of the field.
+
+        Returns
+        ----------
+        value
+            Field value
+        """
+        return self.value.to_bytes(self.size, 'little')
 
 class CStructArray(CStructField):
     """
@@ -143,6 +176,19 @@ class CStructArray(CStructField):
 
         table.add_row(['0x%x' % self.get_offset(), self.name, '0x%x' % self.size, value])
 
+    def get_bytes(self) -> bytes:
+        """Get field value.
+
+        Get the value of the field.
+
+        Returns
+        ----------
+        value
+            Field value
+        """
+        #to_str = str (self.value)
+        #return to_str.encode()
+        return self.value
 
 class CStruct():
     """
@@ -159,7 +205,7 @@ class CStruct():
     def __init__(self, name: str, parent: 'CStructParent'):
         self.fields = OrderedDict()
         self.struct = None
-        self.format = ''
+        self.format = '<'
         self.__size = 0
         self.__name = name
         self.parent = parent

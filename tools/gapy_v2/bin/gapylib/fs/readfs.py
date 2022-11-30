@@ -204,8 +204,11 @@ class ReadfsSection(FlashSection):
                 file.set_field('data', file_desc.read())
 
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return len(self.file_paths) == 0
 
     def get_partition_type(self) -> int:
+        return 0x1
+
+    def get_partition_subtype(self) -> int:
         return 0x81

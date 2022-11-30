@@ -168,8 +168,8 @@ class PartitionTableSection(FlashSection):
         # Per-section header
         for i, section in enumerate(self.section_headers):
             section.set_field('magic_number', 0x01BA)
-            section.set_field('type', 1)
-            section.set_field('subtype', sections[i].get_partition_type())
+            section.set_field('type', sections[i].get_partition_type())
+            section.set_field('subtype', sections[i].get_partition_subtype())
             section.set_field('offset', sections[i].get_offset())
             section.set_field('size', sections[i].get_size())
             section.set_field('name', sections[i].get_name().encode('utf-8') + bytes([0]))

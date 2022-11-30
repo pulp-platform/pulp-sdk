@@ -99,7 +99,7 @@ static int test_entry()
         rx_buffer[i] = 0;
       }
 
-      pi_flash_bwrite(&flash, flash_addr, tx_buffer, BUFF_SIZE);
+      pi_flash_bwrite(&flash, flash_addr, tx_buffer, BUFF_SIZE/2);
       pi_flash_read(&flash, flash_addr, rx_buffer, BUFF_SIZE);
 
       for (int i=0; i<BUFF_SIZE; i++)

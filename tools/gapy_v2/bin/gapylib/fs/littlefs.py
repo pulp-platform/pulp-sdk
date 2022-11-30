@@ -69,27 +69,32 @@ class LfsSection(FlashSection):
         # Littlefs size in target
         self.size = 0
 
-        self.declare_property(name='size', value=0,
-            description="Size in bytes of the whole LittleFS."
-        )
+        self.img_path = None
 
         self.declare_property(name='root_dir', value=None,
             description="Workstation directory content to be included in the LittleFS."
+        )
+
+        self.declare_property(name='img_path', value=None,
+            description="LittleFS image path"
         )
 
     def set_content(self, offset: int, content_dict: dict):
         super().set_content(offset, content_dict)
 
         align = self.parent.get_flash_attribute('littlefs_align')
-        self.set_offset((offset + align - 1) & ~(align - 1))
+        if align is not None:
+            self.set_offset((offset + align - 1) & ~(align - 1))
 
         # Top structure which will gather all sub-sections
         top_struct = CStructParent('readfs', parent=self)
 
         # Get LFS properties from flash and command-line
-        image_path = self.parent.get_image_path() + '.' + self.get_name()
         self.root_dir = content_dict.get('properties').get('root_dir')
-        self.size = content_dict.get('properties').get('size')
+        self.size = self.get_property('size')
+        self.img_path = content_dict.get('properties').get('img_path')
+        if self.img_path is None:
+            self.img_path = self.parent.get_image_path() + '.' + self.get_name()
 
         # Size is a string to be converted if it comes from command-line
         if isinstance(self.size, str):
@@ -105,7 +110,7 @@ class LfsSection(FlashSection):
             # it as non-empty blank section, so that it can still be formatted at runtime
             if self.root_dir is not None:
                 # Use mklfs to format the section with the specified folder
-                cmd = f'mklfs -b {block_size} -r 16 -p 16 -s {self.size} -i {image_path}'
+                cmd = f'mklfs -b {block_size} -r 16 -p 16 -s {self.size} -i {self.img_path}'
 
                 cmd += f' -c {self.root_dir}'
 
@@ -121,7 +126,7 @@ class LfsSection(FlashSection):
                     raise RuntimeError('Failed to create LFS image file')
 
                 # Mklfs will dump it to a file, redump it to the flash image
-                with open(image_path, 'rb') as file_desc:
+                with open(self.img_path, 'rb') as file_desc:
                     header.set_field('data', file_desc.read())
 
 
@@ -131,4 +136,8 @@ class LfsSection(FlashSection):
         return self.root_dir is None
 
     def get_partition_type(self) -> int:
+        return 0x1
+
+
+    def get_partition_subtype(self) -> int:
         return 0x82

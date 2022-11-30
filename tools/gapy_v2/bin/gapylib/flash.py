@@ -24,9 +24,12 @@ The same for each flash.
 # Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
 #
 
-import typing
 import json
+import traceback
 from collections import OrderedDict
+import os.path
+from typing import Any, Dict
+
 from prettytable import PrettyTable
 
 
@@ -75,7 +78,12 @@ class FlashSection():
         self.content_dict = {}
         self.structs = []
         self.properties = {}
+        self.size_align = None
+        self.start_align = None
 
+        self.declare_property(name='size', value=None,
+            description="Force a certain size for section."
+        )
 
     def declare_property(self, name: str, value: any, description: str):
         """Declare a section property.
@@ -95,6 +103,7 @@ class FlashSection():
         """
 
         if self.properties.get(name) is not None:
+            traceback.print_stack()
             raise RuntimeError(f'Property {name} already declared')
 
         self.properties[name] = FlashSectionProperty(
@@ -182,7 +191,27 @@ class FlashSection():
         int
             The section size.
         """
-        return self.current_offset - self.offset
+        size = self.current_offset - self.offset
+        size_property = self.get_property('size')
+        # Size is a string to be converted if it comes from command-line
+        if isinstance(size_property, str):
+            size_property = int(size_property, 0)
+
+        if size_property is not None and size_property != -1:
+            if self.size_align is not None:
+                size_property_aligned =\
+                (size_property + self.start_align - 1) & ~(self.start_align - 1)
+            else:
+                size_property_aligned = size_property
+            if size_property != -1 and (size > size_property
+                                        or size_property_aligned != size_property):
+                raise RuntimeError(f'Section size ({size})is larger\
+                                   than requested in layout {size_property}')
+            size = size_property
+        if self.size_align is not None:
+            size = (size + self.size_align - 1) & ~(self.size_align - 1)
+
+        return size
 
     def get_flash(self) -> 'Flash':
         """Get the sflash containing this section.
@@ -246,6 +275,14 @@ class FlashSection():
         for cstruct in self.structs:
             result += cstruct.pack()
 
+        # pad the section to match its expected size
+        image_len = len(result)
+        if image_len < self.get_size():
+            result += bytearray(self.get_size() - image_len)
+        elif image_len > self.get_size():
+            raise RuntimeError('Section image is too big (expected'
+                               f'{self.get_size()}, got {image_len})')
+
         return result
 
 
@@ -281,6 +318,23 @@ class FlashSection():
 
         return str(table)
 
+    def set_alignments(self, start_align: int=None, size_align: int=None):
+        """Set the section alignments.
+
+        This can be called to specific start address and size of the section.
+        Some padding will be inserted at the end of the section to match the specified
+        size alignment.
+
+        Parameters
+        ----------
+        start_align : int
+            Alignment in bytes of the start address of the section.
+        size_align : int
+            Alignment in bytes of the size of the section.
+
+        """
+        self.size_align = size_align
+        self.start_align = start_align
 
     def set_content(self, offset: int, content_dict: dict):
         """Set the content of the section.
@@ -298,7 +352,6 @@ class FlashSection():
         content_dict : dict
             Content of the section
         """
-        self.set_offset(offset)
         self.content_dict = content_dict
 
         if self.content_dict.get("properties") is not None:
@@ -307,6 +360,11 @@ class FlashSection():
                     raise RuntimeError(f'Trying to set undefined property: {name}')
 
                 self.properties[name].value = value
+
+        if self.start_align is not None:
+            offset = (offset + self.start_align - 1) & ~(self.start_align - 1)
+
+        self.set_offset(offset)
 
 
     def finalize(self):
@@ -355,6 +413,19 @@ class FlashSection():
     def get_partition_type(self)-> int:
         """Return the partition type.
 
+        This information can be used by the partition table as the type.
+        This method returns an unknown type (0xff) and should be overloaded by real sections.
+
+        Returns
+        -------
+        int
+            The partition type.
+        """
+        return 0xff
+
+    def get_partition_subtype(self)-> int:
+        """Return the partition subtype.
+
         This information can be used by the partition table as the subtype.
         This method returns an unknown type (0xff) and should be overloaded by real sections.
 
@@ -364,6 +435,61 @@ class FlashSection():
             The partition type.
         """
         return 0xff
+
+    def get_next_section(self)-> 'FlashSection':
+        """Return the next section in the flash.
+
+        Returns
+        -------
+        FlashSection
+            The next section.
+        """
+        sections = self.get_flash().get_sections()
+        if self.get_id() == len(sections) - 1:
+            return None
+
+        return sections[self.get_id() + 1]
+
+    def get_image_name(self) -> str:
+        """Get the section image name
+
+        Returns
+        -------
+        str
+            The section image name
+        """
+        return self.get_flash().get_name() + "-" + self.get_name() + ".bin"
+
+    def get_image_path(self) -> str:
+        """Get the section image path
+
+        Returns
+        -------
+        str
+            The section image path
+        """
+        return self.get_flash().target.get_abspath(self.get_image_name())
+
+    def dump_section_description(self) -> Dict[str, Any]:
+        """Dump the description of a section
+
+        Returns
+        -------
+        Dict[str, Any]
+            A description of the section parameters
+        """
+        section_desc = {}
+        section_desc["name"] = self.get_name()
+        # for some reason partition type is hardcoded to 1
+        section_desc["partition_type"] = self.get_partition_type()
+        # and get_partition_type() returns the partition subtype
+        section_desc["partition_subtype"] = self.get_partition_subtype()
+        section_desc["size"] = self.get_size()
+        # for now, overcommit_size is not implemented
+        section_desc["overcommit_size"] = self.get_size()
+        section_desc["image_file"] = self.get_image_name()
+
+        return section_desc
 
 
 class Flash():
@@ -476,7 +602,7 @@ class Flash():
         level : int
             Dumping depth
         """
-        self.__parse_content()
+        self.__parse_content(check_overflow=False)
 
         print (f'\nLayout for flash: {self.name}')
 
@@ -498,6 +624,48 @@ class Flash():
 
         print (table)
 
+    def dump_sections(self):
+        """Dump the sections images and a description of each section
+
+        The description is a JSON file containing the description of each
+        section.
+        """
+        self.__parse_content()
+
+        print(f'Dumping flash \"{self.name}\" section content.')
+
+        self.__dump_sections_description()
+        self.__dump_sections()
+
+    def __dump_sections_description(self):
+
+        section_descriptions = []
+        for section in self.sections.values():
+            section_desc = section.dump_section_description()
+            section_descriptions.append(section_desc)
+
+        image_path_base = os.path.splitext(self.get_image_path())[0]
+        sections_description_path = image_path_base + '-description.json'
+
+        json_content = json.dumps(section_descriptions, indent=4)
+        try:
+            with open(sections_description_path, 'w', encoding="utf-8") as file:
+                file.write(json_content)
+        except OSError as exc:
+            raise RuntimeError('Unable to open flash section image for '
+                               'writing ' + str(exc)) from exc
+
+    def __dump_sections(self):
+        for section in self.sections.values():
+            image = section.get_image()
+
+            section_path = section.get_image_path()
+            try:
+                with open(section_path, 'wb') as file_desc:
+                    file_desc.write(image)
+            except OSError as exc:
+                raise RuntimeError('Unable to open flash section image for '
+                                   'writing ' + str(exc)) from exc
 
     def dump_section_properties(self):
         """Dump the section properties of the flash.
@@ -520,7 +688,7 @@ class Flash():
         print (table)
 
 
-    def dump_image(self, file_desc: typing.BinaryIO):
+    def dump_image(self):
         """Dump the content of the flash in binary form to the specified file.
 
         Parameters
@@ -528,7 +696,12 @@ class Flash():
         fd
             File descriptor
         """
-        file_desc.write(self.get_image())
+        try:
+            with open(self.get_image_path(), 'wb') as file_desc:
+                file_desc.write(self.get_image())
+        except OSError as exc:
+            raise RuntimeError('Unable to open flash image for '
+                               'writing ' + str(exc)) from exc
 
 
     def get_image(self, first: int=None, last: int=None) -> bytes:
@@ -633,6 +806,36 @@ class Flash():
         return list(self.sections.values())
 
 
+    def get_section_by_name(self, name: str) -> FlashSection:
+        """Get a section by its name
+        Parameters
+        ----------
+        name : str
+            Name to search for
+        Returns
+        -------
+        FlashSection
+            Flash section with name "name"
+        """
+        return self.sections.get(name)
+
+
+    def get_section_index(self, name: str) -> int:
+        """Get a section id by its name
+        Parameters
+        ----------
+        name : str
+            Name to search for
+        Returns
+        -------
+        index
+            Index in the section list of section with name "name"
+        """
+        if self.sections.get(name) is not None:
+            return list(self.sections).index(name)
+        return None
+
+
     def is_empty(self) -> bool:
         """Tell if the flash is empty.
 
@@ -655,7 +858,7 @@ class Flash():
         return self.sections_templates.get(template_name)
 
 
-    def __parse_content(self):
+    def __parse_content(self, check_overflow: bool=True):
         # To allow overloading the content, we parse the content only once the first time
         # it is needed
         if not self.content_parsed and self.content_dict is not None:
@@ -691,16 +894,24 @@ class Flash():
             # And finally set the content of each section and give it its starting offset
             if self.content_dict.get('sections') is not None:
                 flash_offset = 0
+                section_start_align = self.get_flash_attribute('section_start_align')
+                section_size_align = self.get_flash_attribute('section_size_align')
+
                 for content_section in self.content_dict.get('sections'):
                     section = self.sections[content_section.get('name')]
+
+                    section.set_alignments(section_start_align, section_size_align)
                     section.set_content(flash_offset, content_section)
                     flash_offset = section.get_offset() + section.get_size()
 
                     if flash_offset > self.size:
-                        raise RuntimeError(
-                            f'Section "{section.get_name()}" overflowed flash "{self.name}",'
-                            f' flash size is 0x{self.size:x}, current content size is'
-                            f' 0x{flash_offset:x}.')
+                        if check_overflow:
+                            raise RuntimeError(
+                                f'Section "{section.get_name()}" overflowed flash "{self.name}",'
+                                f' flash size is 0x{self.size:x}, current content size is'
+                                f' 0x{flash_offset:x}.')
+
+                        break
 
 
             # And finally set the content of each section and give it its starting offset

@@ -60,11 +60,28 @@ class Target():
 
     Attributes
     ----------
+    parser : argparse.ArgumentParser
+        The parser where to add arguments.
     options : List
         A list of options for the target.
     """
 
-    def __init__(self, options: list=None):
+    def __init__(self, parser, options: list=None):
+
+        parser.add_argument("--flash-property", dest="flash_properties", default=[],
+            action="append", help="specify the value of a flash property")
+
+        parser.add_argument("--flash-content", dest="flash_contents", default=[], action="append",
+            help="specify the path to the JSON file describing the content of the flash")
+
+        parser.add_argument("--flash-layout-level", dest="layout_level", type=int, default=2,
+            help="specify the level of the layout when dumping flash layout")
+
+        parser.add_argument("--flash-no-auto", dest="flash_auto", action="store_false",
+            help="Flash auto-mode, will force the flash content update only if needed")
+
+        parser.add_argument("--binary", dest = "binary", default = None,
+            help = "Binary to execute on the target")
 
         self.commands = [
             ['commands'    , 'Show the list of available commands'],
@@ -72,6 +89,7 @@ class Target():
             ['image'       , 'Generate the target images needed to run execution'],
             ['flash'       , 'Upload the flash contents to the target'],
             ['flash_layout', 'Dump the layout of the flashes'],
+            ['flash_dump_sections', 'Dump each section of each flash memory'],
             ['flash_properties', 'Dump the value of all flash section properties'],
             ['run'         , 'Start execution on the target'],
         ]
@@ -173,10 +191,7 @@ class Target():
             Command name to be handled.
         """
         if cmd == 'commands':
-            print ('Available commands:')
-
-            for command in self.commands:
-                print (f'  {command[0]:16s} {command[1]}')
+            self.__print_available_commands()
 
         elif cmd == 'targets':
             self.__display_targets()
@@ -185,24 +200,29 @@ class Target():
             for flash in self.flashes.values():
                 flash.dump_layout(level=self.layout_level)
 
+        elif cmd == 'flash_dump_sections':
+            for flash in self.flashes.values():
+                flash.dump_sections()
+
         elif cmd == 'flash_properties':
             for flash in self.flashes.values():
                 flash.dump_section_properties()
 
         elif cmd == 'image':
             for flash in self.flashes.values():
-                try:
-                    with open(flash.get_image_path(), 'wb') as file_desc:
-                        flash.dump_image(file_desc)
-                except OSError as exc:
-                    raise RuntimeError('Unable to open flash image for '
-                        'writing ' + str(exc)) from exc
+                flash.dump_image()
 
         elif cmd == 'flash':
             pass
 
         else:
             raise RuntimeError('Invalid command: ' + cmd)
+
+    def __print_available_commands(self):
+        print('Available commands:')
+
+        for command in self.commands:
+            print(f'  {command[0]:16s} {command[1]}')
 
 
     def append_args(self, parser: argparse.ArgumentParser):
@@ -217,21 +237,6 @@ class Target():
         parser : argparse.ArgumentParser
             The parser where to add arguments.
         """
-
-        parser.add_argument("--flash-property", dest="flash_properties", default=[],
-            action="append", help="specify the value of a flash property")
-
-        parser.add_argument("--flash-content", dest="flash_contents", default=[], action="append",
-            help="specify the path to the JSON file describing the content of the flash")
-
-        parser.add_argument("--flash-layout-level", dest="layout_level", type=int, default=2,
-            help="specify the level of the layout when dumping flash layout")
-
-        parser.add_argument("--flash-no-auto", dest="flash_auto", action="store_false",
-            help="Flash auto-mode, will force the flash content update only if needed")
-
-        parser.add_argument("--binary", dest = "binary", default = None,
-            help = "Binary to execute on the target")
 
 
     def parse_args(self, args: any):
