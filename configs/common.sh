@@ -28,21 +28,16 @@ export PYTHONPATH=$INSTALL_DIR/python:$PYTHONPATH
 
 
 # Gapy
-export PATH=$PULP_SDK_HOME/tools/gapy:$PATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gapy:$PYTHONPATH
 export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_PATH
 
+# Gapy v2 (for gvsoc)
+export PATH=$PULP_SDK_HOME/tools/gapy_v2/bin:$PATH
+
 # GVSOC
-export PULP_SDK_INSTALL=$INSTALL_DIR
-export GVSOC_PATH=$INSTALL_DIR/python
-export XTENSOR_INCLUDE_DIR=$PULP_SDK_HOME/ext/xtensor/include
-export GVSOC_INC_PATHS="$PULP_SDK_HOME/rtos/pulpos/gap_archi/include/archi/chips/$TARGET_NAME $PULP_SDK_HOME/rtos/pulpos/gap_archi/include $PULP_SDK_HOME/rtos/pulpos/pulp_archi/include"
-export GVSOC_ISS_PATH=$PULP_SDK_HOME/tools/gvsoc/common/models/cpu/iss
-export GVSOC_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/common
-export GVSOC_PULP_SRC_PATH=$PULP_SDK_HOME/tools/gvsoc/pulp
-export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/common/models:$PYTHONPATH
-export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/pulp/models:$PYTHONPATH
-export PYTHONPATH=$PULP_SDK_HOME/tools/gvsoc/common/engine:$PYTHONPATH
+export GVSOC_MODULES="${GAP_SDK_HOME}/tools/gvsoc/common;${GAP_SDK_HOME}/tools/gvsoc/pulp"
+export GVSOC_TARGETS="$GAPY_V2_TARGET"
+
 
 # FPGA
 #export PULP_

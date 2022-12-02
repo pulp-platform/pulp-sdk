@@ -306,10 +306,11 @@ use_gvsoc_target = 1
 endif
 
 ifeq '$(use_gvsoc_target)' '1'
-GAPY_TARGET_OPT += --target-dir=$(GVSOC_PULP_SRC_PATH)/targets
-endif
-
+GAPY_TARGET_OPT += $(foreach module,$(subst ;, , $(GVSOC_MODULES)),--target-dir=$(module)/models)
+GAPY_TARGET_OPT += --install-dir=$(INSTALL_DIR)/python
+else
 GAPY_TARGET_OPT += --target-dir=$(PULP_SDK_HOME)/tools/gapy/targets
+endif
 
 override runner_args += --flash-property=boot@flash:rom:boot \
 	--flash-property=$(TARGETS)@flash:rom:binary
@@ -343,22 +344,22 @@ gvsoc.run_debug:
 
 else
 
-GAPY = gapy
+GAPY = $(PULP_SDK_HOME)/tools/gapy/gapy
 
 image:
-	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --image --binary=$(TARGETS) $(runner_args)
+	$(GAPY) $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --image --binary=$(TARGETS) $(runner_args)
 
 flash:
-	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --flash --binary=$(TARGETS) $(runner_args)
+	$(GAPY) $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --flash --binary=$(TARGETS) $(runner_args)
 
 run.prepare:
-	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --binary=$(TARGETS) $(runner_args)
+	$(GAPY) $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --binary=$(TARGETS) $(runner_args)
 
 run.exec:
-	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec --binary=$(TARGETS) $(runner_args)
+	$(GAPY) $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec --binary=$(TARGETS) $(runner_args)
 
 run:
-	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --exec --binary=$(TARGETS) $(runner_args)
+	$(GAPY) $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --exec-prepare --exec --binary=$(TARGETS) $(runner_args)
 
 endif
 
