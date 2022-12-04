@@ -307,7 +307,7 @@ endif
 
 ifeq '$(use_gvsoc_target)' '1'
 GAPY_TARGET_OPT += $(foreach module,$(subst ;, , $(GVSOC_MODULES)),--target-dir=$(module)/models)
-GAPY_TARGET_OPT += --install-dir=$(INSTALL_DIR)/python
+GAPY_TARGET_OPT += --model-dir=$(INSTALL_DIR)/models
 else
 GAPY_TARGET_OPT += --target-dir=$(PULP_SDK_HOME)/tools/gapy/targets
 endif
