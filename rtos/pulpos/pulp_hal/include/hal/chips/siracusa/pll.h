@@ -19,7 +19,8 @@
 
 #define PLL_REF_CLK_FREQ_HZ 32768
 #define PLL_MIN_VCO_MULT 3052
-#define PLL_MAX_VCO_MULT 12207
+#define PLL_MAX_VCO_MULT 15500
+//#define PLL_MAX_VCO_MULT 18000
 
 /**
  * Enum of available clock domains
