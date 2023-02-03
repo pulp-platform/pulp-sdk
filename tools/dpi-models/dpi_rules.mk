@@ -9,8 +9,8 @@ CPP=$(CXX)
 DPI_MODEL_CFLAGS=-MMD -MP -O2 -g -fpic -std=c++11 -I$(INSTALL_DIR)/include
 DPI_MODEL_LDFLAGS=-O2 -g -shared -L$(INSTALL_DIR)/lib
 
-DPI_MODEL_CFLAGS += -Werror -Wfatal-errors
-DPI_MODEL_LDFLAGS += -Werror -Wfatal-errors
+DPI_MODEL_CFLAGS +=  -Wfatal-errors
+DPI_MODEL_LDFLAGS +=  -Wfatal-errors
 
 
 DPI_MODEL_EXT=.so

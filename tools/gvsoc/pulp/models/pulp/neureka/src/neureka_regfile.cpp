@@ -95,7 +95,7 @@ void Neureka::regfile_cxt() {
     switch(addr) {
 
       case NEUREKA_REG_WEIGHTS_PTR:
-        this->weights_ptr = value;
+        this->weights_ptr = value + 0x10400000;
         break;
 
       case NEUREKA_REG_INFEAT_PTR:

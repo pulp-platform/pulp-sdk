@@ -8,8 +8,8 @@ LAUNCHER_BUILD_DIR = $(ROOT_VP_BUILD_DIR)/launcher
 
 # CC = g++
 
-CFLAGS +=  -MMD -MP -O2 -g -fpic -std=c++11 -Werror -Wall -I$(INSTALL_DIR)/include
-LDFLAGS += -O2 -g -shared -Werror -Wall -L$(INSTALL_DIR)/lib -Wl,--whole-archive -ljson -Wl,--no-whole-archive
+CFLAGS +=  -MMD -MP -O2 -g -fpic -std=c++11 -Wall -I$(INSTALL_DIR)/include
+LDFLAGS += -O2 -g -shared -Wall -L$(INSTALL_DIR)/lib -Wl,--whole-archive -ljson -Wl,--no-whole-archive
 
 LAUNCHER_SRCS = src/launcher.cpp
 LAUNCHER_OBJS = $(patsubst src/%.cpp,$(LAUNCHER_BUILD_DIR)/%.o,$(patsubst src/%.c,$(LAUNCHER_BUILD_DIR)/%.o,$(LAUNCHER_SRCS)))

@@ -7,8 +7,8 @@ MEMORY
   L2_aliased   : ORIGIN = 0x00000004, LENGTH = 0x001ffffc
   L1           : ORIGIN = 0x10000004, LENGTH = 0x0003fffc
   L1_aliased   : ORIGIN = 0x00000004, LENGTH = 0x0003fffc
-  WEIGHTMEM_MRAM : ORIGIN = 0x10400004, LENGTH = 0x003ffffc
-  WEIGHTMEM_SRAM : ORIGIN = 0x10800004, LENGTH = 0x003ffffc
+  WEIGHTMEM_MRAM : ORIGIN = 0x10400020, LENGTH = 0x003fffe0
+  WEIGHTMEM_SRAM : ORIGIN = 0x10800020, LENGTH = 0x003fffe0
 }
 
 /*
@@ -36,7 +36,7 @@ SECTIONS
    */
   .weightmem_sram :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     *(.weightmem_sram)
     *(.weightmem_sram.*)
     KEEP( *(.weightmem_sram) )
@@ -44,7 +44,7 @@ SECTIONS
 
   .weightmem_mram :
   {
-    . = ALIGN(4);
+    . = ALIGN(32);
     *(.weightmem_mram)
     *(.weightmem_mram.*)
     KEEP( *(.weightmem_mram) )	
