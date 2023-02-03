@@ -190,6 +190,7 @@ pi_err_t flash_partition_table_load(pi_device_t *flash, const flash_partition_ta
                   sizeof(flash_partition_info_t) * table->header.nbr_of_entries);
 
 
+
     if(table->header.crc_flags)
     {
         rc = flash_partition_table_verify(table);

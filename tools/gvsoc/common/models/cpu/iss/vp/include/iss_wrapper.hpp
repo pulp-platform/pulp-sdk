@@ -229,6 +229,7 @@ inline int iss_wrapper::data_req_aligned(iss_addr_t addr, uint8_t *data_ptr, int
   req->set_is_write(is_write);
   req->set_data(data_ptr);
   int err = data.req(req);
+
   if (err == vp::IO_REQ_OK) 
   {
     this->cpu.state.insn_cycles += req->get_latency();

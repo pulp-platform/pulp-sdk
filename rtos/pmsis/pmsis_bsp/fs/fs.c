@@ -60,7 +60,6 @@ int32_t pi_fs_mount(struct pi_device *device)
   }
 
   device->api = (struct pi_device_api *)api;
-
   return api->mount(device);
 }
 

@@ -28,6 +28,8 @@ void pos_init_stop();
 void pos_sched_init();
 void pos_task_handle_blocking(void *arg);
 void pos_task_handle();
+void pos_task_handle_polling();
+
 void pos_task_remote_enqueue();
 
 

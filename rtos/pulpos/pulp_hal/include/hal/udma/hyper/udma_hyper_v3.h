@@ -54,7 +54,12 @@ static inline void plp_hyper_wait(unsigned char hyper_id, unsigned int tran_id){
 }
 
 static inline int plp_hyper_id_alloc(unsigned char hyper_id){
-  return plp_hyper_get_reg(UDMA_HYPER_BASE_ADDR(hyper_id) + TRANS_ID_ALLOC);
+  int tran_id = HYPER_NB_CHANNELS;
+  while(tran_id == HYPER_NB_CHANNELS)
+  {
+    tran_id = plp_hyper_get_reg(UDMA_HYPER_BASE_ADDR(hyper_id) + TRANS_ID_ALLOC);
+  }
+  return tran_id;
 }
 
 static inline void plp_hyper_set_reg(unsigned int offset, unsigned int value){

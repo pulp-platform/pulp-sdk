@@ -66,7 +66,6 @@ vp::io_req_status_e interleaver::req(void *__this, vp::io_req *req)
   bool is_write = req->get_is_write();
   uint64_t size = req->get_size();
   uint8_t *data = req->get_data();
-
   _this->trace.msg("Received IO req (offset: 0x%llx, size: 0x%llx, is_write: %d)\n", offset, size, is_write);
  
   int bank_id = (offset >> 2) & _this->bank_mask;

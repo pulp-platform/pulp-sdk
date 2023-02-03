@@ -23,8 +23,9 @@
 #include <vp/itf/io.hpp>
 #include <vp/itf/wire.hpp>
 #include <stdio.h>
+#include <iostream>
 #include <math.h>
-
+using namespace std;
 class router;
 
 class Perf_counter {
@@ -160,6 +161,7 @@ void MapEntry::insert(router *router)
 
 vp::io_req_status_e router::req(void *__this, vp::io_req *req)
 {
+
   router *_this = (router *)__this;
   
   if (!_this->init)
@@ -183,31 +185,38 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
 
       if (offset >= entry->base) entry = entry->right;
       else entry = entry->left;
+
     }
 
     if (entry && (offset < entry->base || offset > entry->base + entry->size - 1)) {
       entry = NULL;
+
     }
   }
 
   if (!entry) {
     if (_this->errorMapEntry && offset >= _this->errorMapEntry->base && offset + size - 1 <= _this->errorMapEntry->base + _this->errorMapEntry->size - 1) {
+
     } else {
       entry = _this->defaultMapEntry;
+
     }
   }
 
   if (!entry) {
     //_this->trace.msg(&warning, "Invalid access (offset: 0x%llx, size: 0x%llx, isRead: %d)\n", offset, size, isRead);
+
     return vp::IO_REQ_INVALID;
   }
 
   if (entry == _this->defaultMapEntry) {
     _this->trace.msg(vp::trace::LEVEL_TRACE, "Routing to default entry (target: %s)\n", entry->target_name.c_str());
+
   } else {
     _this->trace.msg(vp::trace::LEVEL_TRACE, "Routing to entry (target: %s)\n", entry->target_name.c_str());
+
   }
-  
+  // std::cout<<" 10 ";
   if (0) { //_this->bandwidth != 0 and !req->is_debug()) {
     
 #if 0
@@ -238,11 +247,15 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
   }
 
   // Forward the request to the target port
-  if (entry->remove_offset) req->set_addr(offset - entry->remove_offset);
+  if (entry->remove_offset){
+     req->set_addr(offset - entry->remove_offset);
+
+  }
   if (entry->add_offset) req->set_addr(offset + entry->add_offset);
   vp::io_req_status_e result = vp::IO_REQ_OK;
   if (entry->port)
   {
+
     req->arg_push(NULL);
     result = _this->out.req(req, entry->port);
     if (result == vp::IO_REQ_OK)
@@ -250,6 +263,7 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
   }
   else if (entry->itf)
   {
+
     if (!entry->itf->is_bound())
     {
       _this->warning.msg(vp::trace::LEVEL_WARNING, "Invalid access, trying to route to non-connected interface (offset: 0x%llx, size: 0x%llx, is_write: %d)\n", offset, size, !isRead);
@@ -286,6 +300,7 @@ vp::io_req_status_e router::req(void *__this, vp::io_req *req)
 
 void router::grant(void *__this, vp::io_req *req)
 {
+
   router *_this = (router *)__this;
 
   vp::io_slave *port = (vp::io_slave *)req->arg_pop();
@@ -299,6 +314,7 @@ void router::grant(void *__this, vp::io_req *req)
 
 void router::response(void *_this, vp::io_req *req)
 {
+
   vp::io_slave *port = (vp::io_slave *)req->arg_pop();
   if (port != NULL)
     port->resp(req);
@@ -306,6 +322,7 @@ void router::response(void *_this, vp::io_req *req)
 
 int router::build()
 {
+
   traces.new_trace("trace", &trace, vp::DEBUG);
 
   in.set_req_meth(&router::req);
@@ -397,7 +414,7 @@ extern "C" vp::component *vp_constructor(js::config *config)
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
 void router::init_entries() {
-
+  // std::cout<<"ROUTER INIT_ENTRIES\n";
   MapEntry *current = firstMapEntry;
   trace.msg(vp::trace::LEVEL_INFO, "Building router table\n");
   while(current) {
@@ -461,6 +478,7 @@ void router::init_entries() {
 
 inline void io_master_map::bind_to(vp::port *_port, vp::config *config)
 {
+
   MapEntry *entry = new MapEntry();
   vp::config *conf;
   entry->port = (vp::io_slave *)_port;

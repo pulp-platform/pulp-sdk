@@ -165,7 +165,7 @@ void pi_task_terminate(void *task_handler);
  * In case of waiting for the end of some transfers, synchronisation,...
  */
 static inline void pi_yield();
-
+static inline void pi_yield_polling();
 /**
  * @} addtogroup Task
  */

@@ -19,7 +19,6 @@ from generators.v1.comp_gen import *
 import math
 
 def get_config(tp, cluster_id):
-
   cluster_id        = cluster_id
   cluster_size      = tp.get_child_int("cluster/size")
   nb_pe             = tp.get_child_int('cluster/nb_pe')
@@ -30,7 +29,8 @@ def get_config(tp, cluster_id):
   has_hwce          = tp.get('cluster/peripherals/hwce') is not None
   has_hwacc         = tp.get('cluster/peripherals/hwacc') is not None
   has_ima           = tp.get('cluster/peripherals/ima') is not None
-  has_ne16          = tp.get('cluster/peripherals/ne16') is not None
+  has_neureka       = tp.get('cluster/peripherals/neureka') is not None
+  has_wmem          = tp.get('cluster/wmem') is not None
   dma_irq_0         = tp.get('cluster/pe/irq').get_dict().index('dma_0')
   dma_irq_1         = tp.get('cluster/pe/irq').get_dict().index('dma_1')
   dma_irq_ext       = tp.get('cluster/pe/irq').get_dict().index('dma_ext')
@@ -40,10 +40,6 @@ def get_config(tp, cluster_id):
     job_fifo_irq    = tp.get('cluster/pe/irq').get_dict().index('job_fifo')
   except:
     job_fifo_irq    = None
-  #if tp.get('cluster/alias') is not None:
-  #  alias = tp.get_child_str('cluster/alias')
-  #else:
-  #  alias = "0x00000000"
 
   if has_hwce:
     hwce_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
@@ -54,8 +50,8 @@ def get_config(tp, cluster_id):
   if has_ima:
     ima_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
-  if has_ne16:
-    ne16_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
+  if has_neureka:
+    neureka_irq         = tp.get('cluster/pe/irq').get_dict().index('acc_0')
 
   core_conf = js.import_config_from_file("ips/riscv/%s.json" % cluster_core, find=True)
 
@@ -63,6 +59,9 @@ def get_config(tp, cluster_id):
   nb_l1_banks = 1<<int(math.log(nb_pe * l1_banking_factor, 2.0))
   l1_bank_size = int(tp.get_child_int('cluster/l1/size') / nb_l1_banks)
 
+  if has_wmem:
+    nb_wmem_banks = nb_l1_banks  
+    wmem_bank_size = int(tp.get_child_int('cluster/wmem/size') / nb_l1_banks)
 
 
   cluster = Component(properties=OrderedDict([
@@ -87,6 +86,7 @@ def get_config(tp, cluster_id):
     ('latency', 2),
     ('mappings', OrderedDict([
       ("l1", get_mapping_area(tp.get_child_dict("cluster/l1"), cluster_size, cluster_id, True)),
+      ("wmem_soc", OrderedDict()),
       ("l1_ts", l1_ts_mapping),
       ("periph_ico", get_mapping_area(tp.get_child_dict("cluster/peripherals"), cluster_size, cluster_id)),
       ("periph_ico_alias", get_mapping(tp.get_child_dict("cluster/peripherals/alias"), add_offset=get_area_int('%d' % ((tp.get_child_int("cluster/peripherals/base") - tp.get_child_int("cluster/peripherals/alias/base"))), cluster_size, cluster_id))),
@@ -97,6 +97,13 @@ def get_config(tp, cluster_id):
       ("soc", OrderedDict())
     ]))
   ]))
+
+  if has_wmem:
+    cluster_ico_mappings = cluster.cluster_ico.get_property("mappings")
+    cluster_ico_mappings.update(OrderedDict([
+      ("wmem_soc", get_mapping_area(tp.get_child_dict("cluster/wmem"), cluster_size, cluster_id, False))
+    ]))
+    cluster.cluster_ico.set_property('mappings', cluster_ico_mappings)
 
   demux_eu_mapping = tp.get_child_dict("cluster/demux_peripherals/event_unit")
   demux_eu_mapping['base'] = '0x%x' % (int(demux_eu_mapping['base'], 0) - tp.get_child_int("cluster/demux_peripherals/base"))
@@ -147,9 +154,9 @@ def get_config(tp, cluster_id):
       ("ima", get_mapping_area(tp.get_child_dict("cluster/peripherals/ima"), cluster_size, cluster_id, True))
     ]))
 
-  if has_ne16:
+  if has_neureka:
     periph_ico_mappings.update(OrderedDict([
-      ("ne16", get_mapping_area(tp.get_child_dict("cluster/peripherals/ne16"), cluster_size, cluster_id, True))
+      ("neureka", get_mapping_area(tp.get_child_dict("cluster/peripherals/neureka"), cluster_size, cluster_id, True))
     ]))
 
   cluster.periph_ico = Component(properties=OrderedDict([
@@ -218,14 +225,15 @@ def get_config(tp, cluster_id):
   if has_ima:
     ima_conf = js.import_config_from_file("ips/ima/ima_v%d.json" % tp.get_child_int('cluster/peripherals/ima/version'), find=True)
 
-  l1_interleaver_nb_masters = nb_pe + 4
+  l1_interleaver_nb_masters = nb_pe + 4 # 4 for mchan
+
   if has_hwce:
     l1_interleaver_nb_masters += 4
   if has_hwacc:
     l1_interleaver_nb_masters += 4
   if has_ima:
     l1_interleaver_nb_masters += ima_conf.get_int('nb_masters')
-  if has_ne16:
+  if has_neureka:
     l1_interleaver_nb_masters += 1
 
   cluster.l1_ico.interleaver = Component(properties=OrderedDict([
@@ -322,9 +330,9 @@ def get_config(tp, cluster_id):
       ('@includes@', ["ips/ima/ima_v%d.json" % tp.get_child_int('cluster/peripherals/ima/version')])
     ]))
 
-  if has_ne16:
-    cluster.ne16 = Component(properties=OrderedDict([
-      ('@includes@', ["ips/ne16/ne16.json"])
+  if has_neureka:
+    cluster.neureka = Component(properties=OrderedDict([
+      ('@includes@', ["ips/neureka/neureka.json"])
     ]))
 
   cluster.icache_ctrl = Component(properties=OrderedDict([
@@ -342,12 +350,12 @@ def get_config(tp, cluster_id):
   icache_config_dict['nb_ports'] = nb_pe
 
   cluster.icache = Component(properties=icache_config_dict)
-
+  # print("Before Interface")
   cluster.icache_ctrl.enable = cluster.icache.enable
   cluster.icache_ctrl.flush = cluster.icache.flush
   cluster.icache_ctrl.flush_line = cluster.icache.flush_line
   cluster.icache_ctrl.flush_line_addr = cluster.icache.flush_line_addr
-
+  # print("After Interface")
   cluster.icache.refill = cluster.cluster_ico.input
 
   cluster.pe = Empty_Component(properties=OrderedDict(
@@ -379,8 +387,8 @@ def get_config(tp, cluster_id):
   cluster.dma.ext_irq_itf = cluster.dma_irq
   cluster.cluster_ico.soc = cluster.soc
   cluster.input = cluster.cluster_ico.input
-  cluster.cluster_ico.l1 = cluster.l1_ico.ext2loc_itf
-  cluster.cluster_ico.l1_ts = cluster.l1_ico.ext2loc_ts_itf
+  cluster.cluster_ico.l1 = cluster.l1_ico.ext2loc_itf #4053
+  cluster.cluster_ico.l1_ts = cluster.l1_ico.ext2loc_ts_itf #4057
   cluster.cluster_ico.periph_ico = cluster.periph_ico.input
   cluster.cluster_ico.periph_ico_alias = cluster.periph_ico.input
   cluster.periph_ico.icache_ctrl = cluster.icache_ctrl.input
@@ -390,8 +398,8 @@ def get_config(tp, cluster_id):
     cluster.periph_ico.hwacc = cluster.hwacc.input
   if has_ima:
     cluster.periph_ico.ima = cluster.ima.input
-  if has_ne16:
-    cluster.periph_ico.ne16 = cluster.ne16.input
+  if has_neureka:
+    cluster.periph_ico.neureka = cluster.neureka.input
   cluster.periph_ico.event_unit = cluster.event_unit.input
   cluster.periph_ico.cluster_ctrl = cluster.cluster_ctrl.input
   cluster.periph_ico.timer = cluster.timer.input
@@ -410,9 +418,9 @@ def get_config(tp, cluster_id):
     for i in range(0, nb_pe):
       cluster.ima.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ima_irq, i))
 
-  if has_ne16:
+  if has_neureka:
     for i in range(0, nb_pe):
-      cluster.ne16.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (ne16_irq, i))
+      cluster.neureka.irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (neureka_irq, i))
 
   for i in range(0, nb_pe):
     cluster.icache_ctrl.flush = cluster.get('pe%d' % i).flush_cache
@@ -439,16 +447,16 @@ def get_config(tp, cluster_id):
     cluster.get('pe%d' % i).fetch = cluster.icache.new_itf('input_%d' % i)
 
   for i in range(0, nb_pe):
-    cluster.l1_ico.set('event_unit_%d' % i, cluster.event_unit.new_itf('demux_in_%d' % i))
+    cluster.l1_ico.set('event_unit_%d' % i, cluster.event_unit.new_itf('demux_in_%d' % i)) #4133, 4137, 4141, 4145, 4149, 4153, 4157, 4161
 
   for i in range(0, nb_pe):
-    cluster.l1_ico.set('event_unit_alias_%d' % i, cluster.event_unit.new_itf('demux_in_%d' % i))
+    cluster.l1_ico.set('event_unit_alias_%d' % i, cluster.event_unit.new_itf('demux_in_%d' % i)) #4165, 4169, 4173, 4177, 4181, 4185, 4189, 4193
 
   for i in range(0, nb_pe):
-    cluster.l1_ico.set('dma_%d'%i, cluster.dma.new_itf('in_%d'%i))
+    cluster.l1_ico.set('dma_%d'%i, cluster.dma.new_itf('in_%d'%i)) #4197, 4201, 4205, 4209, 4213, 4217, 4221, 4225
 
   for i in range(0, nb_pe):
-    cluster.l1_ico.set('dma_alias_%d'%i, cluster.dma.new_itf('in_%d'%i))
+    cluster.l1_ico.set('dma_alias_%d'%i, cluster.dma.new_itf('in_%d'%i)) #4229, 4233, 4237, 4241, 4245, 4249, 4253, 4257
 
   for i in range(0, nb_pe):
     cluster.dma.set('event_itf_%d' % i, cluster.event_unit.new_itf('in_event_%d_pe_%d' % (dma_irq_0, i)))
@@ -487,9 +495,9 @@ def get_config(tp, cluster_id):
     cluster.l1.set('in_%d'%i, cluster.l1.get('bank%d'%i).input)
 
   for i in range(0, nb_l1_banks):
-    cluster.l1_ico.set('out_%d' % i, cluster.l1.new_itf('in_%d' % i))
+    cluster.l1_ico.set('out_%d' % i, cluster.l1.new_itf('in_%d' % i)) #4261, 4265, 4269, 4273, 4277, 4281, 4285, 4289, 4293, 4297, 4301, 4305, 4309, 4313, 4317, 4321
 
-  cluster.l1_ico.cluster_ico = cluster.cluster_ico.input
+  cluster.l1_ico.cluster_ico = cluster.cluster_ico.input #4325
   cluster.dma.ext_itf = cluster.cluster_ico.input
 
   for i in range(0, 4):
@@ -513,9 +521,9 @@ def get_config(tp, cluster_id):
       cluster.ima.set('out_%d' % i, cluster.l1_ico.new_itf('ima_in_%d' % i))
       cluster.l1_ico.set('ima_in_%d' % i, cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4 + i)))
 
-  if has_ne16:
-    cluster.ne16.set('out', cluster.l1_ico.new_itf('ne16_in'))
-    cluster.l1_ico.set('ne16_in', cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4)))
+  if has_neureka:
+    cluster.neureka.set('out', cluster.l1_ico.new_itf('neureka_in'))
+    cluster.l1_ico.set('neureka_in', cluster.l1_ico.interleaver.new_itf('in_%d' % (nb_pe + 4)))
 
   for i in range(0, nb_pe):
     cluster.l1_ico.get('pe%d_ico' % i).dma = cluster.l1_ico.new_itf('dma_%d'%i)
@@ -581,6 +589,53 @@ def get_config(tp, cluster_id):
     for i in range(0, nb_pe):
       cluster.job_fifo_irq = cluster.event_unit.new_itf('in_event_%d_pe_%d' % (job_fifo_irq, i))
 
+  if has_wmem:
+    cluster.wmem_ico = Component(properties=OrderedDict([
+      ('@includes@', ["ips/interco/router.json"]),
+      ('latency', 2),
+      ('mappings', OrderedDict([
+        ("wmem_translated_address", get_mapping_area(tp.get_child_dict("cluster/wmem"), cluster_size, cluster_id, True))
+      ]))
+    ]))
 
+    cluster.cluster_ico.wmem_soc = cluster.wmem_ico.input 
+    cluster.neureka.wmem_out = cluster.wmem_ico.input
+
+    cluster.wmem = Component(properties=OrderedDict([
+      ('vp_class', None),
+      ('vp_component', ""),
+      ('size', tp.get_child_int("cluster/wmem/size")),
+      ('alias', False),
+      ('has_l1_alias', False),
+      ('alias_base', tp.get_child_str("cluster/alias")),
+      ('map_base', tp.get_child_str("cluster/wmem/base")),
+      ('nb_banks', nb_wmem_banks),
+    ]))
+    wmem_interleaver_nb_masters = 1 
+
+    cluster.interleaver = Component(properties=OrderedDict([
+      ('@includes@', ["ips/wmem/wmem_interleaver.json"]),
+      ('nb_slaves', nb_wmem_banks),
+      ('nb_masters', wmem_interleaver_nb_masters),
+      ('interleaving_bits', 2)
+    ]))
+    
+    for i in range(0, nb_wmem_banks):
+      cluster.wmem.add_component(
+        'bank%d' % i,
+        Component(properties=OrderedDict([
+          ('size', wmem_bank_size),
+          ('width_bits', 2),
+          ('vp_class', "memory/memory"),
+          ('vp_component', 'memory.memory_impl'),
+          ('power_models', {"@includes@": ["power_models/l1/l1.json"] }),
+          ('power_trigger', True if i == 0 else False)
+        ]))
+      )
+    for i in range(0,wmem_interleaver_nb_masters):
+      cluster.wmem_ico.wmem_translated_address = cluster.interleaver.new_itf('in_%d' % i) 
+    for i in range(0, nb_wmem_banks):
+      cluster.interleaver.set('out_%d'%i, cluster.wmem.new_itf('in_%d' % i))
+      cluster.wmem.set('in_%d'%i, cluster.wmem.get('bank%d'%i).input)
 
   return cluster

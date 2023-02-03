@@ -115,24 +115,24 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 
     pos_cluster_fc_task_lock = 0;
 
-#if __PLATFORM__ != ARCHI_PLATFORM_FPGA
-    {
-        // Setup FLL
-        int init_freq = pos_fll_init(POS_FLL_CL);
+#if __PLATFORM__ != ARCHI_PLATFORM_FPGA && !defined(SKIP_PLL_INIT)
+    /* { */
+    /*     // Setup FLL */
+    /*     int init_freq = pos_fll_init(POS_FLL_CL); */
 
-        // Check if we have to restore the cluster frequency
-        // otherwise just set it to the one returned by the fll
-        int freq = pi_freq_get(PI_FREQ_DOMAIN_CL);
+    /*     // Check if we have to restore the cluster frequency */
+    /*     // otherwise just set it to the one returned by the fll */
+    /*     int freq = pi_freq_get(PI_FREQ_DOMAIN_CL); */
 
-        if (freq)
-        {
-            pi_freq_set(PI_FREQ_DOMAIN_CL, freq);
-        }
-        else
-        {
-            pos_freq_set_value(PI_FREQ_DOMAIN_CL, init_freq);
-        }
-    }
+    /*     if (freq) */
+    /*     { */
+    /*         pi_freq_set(PI_FREQ_DOMAIN_CL, freq); */
+    /*     } */
+    /*     else */
+    /*     { */
+    /*         pos_freq_set_value(PI_FREQ_DOMAIN_CL, init_freq); */
+    /*     } */
+    /* } */
 #endif
 
     /* Activate cluster top level clock gating */
