@@ -29,9 +29,6 @@ VP_COMP_STD_LDFLAGS=-lpulpvp
 VP_COMP_DBG_LDFLAGS=-lpulpvp-debug
 VP_COMP_SV_LDFLAGS=-lpulpvp-sv
 
-VP_COMP_CFLAGS += -Werror -Wfatal-errors
-VP_COMP_LDFLAGS += -Werror -Wfatal-errors
-
 ifdef VP_USE_SYSTEMV
 VP_COMP_CFLAGS += -D__VP_USE_SYSTEMV
 endif

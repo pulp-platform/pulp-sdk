@@ -13,9 +13,9 @@ endif
 
 # CC = g++
 
-CFLAGS +=  -MMD -MP -O2 -g -fpic -Isrc -std=c++11 -Werror -Wall -I$(INSTALL_DIR)/include
+CFLAGS +=  -MMD -MP -O2 -g -fpic -Isrc -std=c++11 -Wall -I$(INSTALL_DIR)/include
 
-LDFLAGS += -O2 -g -Werror -Wall -lz -L$(INSTALL_DIR)/lib -Wl,--whole-archive -ljson -Wl,--no-whole-archive
+LDFLAGS += -O2 -g -Wall -lz -L$(INSTALL_DIR)/lib -Wl,--whole-archive -ljson -Wl,--no-whole-archive
 
 ifdef VP_USE_SYSTEMC
 CFLAGS += -D__VP_USE_SYSTEMC -I$(SYSTEMC_HOME)/include

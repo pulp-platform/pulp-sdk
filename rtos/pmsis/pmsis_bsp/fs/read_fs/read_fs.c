@@ -140,7 +140,7 @@ static void __pi_fs_free(pi_read_fs_t *fs)
 static void __pi_fs_mount_step(void *arg)
 {
     pi_read_fs_t *fs = (pi_read_fs_t *) arg;
-    const pi_partition_table_t partition_table = NULL;
+    pi_partition_table_t partition_table = NULL;
     const pi_partition_t *readfs_partition = NULL;
     pi_err_t rc;
     
@@ -162,7 +162,6 @@ static void __pi_fs_mount_step(void *arg)
                 pi_partition_table_free(partition_table);
                 goto error;
             }
-            
             fs->partition_offset = pi_partition_get_flash_offset(readfs_partition);
             
             pi_partition_close(readfs_partition);
@@ -251,10 +250,8 @@ static int32_t __pi_read_fs_mount(struct pi_device *device)
     // a long time due to flash access in case of synchronous mode.
     
     //pi_trace(pi_trace_DEV_CTRL, "[FS] Mounting file-system (device: %s)\n", dev_name);
-    
     pi_read_fs_t *fs = pmsis_l2_malloc(sizeof(pi_read_fs_t));
     if(fs == NULL) goto error;
-    
     pi_task_t task;
     
     // Initialize all fields where something needs to be closed in case of error
@@ -264,25 +261,20 @@ static int32_t __pi_read_fs_mount(struct pi_device *device)
     fs->fs_data.cluster_reqs_first = NULL;    
     fs->pi_fs_l2 = pmsis_l2_malloc(sizeof(pi_fs_l2_t));
     if(fs->pi_fs_l2 == NULL) goto error;
-    
     fs->mount_step = 1;
     fs->pi_fs_info = NULL;
     fs->pending_event = pi_task_block(&task);
     fs->partition_name = conf->partition_name;
-    
     device->data = (void *) fs;
-    
     // This function will take care of either blocking the thread if we are in blocking mode
     // or will just execute it asynchronously
     __pi_fs_mount_step((void *) fs);
 
     pi_task_wait_on(&task);
-    
     if(fs->error)
         goto error;
     
     return 0;
-    
     error:  
     //__pi_fs_error(FS_MOUNT_MEM_ERROR);
     __pi_fs_free(fs);

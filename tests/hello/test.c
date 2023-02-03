@@ -9,16 +9,27 @@
  */
 
 #include "pmsis.h"
-
+#include "pmsis/cluster/cluster_team/cl_team.h"
+#if defined(RTL_PLATFORM)
+    #include "siracusa_padctrl.h"
+#endif
 
 #if defined(CLUSTER)
 void pe_entry(void *arg)
-{
-    printf("Hello from cluster_id: %d, core_id: %d\n", pi_cluster_id(), pi_core_id());
+{   
+    volatile int myid = pi_core_id();
+    for(volatile int i=0; i<(myid+1)*15000; i++){
+        asm("nop");
+    }
+
+    printf("Hello from cluster=%d, core=%d\n\r", pi_cluster_id(), pi_core_id());
+
 }
 
 void cluster_entry(void *arg)
 {
+    int ncores=pi_cl_team_nb_cores();   
+
     pi_cl_team_fork((NUM_CORES), pe_entry, 0);
 }
 #endif
@@ -56,5 +67,9 @@ static void test_kickoff(void *arg)
 
 int main()
 {
+    #if defined(RTL_PLATFORM)
+        padctrl_mode_set(PAD_GPIO32, PAD_MODE_UART0_RX);
+        padctrl_mode_set(PAD_GPIO33, PAD_MODE_UART0_TX);
+    #endif
     return pmsis_kickoff((void *)test_kickoff);
 }

@@ -30,7 +30,7 @@ def get_config(tp):
   debug_bridge_commands = None
   chip              = tp.get_child_str('chip')
 
-  if chip in ['pulpissimo', 'pulpissimo_v1', 'pulp', 'pulp_v1']:
+  if chip in ['pulpissimo', 'pulpissimo_v1', 'pulp', 'pulp_v1', 'siracusa']:
       start_addr = '0x%X' % (tp.get_child_int("soc/peripherals/fc_dbg_unit/base") + 0x0000)
       start_value = '0'
       stop_addr = '0x%X' % (tp.get_child_int("soc/peripherals/fc_dbg_unit/base") + 0x0000)

@@ -112,7 +112,6 @@ static uint64_t smallest_norm_neg_value[2] = {0x0000000000000000, 0x800100000000
 #define NUM_BITS_FRAC (112)
 typedef int128_t int_t;
 typedef uint128_t uint_t;
-typedef __float128 fp_t;
 #define PRINTF_FORMAT "%.38Lf"
 #endif /* FLEXFLOAT_ON_QUAD */
 
@@ -207,9 +206,6 @@ void ff_init(flexfloat_t *obj, flexfloat_desc_t desc);
 void ff_init_float(flexfloat_t *obj, float value, flexfloat_desc_t desc);
 void ff_init_double(flexfloat_t *obj, double value, flexfloat_desc_t desc);
 void ff_init_longdouble(flexfloat_t *obj, long double value, flexfloat_desc_t desc);
-#ifdef FLOAT_ON_QUAD
-  void ff_init_float128(flexfloat_t *obj, __float128 value, flexfloat_desc_t desc);
-#endif
 void ff_init_int(flexfloat_t *obj, int value, flexfloat_desc_t desc);
 void ff_init_long(flexfloat_t *obj, long value, flexfloat_desc_t desc);
 void ff_cast(flexfloat_t *obj, const flexfloat_t *source, flexfloat_desc_t desc);
@@ -219,9 +215,6 @@ void ff_cast(flexfloat_t *obj, const flexfloat_t *source, flexfloat_desc_t desc)
 float ff_get_float(const flexfloat_t *obj);
 double ff_get_double(const flexfloat_t *obj);
 long double ff_get_longdouble(const flexfloat_t *obj);
-#ifdef FLOAT_ON_QUAD
-  __float128 ff_get_float128(const flexfloat_t *obj);
-#endif
 
 
 // Artihmetic operators

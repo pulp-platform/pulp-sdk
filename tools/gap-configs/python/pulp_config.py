@@ -182,7 +182,7 @@ def get_configs_from_env(path=None, interpret=True):
     config_str = os.environ.get('PULP_CURRENT_CONFIG')
     if config_str is None:
       config_str = os.environ.get('PULP_CONFIGS')
-
+  print("INSIDE get_configs_from_env "+config_str)
   if config_str is None:
     raise Exception("Configurations must e given either through PULP_CURRENT_CONFIG or PULP_CONFIGS")
 
