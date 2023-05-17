@@ -17,7 +17,7 @@
 #ifndef __POS_CHIPS_KRAKEN_SOC_H__
 #define __POS_CHIPS_KRAKEN_SOC_H__
 
-#define POS_FLL_EHWPE 3
+#define POS_FLL_EHWPE 4
 #define POS_FLL_CL 2
 #define POS_FLL_PERIPH 1
 #define POS_FLL_FC 0

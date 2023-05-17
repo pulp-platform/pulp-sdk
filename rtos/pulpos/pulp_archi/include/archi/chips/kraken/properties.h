@@ -168,7 +168,8 @@
 /*
  * FLLS
 */
-#define ARCHI_NB_FLL  4
+// SET TO 5 even though we only have 4 FLLs - this is to deal with the stupid FLL addressing so we can set POS_FLL_EHWPE to 4
+#define ARCHI_NB_FLL  5
 
 
 
