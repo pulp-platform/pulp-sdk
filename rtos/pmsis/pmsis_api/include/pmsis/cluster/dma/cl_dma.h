@@ -68,7 +68,7 @@ typedef enum {
  * It can be instantiated as a normal variable, for example as a global
  * variable, a local one on the stack, or through the memory allocator.
  */
-typedef struct pi_cl_dma_cmd_s pi_cl_dma_cmd_t;
+// typedef struct pi_cl_dma_cmd_s pi_cl_dma_cmd_t;
 
 /** \brief Structure for 1D DMA copy structure.
  *
@@ -105,7 +105,7 @@ typedef pi_cl_dma_copy_t pi_cl_dma_copy_2d_t;
  *   with pi_cl_dma_wait to wait for the completion of this transfer.
  */
 static inline void pi_cl_dma_cmd(uint32_t ext, uint32_t loc, uint32_t size,
-  pi_cl_dma_dir_e dir, pi_cl_dma_cmd_t *cmd);
+  pi_cl_dma_dir_e dir, pi_cl_dma_copy_t *cmd);
 
 /** \brief 2D DMA memory transfer. 
  *
@@ -126,7 +126,7 @@ static inline void pi_cl_dma_cmd(uint32_t ext, uint32_t loc, uint32_t size,
  *   with pi_cl_dma_wait to wait for the completion of this transfer.
  */
 static inline void pi_cl_dma_cmd_2d(uint32_t ext, uint32_t loc, uint32_t size,
-  uint32_t stride, uint32_t length, pi_cl_dma_dir_e dir, pi_cl_dma_cmd_t *cmd);
+  uint32_t stride, uint32_t length, pi_cl_dma_dir_e dir, pi_cl_dma_copy_t *cmd);
 
 /** \brief Simple DMA transfer completion wait.
  *
@@ -135,7 +135,7 @@ static inline void pi_cl_dma_cmd_2d(uint32_t ext, uint32_t loc, uint32_t size,
  *
  * \param   cmd  The copy structure (1d or 2d).
  */
-static inline void pi_cl_dma_cmd_wait(pi_cl_dma_cmd_t *cmd);
+static inline void pi_cl_dma_cmd_wait(pi_cl_dma_copy_t *cmd);
 
 /** \brief Simple DMA transfer completion flush.
  *

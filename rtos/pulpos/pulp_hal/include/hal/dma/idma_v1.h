@@ -29,8 +29,8 @@
 #define DMA_MAX_NUM_STREAMS 4
 #define IDMA_EVENT 8 // all iDMA tx_cplt events are broadcast
 
-#define IDMA_DEFAULT_CONFIG 0x1
-#define IDMA_DEFAULT_CONFIG_2D 0x9
+#define IDMA_DEFAULT_CONFIG 0x0
+#define IDMA_DEFAULT_CONFIG_2D 0x8
 
 typedef unsigned int dma_ext_t;
 typedef unsigned int dma_loc_t;
@@ -243,7 +243,13 @@ static inline unsigned int pulp_idma_get_conf(unsigned int decouple, unsigned in
 }
 
 static inline unsigned int pulp_idma_tx_cplt(unsigned int dma_tx_id) {
-  return (dma_tx_id & 0x0fffffff) <= DMA_READ(PULPOPEN_IDMA_DONE_REG_OFFSET + ((dma_tx_id & 0xf0000000) >> 26));
+  unsigned int done_id = DMA_READ(PULPOPEN_IDMA_DONE_REG_OFFSET + ((dma_tx_id & 0xf0000000) >> 26));
+  unsigned int my_id = (dma_tx_id & 0x0fffffff);
+  if (done_id>>27 == my_id >> 27) {
+    return my_id <= done_id;
+  } else {
+    return ((done_id & 0x07ffffff) < 0x04000000);
+  }
 }
 
 
@@ -256,7 +262,6 @@ static inline unsigned int pulp_idma_memcpy(unsigned int const dst_addr, unsigne
 
   // Launch TX
   unsigned int dma_tx_id = DMA_READ(PULPOPEN_IDMA_NEXT_ID_REG_OFFSET);
-
   return dma_tx_id;
 }
 
@@ -300,12 +305,19 @@ static inline unsigned int plp_dma_status() {
   return DMA_READ(PULPOPEN_IDMA_STATUS_REG_OFFSET);
 }
 
+static inline unsigned int plp_dma_backend_busy(unsigned int backend_id) {
+  return (plp_dma_status() >> backend_id) & 1;
+}
+
 static inline void plp_dma_wait(unsigned int dma_tx_id) {
-  while(!pulp_idma_tx_cplt(dma_tx_id)) {
-    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  while(!pulp_idma_tx_cplt(dma_tx_id)){
+    asm volatile ("nop");
+    // printf("ID: %x, cplt: %d, busy: %d\n", dma_tx_id, pulp_idma_tx_cplt(dma_tx_id), plp_dma_status());
+    // eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
   }
   return;
 }
+
 
 static inline int plp_dma_memcpy(dma_ext_t ext, unsigned int loc, unsigned int size, int ext2loc) {
   if (ext2loc) {

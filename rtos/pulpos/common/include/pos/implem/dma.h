@@ -22,11 +22,14 @@
 #define __POS_IMPLEM_DMA_H__
 
 
-struct pi_cl_dma_cmd_s
-{
-  uint32_t id;
-  struct pi_cl_dma_cmd_s *next;
-};
+// struct pi_cl_dma_cmd_s
+// {
+//   uint32_t id;
+//   struct pi_cl_dma_cmd_s *next;
+// };
+
+
+// typedef pi_cl_dma_copy_t pi_cl_dma_cmd_t;
 
 
 static inline void __cl_dma_flush()
@@ -35,43 +38,54 @@ static inline void __cl_dma_flush()
 }
 
 
-static inline void __cl_dma_wait_safe(pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_wait_safe(pi_cl_dma_copy_t *copy)
 {
-  int counter = copy->id;
-
+  uint32_t counter = copy->id;
+// #if MCHAN_VERSION == 7
+  // printf("ID: %x, counter: %x\n", copy->id, counter);
   plp_dma_wait(counter);
-  copy->id = -1;
+// #elif IDMA_VERSION == 1
+  // for (int i = 0; i < PULPOPEN_IDMA_NUM_BACKENDS; i++) {
+  //   plp_dma_wait(i<<28 | (0x0fffffff & (counter)));
+  // }
+// #else
+// #error DMA Version not specified
+// #endif
+  // copy->id = -1;
 }
 
 
-static inline void __cl_dma_wait(pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_wait(pi_cl_dma_copy_t *copy)
 {
-  int counter = copy->id;
+  uint32_t counter = copy->id;
 
-  eu_mutex_lock_from_id(0);
 
 #if MCHAN_VERSION == 7
+  eu_mutex_lock_from_id(0);
   while(DMA_READ(MCHAN_STATUS_OFFSET) & (1 << counter)) {
-#elif IDMA_VERSION == 1
-  while(!pulp_idma_tx_cplt(counter)) {
-#else
-#error DMA Version not specified
-#endif
     eu_mutex_unlock_from_id(0);
     eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
     eu_mutex_lock_from_id(0);
   }
-
-#if MCHAN_VERSION == 7
   plp_dma_counter_free(counter);
-#endif
-  copy->id = -1;
-
   eu_mutex_unlock_from_id(0);
+
+#elif IDMA_VERSION == 1
+  for (int i = 0; i < PULPOPEN_IDMA_NUM_BACKENDS; i++) {
+
+    eu_mutex_lock_from_id(0);
+    while(!pulp_idma_tx_cplt(i<<28 | (0x0fffffff & (counter)))) {
+      eu_mutex_unlock_from_id(0);
+      eu_evt_maskWaitAndClr(1<<ARCHI_CL_EVT_DMA0);
+      eu_mutex_lock_from_id(0);
+    }
+    eu_mutex_unlock_from_id(0);
+  }
+#endif
+  // copy->id = -1;
 }
 
-
-static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_copy_t *copy)
 {
   eu_mutex_lock_from_id(0);
   
@@ -85,12 +99,12 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
   plp_dma_cmd_push(cmd, loc, ext);
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
-  if (merge) {
-    // Naive implementation -> wait for previous transfer in chain to complete
-    int counter = copy->id;
+  // if (merge) {
+  //   // Naive implementation -> wait for previous transfer in chain to complete
+  //   int counter = copy->id;
 
-    plp_dma_wait(counter);
-  }
+  //   plp_dma_wait(counter);
+  // }
   copy->id = plp_dma_memcpy(ext, loc, size, dir);
 #else
 #error DMA Version not specified
@@ -100,7 +114,7 @@ static inline void __cl_dma_memcpy(unsigned int ext, unsigned int loc, unsigned 
 }
 
 
-static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_copy_t *copy)
 {
 #if MCHAN_VERSION == 7
   int id = copy->id;
@@ -112,13 +126,14 @@ static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsi
   plp_dma_cmd_push(cmd, loc, ext);
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
-  if (merge) {
-    // Naive implementation -> wait for previous transfer in chain to complete
-    int counter = copy->id;
+  // if (merge) {
+  //   // Naive implementation -> wait for previous transfer in chain to complete
+  //   int counter = copy->id;
 
-    plp_dma_wait(counter);
-  }
+  //   plp_dma_wait(counter);
+  // }
   copy->id = plp_dma_memcpy(ext, loc, size, dir);
+  // plp_dma_wait(copy->id);
 #else
 #error DMA Version not specified
 #endif
@@ -126,7 +141,7 @@ static inline void __cl_dma_memcpy_safe(unsigned int ext, unsigned int loc, unsi
 
 
 #if 0
-static inline void __cl_dma_memcpy_irq(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_memcpy_irq(unsigned int ext, unsigned int loc, unsigned short size, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_copy_t *copy)
 {
   eu_mutex_lock_from_id(0);
   
@@ -157,7 +172,7 @@ static inline void __cl_dma_memcpy_irq(unsigned int ext, unsigned int loc, unsig
 
 
 
-static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned short length, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned short length, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_copy_t *copy)
 {
   eu_mutex_lock_from_id(0);
 
@@ -173,12 +188,12 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
   if (!merge) copy->id = id;
 
 #elif IDMA_VERSION == 1
-  if (merge) {
-    // Naive implementation -> wait for previous transfer in chain to complete
-    int counter = copy->id;
+  // if (merge) {
+  //   // Naive implementation -> wait for previous transfer in chain to complete
+  //   int counter = copy->id;
 
-    plp_dma_wait(counter);
-  }
+  //   plp_dma_wait(counter);
+  // }
   copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
 #else
 #error DMA Version not specified
@@ -187,7 +202,7 @@ static inline void __cl_dma_memcpy_2d(unsigned int ext, unsigned int loc, unsign
   eu_mutex_unlock_from_id(0);
 }
 
-static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned short length, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_cmd_t *copy)
+static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, unsigned int size, unsigned int stride, unsigned short length, pi_cl_dma_dir_e dir, int merge, pi_cl_dma_copy_t *copy)
 {  
 #if MCHAN_VERSION == 7
   int id = copy->id;
@@ -200,13 +215,14 @@ static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, u
   plp_dma_cmd_push_2d(cmd, loc, ext, stride, length);
   if (!merge) copy->id = id;
 #elif IDMA_VERSION == 1
-  if (merge) {
-    // Naive implementation -> wait for previous transfer in chain to complete
-    int counter = copy->id;
+  // if (merge) {
+  //   // Naive implementation -> wait for previous transfer in chain to complete
+  //   int counter = copy->id;
 
-    plp_dma_wait(counter);
-  }
+  //   plp_dma_wait(counter);
+  // }
   copy->id = plp_dma_memcpy_2d(ext, loc, size, stride, length, dir);
+  // plp_dma_wait(copy->id);
 #else
 #error DMA Version not specified
 #endif
@@ -216,9 +232,9 @@ static inline void __cl_dma_memcpy_2d_safe(unsigned int ext, unsigned int loc, u
 static inline void pi_cl_dma_memcpy(pi_cl_dma_copy_t *copy)
 {
 #if ARCHI_HAS_DMA_DEMUX
-  __cl_dma_memcpy_safe(copy->ext, copy->loc, copy->size, copy->dir, copy->merge, (pi_cl_dma_cmd_t *)copy);
+  __cl_dma_memcpy_safe(copy->ext, copy->loc, copy->size, copy->dir, copy->merge, (pi_cl_dma_copy_t *)copy);
 #else
-  __cl_dma_memcpy(copy->ext, copy->loc, copy->size, copy->dir, copy->merge, (pi_cl_dma_cmd_t *)copy);
+  __cl_dma_memcpy(copy->ext, copy->loc, copy->size, copy->dir, copy->merge, (pi_cl_dma_copy_t *)copy);
 #endif
 }
 
@@ -226,9 +242,9 @@ static inline void pi_cl_dma_memcpy(pi_cl_dma_copy_t *copy)
 static inline void pi_cl_dma_memcpy_2d(pi_cl_dma_copy_2d_t *copy)
 {
 #if ARCHI_HAS_DMA_DEMUX
-  __cl_dma_memcpy_2d_safe(copy->ext, copy->loc, copy->size, copy->stride, copy->length, copy->dir, copy->merge, (pi_cl_dma_cmd_t *)copy);
+  __cl_dma_memcpy_2d_safe(copy->ext, copy->loc, copy->size, copy->stride, copy->length, copy->dir, copy->merge, (pi_cl_dma_copy_t *)copy);
 #else
-  __cl_dma_memcpy_2d(copy->ext, copy->loc, copy->size, copy->stride, copy->length, copy->dir, copy->merge, (pi_cl_dma_cmd_t *)copy);
+  __cl_dma_memcpy_2d(copy->ext, copy->loc, copy->size, copy->stride, copy->length, copy->dir, copy->merge, (pi_cl_dma_copy_t *)copy);
 #endif
 }
 
@@ -249,44 +265,44 @@ static inline void pi_cl_dma_wait(void *copy)
 }
 
 
-static inline void pi_cl_dma_cmd(uint32_t ext, uint32_t loc, uint32_t size, pi_cl_dma_dir_e dir, pi_cl_dma_cmd_t *cmd)
+static inline void pi_cl_dma_cmd(uint32_t ext, uint32_t loc, uint32_t size, pi_cl_dma_dir_e dir, pi_cl_dma_copy_t *cmd)
 {
 #if ARCHI_HAS_DMA_DEMUX
-  __cl_dma_memcpy_safe(ext, loc, size, dir, 0, (pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_memcpy_safe(ext, loc, size, dir, 0, (pi_cl_dma_copy_t *)cmd);
 #else
-  __cl_dma_memcpy(ext, loc, size, dir, 0, (pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_memcpy(ext, loc, size, dir, 0, (pi_cl_dma_copy_t *)cmd);
 #endif
 }
 
 
-static inline void pi_cl_dma_cmd_safe(uint32_t ext, uint32_t loc, uint32_t size, pi_cl_dma_dir_e dir, pi_cl_dma_cmd_t *cmd)
+static inline void pi_cl_dma_cmd_safe(uint32_t ext, uint32_t loc, uint32_t size, pi_cl_dma_dir_e dir, pi_cl_dma_copy_t *cmd)
 {
-  __cl_dma_memcpy_safe(ext, loc, size, dir, 0, (pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_memcpy_safe(ext, loc, size, dir, 0, (pi_cl_dma_copy_t *)cmd);
 }
 
 
-static inline void pi_cl_dma_cmd_2d(uint32_t ext, uint32_t loc, uint32_t size, uint32_t stride, uint32_t length, pi_cl_dma_dir_e dir, pi_cl_dma_cmd_t *cmd)
+static inline void pi_cl_dma_cmd_2d(uint32_t ext, uint32_t loc, uint32_t size, uint32_t stride, uint32_t length, pi_cl_dma_dir_e dir, pi_cl_dma_copy_t *cmd)
 {
 #if ARCHI_HAS_DMA_DEMUX
-  __cl_dma_memcpy_2d_safe(ext, loc, size, stride, length, dir, 0, (pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_memcpy_2d_safe(ext, loc, size, stride, length, dir, 0, (pi_cl_dma_copy_t *)cmd);
 #else
-  __cl_dma_memcpy_2d(ext, loc, size, stride, length, dir, 0, (pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_memcpy_2d(ext, loc, size, stride, length, dir, 0, (pi_cl_dma_copy_t *)cmd);
 #endif
 }
 
 
-static inline void pi_cl_dma_cmd_wait(pi_cl_dma_cmd_t *cmd)
+static inline void pi_cl_dma_cmd_wait(pi_cl_dma_copy_t *cmd)
 {
 #if ARCHI_HAS_DMA_DEMUX
-  __cl_dma_wait_safe((pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_wait_safe((pi_cl_dma_copy_t *)cmd);
 #else
-  __cl_dma_wait((pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_wait((pi_cl_dma_copy_t *)cmd);
 #endif
 }
 
-static inline void pi_cl_dma_cmd_wait_safe(pi_cl_dma_cmd_t *cmd)
+static inline void pi_cl_dma_cmd_wait_safe(pi_cl_dma_copy_t *cmd)
 {
-  __cl_dma_wait_safe((pi_cl_dma_cmd_t *)cmd);
+  __cl_dma_wait_safe((pi_cl_dma_copy_t *)cmd);
 }
 
 

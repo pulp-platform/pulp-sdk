@@ -69,8 +69,8 @@
 #define ITC_VERSION         1
 #define FLL_VERSION         1
 #define RISCV_VERSION       4
-#define MCHAN_VERSION       7
-// #define IDMA_VERSION        1
+// #define MCHAN_VERSION       7
+#define IDMA_VERSION        1
 #define PADS_VERSION        2
 #define IMA_VERSION         1
 
@@ -90,7 +90,7 @@
 #define ARCHI_NB_CLUSTER    1
 
 #define ARCHI_HAS_DMA_DEMUX 1
-
+#define PULPOPEN_IDMA_NUM_BACKENDS 1
 
 
 /*
