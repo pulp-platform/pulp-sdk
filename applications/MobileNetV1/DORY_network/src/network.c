@@ -51,6 +51,9 @@
 #define FLASH_BUFF_SIZE 128
 #define VERBOSE 1
 
+#define CLUSTER_ICACHE_CTRL_UNIT 0x10201400
+#define CLUSTER_ICACHE_PREFETCH  CLUSTER_ICACHE_CTRL_UNIT + 0x1C
+
 unsigned int PMU_set_voltage(unsigned int Voltage, unsigned int CheckFrequencies)
 {
   return 0;
@@ -166,6 +169,7 @@ void open_filesystem(struct pi_device *flash, struct pi_device *fs)
 /* Moves the weights and the biases from hyperflash to hyperram */
 int network_setup()
 {
+  printf("network setup\n");
   pi_task_t task = {0};
   pi_task_block(&task);
   struct pi_device fs;
@@ -237,6 +241,10 @@ int network_setup()
 // on cluster function execution
 void cluster_main(void *arg) 
 {
+  //  if(pi_core_id()==0){
+  // * ((int *) CLUSTER_ICACHE_CTRL_UNIT) = 0xffffffff;
+    //* ((int *) CLUSTER_ICACHE_PREFETCH)  = 0xffffffff;
+    //}
   int *real_arg = (int *) arg;
   network_run((unsigned int) real_arg[0]);
 }
@@ -251,13 +259,15 @@ void network_run_FabricController()
 {
   int arg[1];
   arg[0] = (unsigned int) L3_weights_size;
-  PMU_set_voltage(1000, 0);
+  /*  PMU_set_voltage(1000, 0);
   pi_time_wait_us(10000);
   pi_freq_set(PI_FREQ_DOMAIN_FC, 100000000);
   pi_time_wait_us(10000);
   pi_freq_set(PI_FREQ_DOMAIN_CL, 100000000);
   pi_time_wait_us(10000);
-  
+  */
+
+  printf("network_run_FabricController\n");
   struct pi_device cluster_dev = {0};
   struct pi_cluster_conf conf;
   struct pi_cluster_task cluster_task = {0};
@@ -272,6 +282,7 @@ void network_run_FabricController()
   if (pi_cluster_open(&cluster_dev))
     return -1;
   // Then offload an entry point, this will get executed on the cluster controller
+  printf("pi_cluster_send_task_to_cl\n");
   pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
   // closing of the cluster
   pi_cluster_close(&cluster_dev);
@@ -299,6 +310,8 @@ void network_run(unsigned int L3_weights_size)
   - initial buffer allocation L2 and L1
   - variable declaration
 */
+  if(pi_is_fc()==0)
+    printf("Starting the network\n");
 /* ---------------------------------- */
 /* -------- SECTION 0 BEGIN --------- */
 /* ---------------------------------- */
