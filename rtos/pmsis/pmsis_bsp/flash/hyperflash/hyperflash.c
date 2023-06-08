@@ -769,6 +769,11 @@ static inline int hyperflash_id_alloc(struct pi_device *device)
   return pi_hyper_id_alloc(&hyperflash->hyper_device);  
 }
 
+// Burst write for Hyper flash.
+// Page boundary consideration and byte addressing mode are NOT supported.
+// nb_word <- burst length in 16b words
+// hyper_waddr <- start address of the hyperflash (byte addressing),
+// l2_addr <- start_address for L2
 static inline void hyperflash_bwrite(struct pi_device *device, uint32_t pi_flash_addr, void *buffer, int nb_word)
 {
   hyperflash_t *hyperflash = (hyperflash_t *)device->data;
@@ -787,6 +792,7 @@ static inline void hyperflash_bwrite(struct pi_device *device, uint32_t pi_flash
   }
 
   hyperflash_set_reg_exec(hyperflash, pi_flash_addr, 0x29);
+
 }
 
 static inline int hyperflash_ctl_status_regs(struct pi_device *device, uint32_t cmd, void *arg)
