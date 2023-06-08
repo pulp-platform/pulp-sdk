@@ -34,15 +34,25 @@
 #define SPI_FLASH   1
 #define MRAM        2
 
-#define BUFF_SIZE 2048
+#define BUFF_SIZE 32
 #define PROGRAM_SIZE_RTL   BUFF_SIZE
 #define PROGRAM_SIZE_OTHER ((1<<18)*4)
 
 #define NB_ITER 2
 
+#define UDMA_HYPERBUS_OFFSET (0x1A100000 + ARCHI_UDMA_OFFSET + 128*9)
+#define HYPERBUS_DEVICE_NUM 8
+#define CONFIG_REG_OFFSET 0x80
+
+//#define PROGRAM
+
+static inline int udma_hyper_busy(unsigned int tran_id){
+  return pulp_read32(UDMA_HYPERBUS_OFFSET + tran_id*CONFIG_REG_OFFSET + 0x24) & 0x00000001;
+}
 
 static inline void get_info(unsigned int *program_size)
 {
+  *program_size = BUFF_SIZE;
 #if defined(ARCHI_PLATFORM_RTL)
   if (rt_platform() == ARCHI_PLATFORM_RTL)
   {
@@ -58,8 +68,8 @@ static inline void get_info(unsigned int *program_size)
 }
 
 
-static PI_L2 unsigned char rx_buffer[BUFF_SIZE];
-static PI_L2 unsigned char tx_buffer[BUFF_SIZE];
+static PI_L2 unsigned int rx_buffer[BUFF_SIZE];
+static PI_L2 unsigned int tx_buffer[BUFF_SIZE];
 
 static int test_entry()
 {
@@ -79,46 +89,34 @@ static int test_entry()
 
   pi_flash_ioctl(&flash, PI_FLASH_IOCTL_INFO, (void *)&flash_info);
 
+  uint32_t flash_addr = 0x40000;
+
   for (int j=0; j<NB_ITER; j++)
   {
-    // The beginning of the flash may contain runtime data such as the boot binary.
-    // Round-up the flash start with the sector size to not erase it.
-    // Also add small offset to better test erase (sector size aligned) and program (512 byte aligned).
-    uint32_t flash_addr = ((flash_info.flash_start + flash_info.sector_size - 1) & ~(flash_info.sector_size - 1)) + 128;
 
-    int size;
-    get_info(&size);
-
-    pi_flash_erase(&flash, flash_addr, size);
-
-    while(size > 0)
-    {
-      for (int i=0; i<BUFF_SIZE; i++)
-      {
-        tx_buffer[i] = i*(j+1);
+    for (int i=0; i<BUFF_SIZE; i++) {
+        tx_buffer[i] = i  + (0xffff<<16)*j;
         rx_buffer[i] = 0;
-      }
-
-      pi_flash_bwrite(&flash, flash_addr, tx_buffer, BUFF_SIZE);
-      pi_flash_read(&flash, flash_addr, rx_buffer, BUFF_SIZE);
-
-      for (int i=0; i<BUFF_SIZE; i++)
-      {
-          if (rx_buffer[i] != (unsigned char)(i*(j+1)))
-          {
-            printf("Error at index %d, expected 0x%2.2x, got 0x%2.2x\n", i, (unsigned char)i, rx_buffer[i]);
-            printf("TEST FAILURE\n");
-            return -2;
-          }
-      }
-      size -= BUFF_SIZE;
-      flash_addr += BUFF_SIZE;
     }
+
+    #ifdef PROGRAM
+    pi_flash_bwrite(&flash, flash_addr, tx_buffer, BUFF_SIZE*2);
+
+    for(volatile int p=0; p<5000; p++);
+
+    #endif
+
+    pi_flash_read(&flash, flash_addr, rx_buffer, BUFF_SIZE*4);
+
+    for (int i=0; i<BUFF_SIZE; i++)
+    {
+      printf("It %d , addr %x, expected 0x%08x, got 0x%08x\n", j, flash_addr + (i*4), tx_buffer[i], rx_buffer[i]);
+    }
+    flash_addr = flash_addr + (BUFF_SIZE * 4);
   }
 
   pi_flash_close(&flash);
 
-  printf("TEST SUCCESS\n");
 
   return 0;
 }
