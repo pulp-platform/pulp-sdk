@@ -129,7 +129,6 @@ SECTIONS
 
 
   .got : {
-    . = ALIGN(4);
     *(.got.plt) * (.igot.plt) *(.got) *(.igot)
   } > L2
 
