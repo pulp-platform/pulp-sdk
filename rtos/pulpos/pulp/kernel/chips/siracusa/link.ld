@@ -268,7 +268,7 @@ SECTIONS
     *(.data_tiny_l1.*)
     *(.data_alias_l1)
     *(.data_alias_l1.*)
-  } > L1_aliased AT> L2
+  } > L2_aliased AT> L2
 
   .l1cluster_g (ORIGIN(L1) + SIZEOF(.data_tiny_l1)): {
     . = ALIGN(4);
