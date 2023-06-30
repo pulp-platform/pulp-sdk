@@ -36,7 +36,10 @@ pos_init_entry:
     andi    a1, a0, 0x1f
     srli    a0, a0, 5
     li      a2, ARCHI_FC_CID
-    bne     a0, a2, pos_pe_start
+    beq     a0, a2, cluster_done
+    j       pos_pe_start
+	
+cluster_done:	
 
 #endif
 
