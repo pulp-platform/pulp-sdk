@@ -20,7 +20,7 @@
 
 #include <pos/data/data.h>
 
-    .section .text_l2
+    .section .text_l2, "ax", %progbits
 
     .global pos_task_push_asm
 pos_task_push_asm:
