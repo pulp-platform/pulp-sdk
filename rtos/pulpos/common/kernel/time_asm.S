@@ -20,7 +20,7 @@
 
 #include <pos/data/data.h>
 
-    .section .text_l2
+    .section .text_l2, "ax", %progbits
 
     .global pos_time_timer_handler_asm
 pos_time_timer_handler_asm:

@@ -8,7 +8,7 @@ export VEGA_SRC
 all:
 ifdef PULPOS
 	make -f rules/pulpos.mk build install
-endif
+endif		
 
 clean:
 ifdef PULPOS
@@ -21,5 +21,5 @@ ifdef PULPOS
 endif
 ifdef SRC
 	mkdir -p $(TARGET_INSTALL_DIR)/src/pmsis_bsp
-	cp -r bsp camera display flash ram fs include zephyr $(TARGET_INSTALL_DIR)/src/pmsis_bsp
+	cp -r bsp partition camera display flash ram fs include zephyr $(TARGET_INSTALL_DIR)/src/pmsis_bsp
 endif

@@ -329,7 +329,11 @@ extern "C" void *model_load(void *_config, void *handle)
 
   std::string module_name = module_config->get_str();
 
+#if (!__APPLE__)
   void *module = dlopen(module_name.c_str(), RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND);
+#else
+  void *module = dlopen(module_name.c_str(), RTLD_NOW | RTLD_GLOBAL);
+#endif
   if (module == NULL)
   {
     dpi_fatal_stub(handle, "ERROR, Failed to open periph model (%s) with error: %s", module_name.c_str(), dlerror());
