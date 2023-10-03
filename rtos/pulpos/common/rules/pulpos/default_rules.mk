@@ -64,12 +64,14 @@ PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_GVSOC
 endif
 ifeq '$(platform)' 'board'
 PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_BOARD
+io = uart
 endif
 ifeq '$(platform)' 'rtl'
 PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_RTL
 endif
 ifeq '$(platform)' 'fpga'
 PULP_CFLAGS += -D__PLATFORM__=ARCHI_PLATFORM_FPGA
+io = uart
 endif
 
 ifdef io
