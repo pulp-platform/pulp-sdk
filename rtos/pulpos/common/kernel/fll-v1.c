@@ -118,7 +118,7 @@ void pos_freq_wait_convergence(int fll)
 unsigned int pos_fll_init(int fll)
 {
     FREQ_TRACE(POS_LOG_INFO, "Initializing FLL (fll: %d)\n", fll);
-    
+    # if __PLATFORM__ != ARCHI_PLATFORM_FPGA
     fll_reg_conf1_t reg1 = { .raw = hal_fll_conf_reg1_get(fll) };
 
     // Only lock the fll if it is not already done by the boot code
@@ -165,6 +165,11 @@ unsigned int pos_fll_init(int fll)
     FREQ_TRACE(POS_LOG_INFO, "FLL is locked (fll: %d, freq: %d)\n", fll, freq);
 
     return freq;
+    # else
+    // on FPGA, we have a number of clock generators which are all configured to run at the same frequency
+    pos_fll_is_on[fll] = 1;
+    return ARCHI_FPGA_FREQUENCY;
+    # endif
 }
 
 
