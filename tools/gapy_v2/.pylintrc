@@ -1,3 +1,0 @@
-[DESIGN]
-max-attributes=12
-disable=consider-using-f-string,no-self-use,subprocess-run-check,too-many-arguments,duplicate-code,too-few-public-methods,too-many-locals
