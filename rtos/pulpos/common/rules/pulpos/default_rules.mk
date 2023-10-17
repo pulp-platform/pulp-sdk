@@ -305,21 +305,25 @@ ifdef GVSOC_COSIM
 use_gvsoc_target = 1
 endif
 
-ifeq '$(use_gvsoc_target)' '1'
-GAPY_TARGET_OPT += $(foreach module,$(subst ;, , $(GVSOC_MODULES)),--target-dir=$(module)/models)
-GAPY_TARGET_OPT += --model-dir=$(INSTALL_DIR)/models
-else
+ifneq '$(use_gvsoc_target)' '1'
 GAPY_TARGET_OPT += --target-dir=$(PULP_SDK_HOME)/tools/gapy/targets
 endif
 
 override runner_args += --flash-property=boot@flash:rom:boot \
 	--flash-property=$(TARGETS)@flash:rom:binary
 
+ifeq '$(platform)' 'gvsoc'
+GAPY_CMD = gvsoc $(GAPY_TARGET_OPT) \
+	--work-dir=$(TARGET_BUILD_DIR) \
+	--binary=$(TARGETS) \
+	$(config_args) $(gapy_args) $(runner_args)
+else
 GAPY_CMD = $(PULP_SDK_HOME)/tools/gapy_v2/bin/gapy $(GAPY_TARGET_OPT) \
 	--platform=$(platform) \
 	--work-dir=$(TARGET_BUILD_DIR) \
 	--binary=$(TARGETS) \
 	$(config_args) $(gapy_args) $(runner_args)
+endif
 
 image:
 	$(GAPY_CMD) image
