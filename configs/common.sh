@@ -35,7 +35,7 @@ export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_
 export PATH=$PULP_SDK_HOME/tools/gvsoc/gapy/bin:$PATH
 
 # GVSOC
-export GVSOC_MODULES="${GAP_SDK_HOME}/tools/gvsoc/core;${GAP_SDK_HOME}/tools/gvsoc/pulp"
+export GVSOC_MODULES="${GAP_SDK_HOME}/tools/gvsoc/core/models;${GAP_SDK_HOME}/tools/gvsoc/pulp"
 export GVSOC_TARGETS="$GAPY_V2_TARGET"
 
 
