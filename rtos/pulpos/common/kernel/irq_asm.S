@@ -19,7 +19,7 @@
 #
 
 
-  .section .text_l2
+  .section .text_l2, "ax", %progbits
 
   .global pos_irq_call_external_c_function
 pos_irq_call_external_c_function:

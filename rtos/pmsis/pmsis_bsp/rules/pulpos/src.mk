@@ -50,6 +50,7 @@ CONFIG_HYPER = 1
 endif
 
 ifeq '$(CONFIG_READFS)' '1'
+PULP_SRCS += $(BSP_FLASH_SRC)
 PULP_SRCS += $(BSP_READFS_SRC)
 CONFIG_FS = 1
 endif

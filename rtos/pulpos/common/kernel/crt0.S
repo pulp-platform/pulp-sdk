@@ -20,7 +20,7 @@
 
 #include "archi/pulp.h"
 
-    .section .text_l2
+    .section .text_l2, "ax", %progbits
     .global pos_init_entry
 pos_init_entry:
 

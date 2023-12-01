@@ -33,8 +33,6 @@
 #include "dpi/tb_driver.h"
 
 
-
-
 // NOTE for DPI models integration with Questasim.
 //
 // As vsim does not export symbols to dynamically loaded modules, we need
@@ -334,7 +332,11 @@ void *dpi_model_load(void *config, void *handle)
   
   if (periph_api == NULL)
   {
+#if !(__APPLE__)
     void *libperiph = dlopen("libpulpperiph.so", RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND);
+#else
+    void *libperiph = dlopen("libpulpperiph.dylib", RTLD_NOW | RTLD_GLOBAL);
+#endif
     if (libperiph == NULL)
     {
       dpi_print(NULL, "ERROR, Failed to open Pulp periph models library with error:");

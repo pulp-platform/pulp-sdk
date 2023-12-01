@@ -1,4 +1,3 @@
-
 [submodule "tools/gvsoc"]
 	path = tools/gvsoc
-	url = https://github.com/gvsoc/gvsoc.git
+	url = git@github.com:Scheremo/gvsoc.git

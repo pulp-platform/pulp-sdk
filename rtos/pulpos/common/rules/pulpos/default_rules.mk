@@ -189,20 +189,40 @@ override config_args += $(foreach file, $(HOSTFS_FILES), --config-opt=flash/cont
 
 define declare_app
 
-$(eval PULP_APP_SRCS_$(1) += $(PULP_APP_SRCS) $(PULP_APP_FC_SRCS) $(PULP_SRCS) $(PULP_APP_CL_SRCS) $(PULP_CL_SRCS))
-$(eval PULP_APP_ASM_SRCS_$(1) += $(PULP_APP_ASM_SRCS) $(PULP_ASM_SRCS) $(PULP_APP_CL_ASM_SRCS) $(PULP_CL_ASM_SRCS))
+$(eval PULP_SDK_SRCS_SDK = $(PULP_CL_SRCS) $(PULP_SRCS))
+$(eval PULP_SDK_ASM_SRCS_SDK = $(PULP_ASM_SRCS) $(PULP_CL_ASM_SRCS))
+$(eval PULP_SDK_OBJS_SDK += $(patsubst %.c,$(TARGET_BUILD_DIR)/SDK/%.o,$(PULP_SDK_SRCS_SDK)))
+$(eval PULP_SDK_OBJS_SDK += $(patsubst %.S,$(TARGET_BUILD_DIR)/SDK/%.o,$(PULP_SDK_ASM_SRCS_SDK)))
+$(eval PULP_APP_CFLAGS_SDK += $(PULP_ARCH_CFLAGS) $(PULP_CFLAGS) $(PULP_APP_CFLAGS) -fno-inline-functions)
+
+$(eval PULP_APP_SRCS_$(1) += $(PULP_APP_SRCS) $(PULP_APP_FC_SRCS) $(PULP_APP_CL_SRCS))
+$(eval PULP_APP_ASM_SRCS_$(1) += $(PULP_APP_ASM_SRCS) $(PULP_APP_CL_ASM_SRCS))
 $(eval PULP_APP_OBJS_$(1) += $(patsubst %.c,$(TARGET_BUILD_DIR)/$(1)/%.o,$(PULP_APP_SRCS_$(1))))
 $(eval PULP_APP_OBJS_$(1) += $(patsubst %.S,$(TARGET_BUILD_DIR)/$(1)/%.o,$(PULP_APP_ASM_SRCS_$(1))))
-
 $(eval PULP_APP_CFLAGS_$(1) += $(PULP_ARCH_CFLAGS) $(PULP_CFLAGS) $(PULP_APP_CFLAGS))
 $(eval PULP_APP_LDFLAGS_$(1) += $(PULP_ARCH_LDFLAGS) $(PULP_LDFLAGS) $(PULP_APP_LDFLAGS))
 
 -include $(PULP_APP_OBJS_$(1):.o=.d)
 
+$(TARGET_BUILD_DIR)/SDK/%.o: %.c
+	@echo "CC  $$<"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP  -fno-inline-functions $(PULP_APP_CFLAGS_SDK)
+
+$(TARGET_BUILD_DIR)/SDK/%.o: %.cpp
+	@echo "CXX $$<"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_CC) -c $< -o $@ -MMD -MP $(PULP_APP_CFLAGS_SDK)
+
+$(TARGET_BUILD_DIR)/SDK/%.o: %.S
+	@echo "CC  $$<"
+	$(V)mkdir -p `dirname $$@`
+	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP -DLANGUAGE_ASSEMBLY $(PULP_APP_CFLAGS_SDK)
+
 $(TARGET_BUILD_DIR)/$(1)/%.o: %.c
 	@echo "CC  $$<"
 	$(V)mkdir -p `dirname $$@`
-	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP $(PULP_APP_CFLAGS_$(1))
+	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP  -fno-inline-functions $(PULP_APP_CFLAGS_$(1))
 
 $(TARGET_BUILD_DIR)/$(1)/%.o: %.cpp
 	@echo "CXX $$<"
@@ -214,7 +234,7 @@ $(TARGET_BUILD_DIR)/$(1)/%.o: %.S
 	$(V)mkdir -p `dirname $$@`
 	$(V)$(PULP_CC) -c $$< -o $$@ -MMD -MP -DLANGUAGE_ASSEMBLY $(PULP_APP_CFLAGS_$(1))
 
-$(TARGET_BUILD_DIR)/$(1)/$(1): $(PULP_APP_OBJS_$(1))
+$(TARGET_BUILD_DIR)/$(1)/$(1): $(PULP_APP_OBJS_$(1)) $(PULP_SDK_OBJS_SDK)
 	@echo "LD  $$@"
 	$(V)mkdir -p `dirname $$@`
 	$(V)$(PULP_LD) -o $$@ $$^ -MMD -MP $(PULP_APP_LDFLAGS_$(1))
