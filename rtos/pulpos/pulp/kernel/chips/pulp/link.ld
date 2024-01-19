@@ -4,7 +4,6 @@ ENTRY( _start )
 MEMORY
 {
   L2           : ORIGIN = 0x1c000004, LENGTH = 0x0007fffc
-  L2_aliased   : ORIGIN = 0x00000004, LENGTH = 0x00003ffc
   L1                 : ORIGIN = 0x10000004, LENGTH = 0x0003fffc
   L1_aliased         : ORIGIN = 0x00000004, LENGTH = 0x0003fffc
 }
@@ -37,7 +36,7 @@ SECTIONS
     . = ALIGN(4);
     *(.data_tiny_fc)
     *(.data_tiny_fc.*)
-  } > L2_aliased AT> L2
+  } > L2
 
 
   .init :
@@ -145,28 +144,6 @@ SECTIONS
     stack = .;
   } > L2
 
-
-  .data : {
-    . = ALIGN(4);
-    sdata  =  .;
-    _sdata  =  .;
-    *(.data_fc)
-    *(.data_fc.*)
-    *(.data);
-    *(.data.*)
-    *(.sdata);
-    *(.sdata.*)
-    *(.heapl2ram)
-    *(.fcTcdm)
-    *(.fcTcdm.*)
-    *(.fcTcdm_g)
-    *(.fcTcdm_g.*)
-    . = ALIGN(4);
-    edata  =  .;
-    _edata  =  .;
-  } > L2
-
-
   .bss : {
     . = ALIGN(8);
     _bss_start = .;
@@ -220,6 +197,26 @@ SECTIONS
    *
    * Contains other data such as peripheral data and cluster code and data
    */
+
+  .data : {
+    . = ALIGN(4);
+    sdata  =  .;
+    _sdata  =  .;
+    *(.data_fc)
+    *(.data_fc.*)
+    *(.data);
+    *(.data.*)
+    *(.sdata);
+    *(.sdata.*)
+    *(.heapl2ram)
+    *(.fcTcdm)
+    *(.fcTcdm.*)
+    *(.fcTcdm_g)
+    *(.fcTcdm_g.*)
+    . = ALIGN(4);
+    edata  =  .;
+    _edata  =  .;
+  } > L2
 
   .l2_data MAX(0x1c010000,ALIGN(4)) :
   {
