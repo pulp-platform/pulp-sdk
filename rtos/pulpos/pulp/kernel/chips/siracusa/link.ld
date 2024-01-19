@@ -4,7 +4,6 @@ ENTRY( _start )
 MEMORY
 {
   L2           : ORIGIN = 0x1c000004, LENGTH = 0x001ffffc
-  L2_aliased   : ORIGIN = 0x00000004, LENGTH = 0x001ffffc
   L1           : ORIGIN = 0x10000004, LENGTH = 0x0003fffc
   L1_aliased   : ORIGIN = 0x00000004, LENGTH = 0x0003fffc
   WEIGHTMEM_MRAM : ORIGIN = 0x10400020, LENGTH = 0x003fffe0
@@ -39,16 +38,16 @@ SECTIONS
     . = ALIGN(32);
     *(.weightmem_sram)
     *(.weightmem_sram.*)
-    KEEP( *(.weightmem_sram) )
+    _emram_start = .;
   } > WEIGHTMEM_SRAM
 
   .weightmem_mram :
   {
-    . = ALIGN(32);
+    _mram_dst = .;
     *(.weightmem_mram)
     *(.weightmem_mram.*)
-    KEEP( *(.weightmem_mram) )	
-  } > WEIGHTMEM_MRAM
+    _mram_end = .;
+  } > WEIGHTMEM_MRAM AT> WEIGHTMEM_SRAM
 
 
   .data_tiny_fc :
@@ -56,7 +55,7 @@ SECTIONS
     . = ALIGN(4);
     *(.data_tiny_fc)
     *(.data_tiny_fc.*)
-  } > L2_aliased AT> L2
+  } > L2
 
 
   .init :
@@ -129,6 +128,7 @@ SECTIONS
 
 
   .got : {
+    . = ALIGN(4);
     *(.got.plt) * (.igot.plt) *(.got) *(.igot)
   } > L2
 
@@ -154,37 +154,6 @@ SECTIONS
     KEEP(*(.gnu.offload_vars))
   } > L2
 
-
-  .stack : {
-    . = ALIGN(4);
-    . = ALIGN(16);
-    stack_start = .;
-    . = . + 0x800;
-    stack = .;
-  } > L2
-
-
-  .data : {
-    . = ALIGN(4);
-    sdata  =  .;
-    _sdata  =  .;
-    *(.data_fc)
-    *(.data_fc.*)
-    *(.data);
-    *(.data.*)
-    *(.sdata);
-    *(.sdata.*)
-    *(.heapl2ram)
-    *(.fcTcdm)
-    *(.fcTcdm.*)
-    *(.fcTcdm_g)
-    *(.fcTcdm_g.*)
-    . = ALIGN(4);
-    edata  =  .;
-    _edata  =  .;
-  } > L2
-
-
   .bss : {
     . = ALIGN(8);
     _bss_start = .;
@@ -195,6 +164,14 @@ SECTIONS
     *(COMMON)
     . = ALIGN(4);
     _bss_end = .;
+  } > L2
+
+  .stack : {
+    . = ALIGN(4);
+    . = ALIGN(16);
+    stack_start = .;
+    . = . + 0x800;
+    stack = .;
   } > L2
 
 
@@ -238,6 +215,24 @@ SECTIONS
    *
    * Contains other data such as peripheral data and cluster code and data
    */
+  .data : {
+    . = ALIGN(4);
+    sdata  =  .;
+    _sdata  =  .;
+    *(.data_fc)
+    *(.data_fc.*)
+    *(.sdata);
+    *(.sdata.*)
+    *(.heapl2ram)
+    *(.fcTcdm)
+    *(.fcTcdm.*)
+    *(.fcTcdm_g)
+    *(.fcTcdm_g.*)
+    . = ALIGN(4);
+    edata  =  .;
+    _edata  =  .;
+  } > L2
+
 
   .l2_data MAX(0x1c010000,ALIGN(4)) :
   {
@@ -247,6 +242,8 @@ SECTIONS
     *(.cluster.text.*)
     . = ALIGN(4);
     __cluster_text_end = .;
+    *(.data);
+    *(.data.*)
     *(.l2_data)
     *(.l2_data.*)
     *(.data_fc_shared)
@@ -267,7 +264,7 @@ SECTIONS
     *(.data_tiny_l1.*)
     *(.data_alias_l1)
     *(.data_alias_l1.*)
-  } > L2_aliased AT> L2
+  } > L1_aliased AT> L2
 
   .l1cluster_g (ORIGIN(L1) + SIZEOF(.data_tiny_l1)): {
     . = ALIGN(4);
