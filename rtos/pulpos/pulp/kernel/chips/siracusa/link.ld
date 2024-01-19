@@ -154,17 +154,6 @@ SECTIONS
     KEEP(*(.gnu.offload_vars))
   } > L2
 
-  .bss : {
-    . = ALIGN(8);
-    _bss_start = .;
-    *(.bss)
-    *(.bss.*)
-    *(.sbss)
-    *(.sbss.*)
-    *(COMMON)
-    . = ALIGN(4);
-    _bss_end = .;
-  } > L2
 
   .stack : {
     . = ALIGN(4);
@@ -215,6 +204,18 @@ SECTIONS
    *
    * Contains other data such as peripheral data and cluster code and data
    */
+  .bss : {
+    . = ALIGN(8);
+    _bss_start = .;
+    *(.bss)
+    *(.bss.*)
+    *(.sbss)
+    *(.sbss.*)
+    *(COMMON)
+    . = ALIGN(4);
+    _bss_end = .;
+  } > L2
+
   .data : {
     . = ALIGN(4);
     sdata  =  .;
