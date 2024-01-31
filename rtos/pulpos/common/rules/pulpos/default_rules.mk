@@ -33,7 +33,7 @@ PULP_CFLAGS += -fno-jump-tables -fno-tree-loop-distribute-patterns
 endif
 ifdef PULP_RISCV_LLVM_TOOLCHAIN
 PULP_CC := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/clang
-PULP_LD := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_LD)
+PULP_LD := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/clang
 PULP_AR := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_AR)
 endif
 endif
