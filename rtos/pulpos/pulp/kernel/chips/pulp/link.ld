@@ -37,7 +37,7 @@ SECTIONS
     . = ALIGN(4);
     *(.data_tiny_fc)
     *(.data_tiny_fc.*)
-  } > L2_aliased AT> L2
+  } > L2
 
 
   .init :
@@ -110,7 +110,6 @@ SECTIONS
 
 
   .got : {
-    . = ALIGN(4);
     *(.got.plt) * (.igot.plt) *(.got) *(.igot)
   } > L2
 

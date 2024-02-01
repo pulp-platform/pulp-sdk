@@ -43,11 +43,14 @@ VPATH = $(PULPOS_HOME) $(PULPOS_MODULES)
 
 include $(PULPOS_HOME)/rules/pulpos/src.mk
 
-
 ifeq '$(CONFIG_LIBC_MINIMAL)' '1'
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/lib/libc/minimal/include
 endif
 PULP_APP_CFLAGS += -I$(PULPOS_HOME)/include -I$(PULPOS_HOME)/kernel -I$(PULPOS_ARCHI)/include -I$(PULPOS_HAL)/include -I$(PMSIS_API)/include
+
+ifdef PULP_RISCV_LLVM_TOOLCHAIN
+PULP_APP_CFLAGS += -fno-inline-functions
+endif
 
 PULP_APP_CFLAGS += $(foreach inc,$(PULPOS_MODULES),-I$(inc)/include)
 
