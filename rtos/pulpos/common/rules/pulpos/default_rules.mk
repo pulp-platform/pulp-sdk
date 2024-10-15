@@ -55,6 +55,23 @@ ifdef PULPOS_PLATFORM
 platform=$(PULPOS_PLATFORM)
 endif
 
+ifdef CONFIG_SPIM
+#include
+PULP_APP_CFLAGS += -I"$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/include"
+
+#src
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/src/common_spi.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/spim/src/abstraction_layer_spi.c
+endif
+
+ifdef CONFIG_I2C
+#include
+PULP_APP_CFLAGS += -I"$(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/i2c/include"
+
+#src
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/i2c/src/common_i2c.c
+PULP_APP_SRCS += $(PULP_SDK_HOME)/rtos/pulpos/pulp/drivers/i2c/src/abstraction_layer_i2c.c
+endif
 
 ifndef platform
 platform=gvsoc
