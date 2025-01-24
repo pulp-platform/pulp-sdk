@@ -309,8 +309,8 @@ ifneq '$(use_gvsoc_target)' '1'
 GAPY_TARGET_OPT += --target-dir=$(PULP_SDK_HOME)/tools/gapy/targets
 endif
 
-override runner_args += --flash-property=boot@flash:rom:boot \
-	--flash-property=$(TARGETS)@flash:rom:binary
+#override runner_args += --flash-property=boot@flash:rom:boot \
+#	--flash-property=$(TARGETS)@flash:rom:binary
 
 ifeq '$(platform)' 'gvsoc'
 GAPY_CMD = gvsoc $(GAPY_TARGET_OPT) \
