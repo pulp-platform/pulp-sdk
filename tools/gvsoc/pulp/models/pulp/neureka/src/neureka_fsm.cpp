@@ -99,8 +99,6 @@ void Neureka::fsm_end_handler(void *__this, vp::clock_event *event) {
   _this->job_pending--;
   _this->irq.sync(true);
   _this->start_cycles = _this->fsm_start_event->get_cycle();
-  std::cout<<"FSM START EVENT CYCLES="<<_this->start_cycles<<std::endl;
-  std::cout<<"TOTAL CYCLES="<<(_this->end_cycles - _this->start_cycles)<<std::endl;
   _this->trace.msg(vp::trace::LEVEL_INFO, "Ending job (id=%d).\n", job_id);
   if (!_this->fsm_start_event->is_enqueued() && _this->job_pending > 0) {
       _this->event_enqueue(_this->fsm_start_event, 1);
@@ -120,7 +118,6 @@ void Neureka::fsm_loop() {
     this->event_enqueue(this->fsm_end_event, latency);
     this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM End Event enqueued with cycles=%d\n", this->fsm_end_event->get_cycle());
     this->end_cycles = this->fsm_end_event->get_cycle();
-    std::cout<<"FSM END EVENT CYCLES="<<this->end_cycles<<std::endl;
   }
   else if (!this->fsm_event->is_enqueued()) {
     if(this->trace_level == L3_ALL) {
@@ -131,7 +128,6 @@ void Neureka::fsm_loop() {
     }
     // this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event before enque with cycles=%d\n", this->fsm_event->get_cycle());
     this->event_enqueue(this->fsm_event, latency);
-    // std::cout<<"FSM Event enqueued "<<this->fsm_event->get_cycle()<<std::endl;
     this->trace.msg(vp::trace::LEVEL_DEBUG, "FSM Event enqueued with cycles=%d\n", this->fsm_event->get_cycle());
   }
 }
