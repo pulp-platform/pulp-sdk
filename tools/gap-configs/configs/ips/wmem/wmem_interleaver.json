@@ -1,7 +1,0 @@
-{
-  "vp_class": "pulp/wmem/wmem",
-  "vp_component": "pulp.wmem.wmem_impl",
-  "nb_slaves": 0,
-  "nb_masters": 0,
-  "stage_bits": 0
-}
