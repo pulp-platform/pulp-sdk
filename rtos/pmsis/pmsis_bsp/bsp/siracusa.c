@@ -17,7 +17,7 @@
 #include "pmsis.h"
 
 #include "bsp/bsp.h"
-#include "bsp/pulp.h"
+#include "bsp/siracusa.h"
 #include "bsp/camera/himax.h"
 #include "bsp/flash/hyperflash.h"
 #include "bsp/ram/hyperram.h"
