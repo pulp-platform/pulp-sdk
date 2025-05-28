@@ -1,0 +1,62 @@
+// Generated register defines for pll_config
+
+#ifndef _PLL_CONFIG_REG_DEFS_
+#define _PLL_CONFIG_REG_DEFS_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+// Register width
+#define PLL_CONFIG_PARAM_REG_WIDTH 32
+
+// Status register of the PLL
+#define PLL_CONFIG_STATUS_REG_OFFSET 0x0
+#define PLL_CONFIG_STATUS_LOCK_BIT 0
+#define PLL_CONFIG_STATUS_FCALOUT_MASK 0xff
+#define PLL_CONFIG_STATUS_FCALOUT_OFFSET 16
+#define PLL_CONFIG_STATUS_FCALOUT_FIELD \
+  ((bitfield_field32_t) { .mask = PLL_CONFIG_STATUS_FCALOUT_MASK, .index = PLL_CONFIG_STATUS_FCALOUT_OFFSET })
+
+// Configure general PLL settings
+#define PLL_CONFIG_CFG1_REG_OFFSET 0x4
+#define PLL_CONFIG_CFG1_PLLEN_BIT 0
+#define PLL_CONFIG_CFG1_FOUTPOSTDIVEN_BIT 1
+#define PLL_CONFIG_CFG1_FOUTVCOEN_BIT 2
+#define PLL_CONFIG_CFG1_LOCKCOUNT_MASK 0x3
+#define PLL_CONFIG_CFG1_LOCKCOUNT_OFFSET 4
+#define PLL_CONFIG_CFG1_LOCKCOUNT_FIELD \
+  ((bitfield_field32_t) { .mask = PLL_CONFIG_CFG1_LOCKCOUNT_MASK, .index = PLL_CONFIG_CFG1_LOCKCOUNT_OFFSET })
+#define PLL_CONFIG_CFG1_LOCKGATE_BIT 6
+
+// Configure the target frequency of the PLL. After reset, the PLL starts up
+// at 50 MHz.
+#define PLL_CONFIG_CFG2_REG_OFFSET 0x8
+#define PLL_CONFIG_CFG2_FBDIV_MASK 0x3fff
+#define PLL_CONFIG_CFG2_FBDIV_OFFSET 0
+#define PLL_CONFIG_CFG2_FBDIV_FIELD \
+  ((bitfield_field32_t) { .mask = PLL_CONFIG_CFG2_FBDIV_MASK, .index = PLL_CONFIG_CFG2_FBDIV_OFFSET })
+#define PLL_CONFIG_CFG2_POSTDIV_MASK 0xf
+#define PLL_CONFIG_CFG2_POSTDIV_OFFSET 14
+#define PLL_CONFIG_CFG2_POSTDIV_FIELD \
+  ((bitfield_field32_t) { .mask = PLL_CONFIG_CFG2_POSTDIV_MASK, .index = PLL_CONFIG_CFG2_POSTDIV_OFFSET })
+#define PLL_CONFIG_CFG2_VCODIVSEL_BIT 18
+#define PLL_CONFIG_CFG2_FAILSAFE_EN_BIT 19
+#define PLL_CONFIG_CFG2_FREQ_CHANGE_MASK_CNT_MASK 0xff
+#define PLL_CONFIG_CFG2_FREQ_CHANGE_MASK_CNT_OFFSET 20
+#define PLL_CONFIG_CFG2_FREQ_CHANGE_MASK_CNT_FIELD \
+  ((bitfield_field32_t) { .mask = PLL_CONFIG_CFG2_FREQ_CHANGE_MASK_CNT_MASK, .index = PLL_CONFIG_CFG2_FREQ_CHANGE_MASK_CNT_OFFSET })
+
+// Configure calibration settings of the PLL.
+#define PLL_CONFIG_CFG3_REG_OFFSET 0xc
+#define PLL_CONFIG_CFG3_FCALIN_MASK 0xff
+#define PLL_CONFIG_CFG3_FCALIN_OFFSET 0
+#define PLL_CONFIG_CFG3_FCALIN_FIELD \
+  ((bitfield_field32_t) { .mask = PLL_CONFIG_CFG3_FCALIN_MASK, .index = PLL_CONFIG_CFG3_FCALIN_OFFSET })
+#define PLL_CONFIG_CFG3_FCALTEST_BIT 30
+#define PLL_CONFIG_CFG3_FCALBYP_BIT 31
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+#endif  // _PLL_CONFIG_REG_DEFS_
+// End generated register defines for pll_config
