@@ -115,7 +115,7 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 
     pos_cluster_fc_task_lock = 0;
 
-#if __PLATFORM__ != ARCHI_PLATFORM_FPGA
+#if __PLATFORM__ != ARCHI_PLATFORM_FPGA && !defined(SKIP_PLL_INIT)
     {
         // Setup FLL
         int init_freq = pos_fll_init(POS_FLL_CL);
