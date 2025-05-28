@@ -24,7 +24,7 @@
 #define pulp_write32(add, val_) (*(volatile unsigned int *)(long)(add) = val_)
 #define pulp_write(add, val_) (*(volatile unsigned int *)(long)(add) = val_)
 
-#if !defined(__clang__)
+#if !defined(__LLVM__)
 
 #define pulp_read8(add) (*(volatile unsigned char *)(long)(add))
 #define pulp_read16(add) (*(volatile unsigned short *)(long)(add))
@@ -67,7 +67,7 @@ static inline uint32_t pulp_read(uint32_t add)
 
 #endif
 
-#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__clang__)
+#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
 #define IP_WRITE_VOL(base, offset, value) __builtin_pulp_write_base_off_v((value), (base), (offset))
 #define IP_WRITE(base, offset, value) __builtin_pulp_OffsetedWrite((value), (int *)(base), (offset))
 #if !defined(CONFIG_PULP)
