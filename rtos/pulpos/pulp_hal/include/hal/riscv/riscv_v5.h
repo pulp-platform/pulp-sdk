@@ -32,7 +32,7 @@
 
 
 
-#if defined(__OPTIMIZE__) && defined(CORE_PULP_BUILTINS) && !defined(__clang__)
+#if defined(__OPTIMIZE__) && defined(CORE_PULP_BUILTINS) && !defined(__LLVM__)
 
 static inline unsigned int hal_spr_read_then_clr(unsigned int reg, unsigned int val)
 {
@@ -56,7 +56,7 @@ static inline unsigned int hal_spr_read(unsigned int reg)
 
 #else
 
-#if defined(__clang__)
+#if defined(__LLVM__)
 
 #else
  
@@ -115,7 +115,7 @@ do { \
 
 
 
-#if defined(__clang__)
+#if defined(__LLVM__)
 
 #define csr_read(csr)           \
 ({                \
@@ -243,7 +243,7 @@ static inline __attribute__((always_inline)) unsigned int hal_is_fc() {
 
 
 
-#if defined(__clang__)
+#if defined(__LLVM__)
 
 static inline int hal_irq_disable()
 {
