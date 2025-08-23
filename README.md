@@ -42,9 +42,9 @@ The following packages needed to be installed:
 sudo apt-get install -y build-essential git libftdi-dev libftdi1 doxygen python3-pip libsdl2-dev curl cmake libusb-1.0-0-dev scons gtkwave libsndfile1-dev rsync autoconf automake texinfo libtool pkg-config libsdl2-ttf-dev
 ~~~~~
 
-The SDK also requires the `argcomplete` and `pyelftools` Python package. You can install them for the local user with:
+The SDK also requires the `argcomplete`, `pyelftools`, and `prettytable` Python packages. You can install them for the local user with:
 ~~~~~shell
-pip install --user argcomplete pyelftools
+pip install --user argcomplete pyelftools prettytable
 ~~~~~
 Omit `--user` to install at system level instead, which will probably require admin rights.
 
