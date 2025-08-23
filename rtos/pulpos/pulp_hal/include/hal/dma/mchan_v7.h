@@ -258,12 +258,17 @@ static inline unsigned int plp_dma_status();
 
 /// @cond IMPLEM
 
-#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
-#define DMA_WRITE(value, offset) __builtin_pulp_OffsetedWrite((value), (int *)ARCHI_MCHAN_EXT_ADDR, (offset))
-#define DMA_READ(offset) __builtin_pulp_OffsetedRead((int *)ARCHI_MCHAN_EXT_ADDR, (offset))
+#if ARCHI_HAS_DMA_DEMUX
+#define DMA_ADDR ARCHI_MCHAN_DEMUX_ADDR
 #else
-#define DMA_WRITE(value, offset) pulp_write32(ARCHI_MCHAN_EXT_ADDR + (offset), (value))
-#define DMA_READ(offset) pulp_read32(ARCHI_MCHAN_EXT_ADDR + (offset))
+#define DMA_ADDR ARCHI_MCHAN_EXT_ADDR
+#endif
+#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
+#define DMA_WRITE(value, offset) __builtin_pulp_OffsetedWrite((value), (int *)DMA_ADDR, (offset))
+#define DMA_READ(offset) __builtin_pulp_OffsetedRead((int *)DMA_ADDR, (offset))
+#else
+#define DMA_WRITE(value, offset) pulp_write32(DMA_ADDR + (offset), (value))
+#define DMA_READ(offset) pulp_read32(DMA_ADDR + (offset))
 #endif
 
 static inline int plp_dma_counter_alloc() {
