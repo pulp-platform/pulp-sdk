@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2017 ETH Zurich, University of Bologna and GreenWaves Technologies
  * All rights reserved.
  *
@@ -23,6 +23,8 @@ void cluster_entry(void *arg)
 }
 #endif
 
+extern pos_alloc_t pos_alloc_l2[];
+
 static int test_entry()
 {
 #if defined(CLUSTER)
@@ -44,6 +46,9 @@ static int test_entry()
 #if !defined(CLUSTER)
     printf("Hello from FC\n");
 #endif
+
+    pos_alloc_dump(&pos_alloc_l2[0]);
+    pos_alloc_dump(&pos_alloc_l2[1]);
 
     return 0;
 }

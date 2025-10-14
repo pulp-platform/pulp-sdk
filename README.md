@@ -78,13 +78,11 @@ Please, refer to official guide to update gcc if is needed.
 
 ## GVSoC
 
-GVSoC is the PULP chips simulator that is natively included in the SDK and is described and evaluated fully in Bruschi et al. [\[arXiv:2201.08166v1\]](https://arxiv.org/abs/2201.08166).
+GVSoC is the PULP chips simulator that is natively supported by the SDK and is described and evaluated fully in Bruschi et al. [\[arXiv:2201.08166v1\]](https://arxiv.org/abs/2201.08166).
 
-Compile GVSoC with this command:
+GVSoC must be downloaded and built separately as a stand-alone application using this repository: https://github.com/gvsoc/gvsoc
 
-~~~~~shell
-make build
-~~~~~
+Note that the file sourceme.sh from the GVSoC repository must be sourced in order to put GVSoC executable in the path. This can be sourced either before or after sourcing the Pulp SDK configuration file.
 
 ## Test execution
 

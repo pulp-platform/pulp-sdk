@@ -14,8 +14,6 @@ if(CCACHE_FOUND)
     set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 endif()
 
-add_subdirectory(tools/gvsoc)
-
 ## Install pip requirements, note: does not install nntool reqs as building
 ## will do that
 add_custom_target(
