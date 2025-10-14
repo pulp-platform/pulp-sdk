@@ -1,5 +1,8 @@
 pyelftools>=0.24
 argparse>=1.4
-argcomplete
-six
-
+prettytable
+pexpect
+lz4
+pycryptodome
+ppk2_api
+rich
