@@ -25,8 +25,6 @@ CMAKE ?= cmake
 build:
 	$(CMAKE) -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 		-DCMAKE_INSTALL_PREFIX=$(PULP_SDK_HOME)/install/workstation \
-		-DGVSOC_MODULES="$(GVSOC_MODULES)" \
-		-DGVSOC_TARGETS=${GVSOC_TARGETS}
 
 	$(CMAKE) --build build $(CMAKE_FLAGS)
 	$(CMAKE) --install build

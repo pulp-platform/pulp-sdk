@@ -27,8 +27,6 @@ export GAPY_V2_TARGET=pulp-open
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 
-export GVSOC_MODULES="$PULP_SDK_HOME/tools/gvsoc/common $PULP_SDK_HOME/tools/gvsoc/pulp/models"
-
 export GAPY_PY_TARGET=Pulp_open_board@pulp_open.pulp_open_board
 
 source $PULP_SDK_HOME/configs/common.sh

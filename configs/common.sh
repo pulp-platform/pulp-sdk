@@ -33,14 +33,6 @@ export PYTHONPATH=$INSTALL_DIR/python:$PYTHONPATH
 export PYTHONPATH=$PULP_SDK_HOME/tools/gapy:$PYTHONPATH
 export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_PATH
 
-# Gapy v2 (for gvsoc)
-export PATH=$PULP_SDK_HOME/tools/gvsoc/gapy/bin:$PATH
-
-# GVSOC
-export GVSOC_MODULES="${GAP_SDK_HOME}/tools/gvsoc/core/models;${GAP_SDK_HOME}/tools/gvsoc/pulp"
-export GVSOC_TARGETS="$GAPY_V2_TARGET"
-
-
 # FPGA
 #export PULP_
 
