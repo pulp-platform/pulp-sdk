@@ -89,7 +89,7 @@ endif
 
 ifdef CONFIG_NB_CLUSTER_PE
 PULP_CFLAGS += -DARCHI_CLUSTER_NB_PE=$(CONFIG_NB_CLUSTER_PE)
-override config_args += --config-opt=cluster/nb_pe=$(CONFIG_NB_CLUSTER_PE)
+#override config_args += --config-opt=cluster/nb_pe=$(CONFIG_NB_CLUSTER_PE)
 endif
 
 ifdef CONFIG_IO_HOST
@@ -313,9 +313,9 @@ endif
 #	--flash-property=$(TARGETS)@flash:rom:binary
 
 ifeq '$(platform)' 'gvsoc'
-GAPY_CMD = gvsoc $(GAPY_TARGET_OPT) \
+GAPY_CMD = gvrun $(GAPY_TARGET_OPT) \
 	--work-dir=$(TARGET_BUILD_DIR) \
-	--binary=$(TARGETS) \
+	--param chip/soc/binary=$(TARGETS) \
 	$(config_args) $(gapy_args) $(runner_args)
 else
 GAPY_CMD = $(PULP_SDK_HOME)/tools/gapy_v2/bin/gapy $(GAPY_TARGET_OPT) \
