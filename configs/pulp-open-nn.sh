@@ -1,7 +1,7 @@
 #! /bin/bash
 
 
-if [  -n "${ZSH_VERSION:-}" ]; then 
+if [  -n "${ZSH_VERSION:-}" ]; then
 	DIR="$(readlink -f -- "${(%):-%x}")"
 	DIRNAME="$(dirname $DIR)"
 	PULP_SDK_HOME=$(dirname $DIRNAME)
@@ -23,6 +23,7 @@ export PULPOS_BOARD_PROFILE=pulp
 export PULPOS_TARGET=pulp_nn
 export PULPOS_SYSTEM=pulp
 export GAPY_TARGET=pulp_nn
+export GAPY_V2_TARGET=pulp-open-nn
 
 export PULPOS_MODULES="$PULP_SDK_HOME/rtos/pulpos/pulp $PULP_SDK_HOME/rtos/pmsis/pmsis_bsp"
 
