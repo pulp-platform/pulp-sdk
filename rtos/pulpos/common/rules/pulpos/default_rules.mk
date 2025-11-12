@@ -14,25 +14,30 @@ endif
 
 CONFIG_BUILD_DIR=$(TARGET_BUILD_DIR)
 
+ifeq (,$(shell which ccache))
+CCACHE=
+else
+CCACHE=ccache
+endif
 
 ifdef PULP_RISCV_GCC_TOOLCHAIN_CI
-PULP_CC := $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_CC)
+PULP_CC := $(CCACHE) $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_LD)
 PULP_AR := $(PULP_RISCV_GCC_TOOLCHAIN_CI)/bin/$(PULP_AR)
 else
 ifdef PULP_RUNTIME_GCC_TOOLCHAIN
-PULP_CC := $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_CC)
+PULP_CC := $(CCACHE) $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_LD)
 PULP_AR := $(PULP_RUNTIME_GCC_TOOLCHAIN)/bin/$(PULP_AR)
 else
 ifdef PULP_RISCV_GCC_TOOLCHAIN
-PULP_CC := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_CC)
+PULP_CC := $(CCACHE) $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_LD)
 PULP_AR := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_AR)
 PULP_CFLAGS += -fno-jump-tables -fno-tree-loop-distribute-patterns
 endif
 ifdef PULP_RISCV_LLVM_TOOLCHAIN
-PULP_CC := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/clang
+PULP_CC := $(CCACHE) $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/clang
 PULP_LD := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_LD)
 PULP_AR := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_AR)
 endif
@@ -89,7 +94,9 @@ endif
 
 ifdef CONFIG_NB_CLUSTER_PE
 PULP_CFLAGS += -DARCHI_CLUSTER_NB_PE=$(CONFIG_NB_CLUSTER_PE)
-#override config_args += --config-opt=cluster/nb_pe=$(CONFIG_NB_CLUSTER_PE)
+ifndef USE_GVRUN
+override config_args += --config-opt=cluster/nb_pe=$(CONFIG_NB_CLUSTER_PE)
+endif
 endif
 
 ifdef CONFIG_IO_HOST
@@ -313,10 +320,17 @@ endif
 #	--flash-property=$(TARGETS)@flash:rom:binary
 
 ifeq '$(platform)' 'gvsoc'
+ifndef USE_GVRUN
+GAPY_CMD = gvsoc $(GAPY_TARGET_OPT) \
+	--work-dir=$(TARGET_BUILD_DIR) \
+	--binary=$(TARGETS) \
+	$(config_args) $(gapy_args) $(runner_args)
+else
 GAPY_CMD = gvrun $(GAPY_TARGET_OPT) \
 	--work-dir=$(TARGET_BUILD_DIR) \
 	--param chip/soc/binary=$(TARGETS) \
 	$(config_args) $(gapy_args) $(runner_args)
+endif
 else
 GAPY_CMD = $(PULP_SDK_HOME)/tools/gapy_v2/bin/gapy $(GAPY_TARGET_OPT) \
 	--platform=$(platform) \
