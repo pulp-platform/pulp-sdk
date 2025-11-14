@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* 
+/*
  * Authors: Nazareno Bruschi, Unibo (nazareno.bruschi@unibo.it)
  */
 
@@ -37,10 +37,17 @@ typedef struct pos_hyper_s
     unsigned int baudrate;
     int active;
     pi_hyper_type_e type;
-    uint32_t cs;
     signed char hyper_id;
     uint32_t tran_id;
+    pi_task_t *waiting_first;
+    pi_task_t *waiting_last;
 } pos_hyper_t;
+
+typedef struct pos_hyper_cs_s
+{
+    uint32_t cs;
+    pos_hyper_t *hyper;
+} pos_hyper_cs_t;
 
 
 #endif
