@@ -1,0 +1,5 @@
+targets:
+  pulp-open:
+    sourceme: ${PULP_SDK_HOME}/configs/pulp-open.sh
+  siracusa:
+    sourceme: ${PULP_SDK_HOME}/configs/siracusa.sh
