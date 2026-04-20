@@ -94,7 +94,7 @@ endif
 
 ifdef CONFIG_NB_CLUSTER_PE
 PULP_CFLAGS += -DARCHI_CLUSTER_NB_PE=$(CONFIG_NB_CLUSTER_PE)
-ifndef USE_GVRUN
+ifdef USE_GAPY
 override config_args += --config-opt=cluster/nb_pe=$(CONFIG_NB_CLUSTER_PE)
 endif
 endif
@@ -320,7 +320,7 @@ endif
 #	--flash-property=$(TARGETS)@flash:rom:binary
 
 ifeq '$(platform)' 'gvsoc'
-ifndef USE_GVRUN
+ifdef USE_GAPY
 GAPY_CMD = gvsoc $(GAPY_TARGET_OPT) \
 	--work-dir=$(TARGET_BUILD_DIR) \
 	--binary=$(TARGETS) \

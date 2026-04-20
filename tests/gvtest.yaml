@@ -1,5 +1,7 @@
 targets:
   pulp-open:
     sourceme: ${PULP_SDK_HOME}/configs/pulp-open.sh
+  pulp-open:attr.chip/cluster/has_redmule=true:
+    sourceme: ${PULP_SDK_HOME}/configs/pulp-open-redmule.sh
   siracusa:
     sourceme: ${PULP_SDK_HOME}/configs/siracusa.sh
