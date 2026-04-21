@@ -3,3 +3,4 @@ BUILD/
 build/
 install/
 .sconsign.dblite
+./tests/datamover/logs/
