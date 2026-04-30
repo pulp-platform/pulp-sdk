@@ -65,9 +65,9 @@ endif
 ifeq '$(CONFIG_SPIM)' '1'
 ifneq '$(udma/version)' ''
 CONFIG_UDMA = 1
-PULP_SRCS += drivers/spim/spim-v$(udma/spim/version).c
+PULP_SRCS += drivers/spim/src/spim-v$(udma/spim/version).c
 ifeq '$(CONFIG_USE_ASM_OPTIM)' '1'
-PULP_ASM_SRCS += drivers/spim/spim-v$(udma/spim/version)_asm.S
+PULP_ASM_SRCS += drivers/spim/src/spim-v$(udma/spim/version)_asm.S
 endif
 endif
 endif
@@ -98,7 +98,7 @@ endif
 ifeq '$(CONFIG_I2C)' '1'
 ifneq '$(udma/i2c/version)' ''
 CONFIG_UDMA = 1
-PULP_SRCS += drivers/i2c/i2c-v$(udma/i2c/version).c
+PULP_SRCS += drivers/i2c/src/i2c-v$(udma/i2c/version).c
 endif
 endif
 

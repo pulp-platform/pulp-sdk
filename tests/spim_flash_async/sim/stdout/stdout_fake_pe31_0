@@ -1,0 +1,13 @@
+
+
+	 *** FreeRTOS Hello World *** 
+
+malloc tx buffer
+malloc rx buffer 1
+malloc rx buffer 2
+tx buffer init
+async cs auto
+WIP Register: 3
+WIP Register: 0
+starting error check
+Test success
