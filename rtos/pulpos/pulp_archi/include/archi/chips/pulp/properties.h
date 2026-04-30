@@ -85,6 +85,8 @@
 #endif
 #define ARCHI_NB_CLUSTER    1
 
+#define ARCHI_HAS_DMA_DEMUX 1
+
 
 
 /*
