@@ -15,21 +15,21 @@
  */
 
 
-#ifndef __ARCHI_CHIPS_PULP_PULP_H__
-#define __ARCHI_CHIPS_PULP_PULP_H__
+#ifndef __ARCHI_CHIPS_MEGATRON_PULP_H__
+#define __ARCHI_CHIPS_MEGATRON_PULP_H__
 
-#include "archi/chips/pulp/properties.h"
-#include "archi/chips/pulp/apb_soc_ctrl.h"
+#include "archi/chips/megatron/properties.h"
+#include "archi/chips/megatron/apb_soc_ctrl.h"
 
 #include "archi/gpio/gpio_v3.h"
 #include "archi/riscv/priv_1_10.h"
 #include "archi/riscv/pcer_v2.h"
 #include "archi/itc/itc_v1.h"
 
-#include "archi/chips/pulp/memory_map.h"
-#include "archi/chips/pulp/apb_soc_ctrl/apb_soc_ctrl.h"
-#include "archi/chips/pulp/cluster_ctrl_unit/cluster_ctrl_unit.h"
-#include "archi/chips/pulp/cluster_icache_ctrl/cluster_icache_ctrl.h"
+#include "archi/chips/megatron/memory_map.h"
+#include "archi/chips/megatron/apb_soc_ctrl/apb_soc_ctrl.h"
+#include "archi/chips/megatron/cluster_ctrl_unit/cluster_ctrl_unit.h"
+#include "archi/chips/megatron/cluster_icache_ctrl/cluster_icache_ctrl.h"
 #include "archi/stdout/stdout_v3.h"
 #include "archi/eu/eu_v3.h"
 #include "archi/dma/mchan_v7.h"
