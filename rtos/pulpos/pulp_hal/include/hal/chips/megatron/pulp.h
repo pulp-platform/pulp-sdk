@@ -31,6 +31,7 @@
 #include "hal/rom/rom_v2.h"
 #include "hal/ima/ima_v1.h"
 #include "hal/softex/softex.h"
+#include "hal/pcm_hwpe/pcm_hwpe.h"
 
 #include "hal/udma/udma_v3.h"
 #include "hal/udma/cpi/udma_cpi_v1.h"
