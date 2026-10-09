@@ -23,7 +23,6 @@
 #include "bsp/flash/hyperflash.h"
 #include "pmsis/drivers/hyperbus.h"
 
-
 #define SECTOR_SIZE (1<<18)
 
 #define STALL_TASK_PROGRAM      0

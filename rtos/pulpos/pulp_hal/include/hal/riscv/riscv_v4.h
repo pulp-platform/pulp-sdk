@@ -512,7 +512,7 @@ static inline unsigned int bi_ExtInsMaskFast(unsigned int Size, unsigned int Off
 #define __builtin_bitinsert_r(dst, src, size, off)   __builtin_pulp_binsert_r((dst), (src), bi_ExtInsMaskFast((size), (off)))
 
 /* 1 bit rotation to the right, 32 bits input */
-#define __builtin_rotr(x)      __builtin_pulp_rotr((x))
+#define __builtin_rotr(x)      __builtin_pulp_rotr((x), 1)
 
 /* Add with normalization and rounding */
 #define __builtin_addroundnormu(x, y, scale) __builtin_pulp_adduRN((x), (y), (scale), (1<<((scale)-1)))

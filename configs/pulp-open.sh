@@ -15,7 +15,6 @@ export TARGET_CHIP_FAMILY="PULP"
 export TARGET_CHIP="PULP"
 export TARGET_NAME="pulp"
 export BOARD_NAME=pulp
-export PULP_CURRENT_CONFIG=$BOARD_NAME@config_file=config/$BOARD_NAME.json
 
 export PULPOS_BOARD=pulp
 export PULPOS_BOARD_VERSION=pulp

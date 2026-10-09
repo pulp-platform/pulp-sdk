@@ -34,17 +34,8 @@
 #define __HAL_RISCV_BUILTINS_V2_H__
 #ifdef ARCHI_CORE_HAS_PULPV2
 /* ARITHMETIC SECTION */
-typedef   signed short v2s __attribute__((vector_size (4)));
-typedef unsigned short v2u __attribute__((vector_size (4)));
+#include "archi/riscv/vector_types.h"
 
-typedef   signed char  v4s __attribute__((vector_size (4)));
-typedef unsigned char  v4u __attribute__((vector_size (4)));
-
-#ifdef __EMUL__
-typedef void * rt_pointerT;
-#else
-typedef unsigned int rt_pointerT;
-#endif
 /* Packing of scalars into vectors */
 #define __PACK2(x, y)		__builtin_pulp_pack2((signed short)   (x), (signed short)   (y))
 #define __PACKU2(x, y)		__builtin_pulp_pack2((unsigned short) (x), (unsigned short) (y))
@@ -260,7 +251,7 @@ static inline unsigned int __attribute__ ((always_inline)) __ExtInsMaskSafe(unsi
 #define __BITINSERT_R_SAFE(dst, src, size, off) 	__builtin_pulp_binsert_r((dst), (src), __ExtInsMaskSafe((size), (off)))
 
 /* 1 bit rotation to the right, 32 bits input */
-#define __ROTR(x)			__builtin_pulp_rotr((x))
+#define __ROTR(x)			__builtin_pulp_rotr((x), 1)   /* rotate by 1, as the emulated form */
 
 /* Add with normalization */
 #define __ADDNORMU(x, y, scale)		__builtin_pulp_adduN((x), (y), (scale))

@@ -31,9 +31,17 @@ static inline unsigned int __attribute__ ((always_inline)) ExtInsMaskSafe_archi(
 #define GAP_READ(base, offset)             archi_read32((base) + (offset))
 #endif
 
+#if defined(__riscv__) && !defined(__LLVM__) && !defined(RV_ISA_RV32)
 #define GAP_BINSERT(dst,src,size,off)  __builtin_pulp_binsert((dst), ~(((1UL<<(size))-1)<<(off)), (src), (((1UL<<(size))-1)<<(off)), (off))
 #define GAP_BINSERT_R(dst,src,size,off)  __builtin_pulp_binsert_r((dst), (src), ExtInsMaskFast_archi((size), (off)))
 #define GAP_BEXTRACTU(src,size,off)    __builtin_pulp_bextractu((src), (size), (off))
 #define GAP_BEXTRACT(src,size,off)     __builtin_pulp_bextract((src), (size), (off))
+#else
+/* Pure-C, for toolchains without the xpulp builtins. */
+#define GAP_BINSERT(dst,src,size,off)  (((dst) & ~(((1<<(size))-1)<<(off))) | (((src) & ((1<<(size))-1))<<(off)))
+#define GAP_BINSERT_R(dst,src,size,off)  GAP_BINSERT((dst), (src), (size), (off))
+#define GAP_BEXTRACTU(src,size,off)    (((src)>>(off)) & ((unsigned int)(1<<(size))-1))
+#define GAP_BEXTRACT(src,size,off)     (((((src)>>(off)) & ((unsigned int)(1<<(size))-1))<<(32-(size)))>>(32-(size)))
+#endif
 
 #endif

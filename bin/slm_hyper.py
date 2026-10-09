@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 #Written by ABA to update the format of the slm file to be compliant with hyperflash model used in testbench
-import numpy as np
 import os
 import os.path
 import argparse
@@ -24,7 +23,10 @@ delimiter=" "
 with open(args.input_file, "r") as fi:
     data = list(map(lambda x:x.split(delimiter), fi.read().strip().split("\n")))
 fo=open(args.output_file, "w")
-A=np.array(data)
+
+# Write the header
 fo.write('@000000\n')
-for i in range(0, A.shape[0],2):
-    fo.write('%s%s\n' %(A[i+1][1],A[i][1]))
+
+# Iterate over rows in pairs
+for i in range(0, len(data)-1, 2):  # subtract 1 to avoid IndexError if odd number of rows
+    fo.write(f'{data[i+1][1]}{data[i][1]}\n')

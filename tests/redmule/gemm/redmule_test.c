@@ -46,10 +46,11 @@ static int glob_errors;
 
 int run_test() {
   redmule_cfg(M_SIZE, N_SIZE, K_SIZE, gemm_ops);
-  redmule_x_add_set(x);
-  redmule_w_add_set(w);
-  redmule_z_add_set(z);
-  redmule_y_add_set(y);
+  /* Setters take a raw address; GCC >= 14 rejects the implicit conversion. */
+  redmule_x_add_set((unsigned int)x);
+  redmule_w_add_set((unsigned int)w);
+  redmule_z_add_set((unsigned int)z);
+  redmule_y_add_set((unsigned int)y);
 
   pi_perf_conf(1 << PI_PERF_CYCLES);
   pi_perf_reset();

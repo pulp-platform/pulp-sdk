@@ -6,3 +6,6 @@ lz4
 pycryptodome
 ppk2_api
 rich
+typing-extensions
+six
+psutil

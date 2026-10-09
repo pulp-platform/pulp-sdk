@@ -20,8 +20,8 @@
 #include "archi/pulp.h"
 
 #include "hal/riscv/types.h"
-#include "archi/riscv/builtins_v2.h"
-#include "archi/riscv/builtins_v2_emu.h"
+
+#include "archi/riscv/builtins.h"
 
 #define CSR_PCMR_ACTIVE 0x1
 
@@ -168,8 +168,12 @@ static inline unsigned int hal_core_id() {
 }
 
 static inline unsigned int hal_cluster_id() {
+#ifdef __cv32e40p__
+  return cluster_id();   // no __builtin_pulp_* in the CoreV toolchain
+#else
   //return cluster_id();
   return __builtin_pulp_ClusterId();
+#endif
 }
 
 // TODO replace by compiler builtin
@@ -297,11 +301,30 @@ static inline void hal_irq_enable()
 #define PCMR_ACTIVE CSR_PCMR_ACTIVE
 #define PCMR_SATURATE CSR_PCMR_SATURATE
 
+/*
+ * CV32E40P has no PCER/PCMR/PCCR. Each event gets its own mhpmcounter so the
+ * per-event read API still works -- see archi/riscv/pcer_cv32e40p.h.
+ */
+#ifdef __cv32e40p__
+#include "archi/riscv/pcer_cv32e40p.h"
+#endif
+
 /* Configure the active events. eventMask is an OR of events got through SPR_PCER_EVENT_MASK */
 static inline void cpu_perf_conf_events(unsigned int eventMask)
 {
 #ifndef PLP_NO_PERF_COUNTERS
+#ifdef __cv32e40p__
+  /* One select register per event; a cleared bit stops that counter. */
+#define __CV_PERF_SEL(id, cnt, evt)                                     \
+  {                                                                     \
+    unsigned int __m = ((eventMask) >> (id)) & 1u ? (1u << (id)) : 0u;   \
+    asm volatile ("csrw " #evt ", %0" :: "r" (__m));                    \
+  }
+  CV32E40P_PERF_FOREACH(__CV_PERF_SEL)
+#undef __CV_PERF_SEL
+#else
   asm volatile ("csrw 0xCC0, %0" : "+r" (eventMask));
+#endif
 #endif
 }
 
@@ -310,7 +333,19 @@ static inline unsigned int cpu_perf_conf_events_get()
 {
 #ifndef PLP_NO_PERF_COUNTERS
   unsigned int result;
+#ifdef __cv32e40p__
+  result = 0;
+#define __CV_PERF_SEL_GET(id, cnt, evt)                                 \
+  {                                                                     \
+    unsigned int __v;                                                   \
+    asm volatile ("csrr %0, " #evt : "=r" (__v));                       \
+    if (__v) result |= 1u << (id);                                      \
+  }
+  CV32E40P_PERF_FOREACH(__CV_PERF_SEL_GET)
+#undef __CV_PERF_SEL_GET
+#else
   asm volatile ("csrr %0, 0xCC0" : "=r" (result));
+#endif
   return result;
 #else
   return 0;
@@ -321,7 +356,13 @@ static inline unsigned int cpu_perf_conf_events_get()
 static inline void cpu_perf_conf(unsigned int confMask)
 {
 #ifndef PLP_NO_PERF_COUNTERS
+#ifdef __cv32e40p__
+  /* No PCMR: gate via mcountinhibit. */
+  unsigned int inhibit = (confMask & CSR_PCMR_ACTIVE) ? 0 : ~0U;
+  asm volatile ("csrw 0x320, %0" :: "r" (inhibit));
+#else
   asm volatile ("csrw 0xCC1, %0" :: "r" (confMask));
+#endif
 #endif
 }
 
@@ -343,13 +384,33 @@ static inline void cpu_perf_stop(unsigned int conf) {
 
 /* Set the specified counter to the specified value */
 static inline void cpu_perf_set(unsigned int counterId, unsigned int value) {
-  
+#ifndef PLP_NO_PERF_COUNTERS
+#ifdef __cv32e40p__
+  switch (counterId) {
+#define __CV_PERF_SET(id, cnt, evt) \
+    case id: asm volatile ("csrw " #cnt ", %0" :: "r" (value)); break;
+    CV32E40P_PERF_FOREACH(__CV_PERF_SET)
+#undef __CV_PERF_SET
+    default: break;
+  }
+#endif
+#endif
 }
 
 /* Set all counters to the specified value */
 static inline void cpu_perf_setall(unsigned int value) {
 #ifndef PLP_NO_PERF_COUNTERS
+#ifdef __cv32e40p__
+  /* No write-all register; one by one, plus mcycle/minstret. */
+  asm volatile ("csrw 0xB00, %0" :: "r" (value));
+  asm volatile ("csrw 0xB02, %0" :: "r" (value));
+#define __CV_PERF_ZERO(id, cnt, evt) \
+  asm volatile ("csrw " #cnt ", %0" :: "r" (value));
+  CV32E40P_PERF_FOREACH(__CV_PERF_ZERO)
+#undef __CV_PERF_ZERO
+#else
   asm volatile ("csrw 0x79F, %0" :: "r" (value));
+#endif
 #endif
 }
 
@@ -358,6 +419,17 @@ static inline unsigned int cpu_perf_get(const unsigned int counterId) {
 #ifndef PLP_NO_PERF_COUNTERS
   unsigned int value = 0;
 
+#ifdef __cv32e40p__
+  /* counterId is the event id: event N lives in mhpmcounter(3+N). */
+  switch (counterId) {
+#define __CV_PERF_GET(id, cnt, evt) \
+    case id: asm volatile ("csrr %0, " #cnt : "=r" (value)); break;
+    CV32E40P_PERF_FOREACH(__CV_PERF_GET)
+#undef __CV_PERF_GET
+    default: break;
+  }
+  return value;
+#else
   // This is stupid! But I really don't know how else we could do that
   switch(counterId) {
    case  0: asm volatile ("csrr %0, 0x780" : "=r" (value)); break;
@@ -393,6 +465,7 @@ static inline unsigned int cpu_perf_get(const unsigned int counterId) {
    case 30: asm volatile ("csrr %0, 0x79E" : "=r" (value)); break;
   }
   return value;
+#endif
 #else
   return 0;
 #endif
@@ -442,7 +515,9 @@ static inline void cpu_stack_check_disable()
 
 
 
-#if !defined(RV_ISA_RV32)
+/* Skipped entirely under COREV_V2: builtins_corev_v2.h already defines these. */
+#if defined(ARCHI_CORE_HAS_COREV_V2)
+#elif !defined(RV_ISA_RV32)
 
 /* Packing of scalars into vectors */
 #define __builtin_pack2(x, y)    __builtin_pulp_pack2((signed short)   (x), (signed short)   (y))
@@ -533,7 +608,7 @@ static inline unsigned int bi_ExtInsMaskFast(unsigned int Size, unsigned int Off
 #define __builtin_bitinsert_r(dst, src, size, off)   __builtin_pulp_binsert_r((dst), (src), bi_ExtInsMaskFast((size), (off)))
 
 /* 1 bit rotation to the right, 32 bits input */
-#define __builtin_rotr(x)      __builtin_pulp_rotr((x))
+#define __builtin_rotr(x)      __builtin_pulp_rotr((x), 1)
 
 /* Add with normalization and rounding */
 #define __builtin_addroundnormu(x, y, scale) __builtin_pulp_adduRN((x), (y), (scale), (1<<((scale)-1)))
@@ -632,10 +707,12 @@ static inline unsigned int bi_ExtInsMaskFast(unsigned int Size, unsigned int Off
 #define __builtin_sumdotpus4(x, y, z)  ((z)+(x)[0]*(y)[0] + (x)[1]*(y)[1] + (x)[2]*(y)[2] + (x)[3]*(y)[3])
 
 
-/* Position of the most significant bit of x */
+// Position of the most significant bit of x.
 #define __FL1(x)     (31 - __builtin_clz((x)))
 
 /* Number of sign bits */
+/* Guarded like the macros around it: a provider defining __builtin_clb as a
+ * macro would otherwise expand this function's own signature. */
 static inline unsigned int __builtin_clb(unsigned int x) {
   int result = 0;
   while (x) {

@@ -19,6 +19,7 @@
 #
 
 #include <archi/pulp.h>
+#include <archi/riscv/xpulp_asm.h>
 
 
     .section .text_l2, "ax"
@@ -74,9 +75,9 @@
     lw   x11, %tiny(pos_soc_event_callback_arg)(x11)
 #else
     la   t0, pos_soc_event_callback
-    p.lw x12, t0(x11)
+    XPULP_LW x12, t0(x11)
     la   t0, pos_soc_event_callback_arg
-    p.lw x11, t0(x11)
+    XPULP_LW x11, t0(x11)
 #endif
     la   x9, pos_soc_event_handler_end_asm
     j    pos_irq_call_external_c_function
@@ -101,17 +102,17 @@ pos_soc_event_store_asm:
     lw      x12, %tiny(pos_soc_event_status)(x11)
 #else
     la   t0, pos_soc_event_status
-    p.lw x12, t0(x11)
+    XPULP_LW x12, t0(x11)
 #endif
     andi    x10, x10, 0x1f
 
-    p.bsetr x12, x12, x10
+    XPULP_BSETR x12, x12, x10
 
 #ifdef CONFIG_NO_STD_RELOC
     sw      x12, %tiny(pos_soc_event_status)(x11)
 #else
     la      t0, pos_soc_event_status
-    p.sw    x12, t0(x11)
+    XPULP_SW    x12, t0(x11)
 #endif
 
 
