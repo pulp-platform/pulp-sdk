@@ -41,15 +41,24 @@ static inline void pcm_soft_clear() {
   PCM_HWPE_WRITE(0, PCM_HWPE_SOFT_CLEAR);
 }
 
+// A job is done once the queue is drained, a later job (ids are increasing) is running,
+// or it is the running job and STATUS reports its completion. STATUS alone is not enough:
+// it is 0 both while the job runs and while it is still queued behind another job.
+static inline int pcm_job_done(uint32_t job_id) {
+    int32_t running = PCM_HWPE_READ(PCM_HWPE_RUN_TASK);
+    return PCM_HWPE_READ(PCM_HWPE_FIN_JOBS) ||
+           running > (int32_t)job_id ||
+           (running == (int32_t)job_id && pcm_get_status() != 0);
+}
+
 static inline void pcm_eu_wait(uint32_t job_id) {
-    
-    while (pcm_get_status() != 0 && PCM_HWPE_READ(PCM_HWPE_RUN_TASK) == job_id) {
+    while (!pcm_job_done(job_id)) {
         eu_evt_maskWaitAndClr(1 << ARCHI_CL_EVT_ACC0);
     }
 }
 
 static inline void pcm_polling_wait(uint32_t job_id) {
-    while (pcm_get_status() != 0 && PCM_HWPE_READ(PCM_HWPE_RUN_TASK) == job_id) {
+    while (!pcm_job_done(job_id)) {
         // busy wait
     }
 }
