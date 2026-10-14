@@ -8,9 +8,9 @@ $(error PULP_RISCV_GCC_TOOLCHAIN and PULP_RISCV_LLVM_TOOLCHAIN cannot be set bot
 endif
 
 ifdef PULP_RISCV_GCC_TOOLCHAIN
-PULP_ARCH_CFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
-PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9 -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
-PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9
+PULP_ARCH_CFLAGS ?=  -march=rv32imcXpulpnn -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
+PULP_ARCH_LDFLAGS ?=  -march=rv32imcXpulpnn -mPE=$(CONFIG_NB_CLUSTER_PE) -mFC=1
+PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcXpulpnn
 endif
 
 ifdef PULP_RISCV_LLVM_TOOLCHAIN
