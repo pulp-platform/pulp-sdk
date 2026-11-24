@@ -24,11 +24,13 @@
 
 static inline void pos_team_cc_barrier()
 {
+    hal_compiler_barrier();
 #ifdef ARCHI_CC_CORE_ID
     eu_bar_trig_wait_clr(eu_bar_addr(1));
 #else
     eu_bar_trig_wait_clr(eu_bar_addr(0));
 #endif
+    hal_compiler_barrier();
 }
 
 

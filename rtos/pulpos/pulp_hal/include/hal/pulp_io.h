@@ -82,6 +82,10 @@ static inline uint32_t pulp_read(uint32_t add)
 #else
 #define IP_WRITE_VOL(base, offset, value) pulp_write32((base) + (offset), (value))
 #define IP_WRITE(base, offset, value) pulp_write32((base) + (offset), (value))
+#define IP_WRITE_PTR(base, offset, value) do{asm volatile("":::"memory"); \
+                                            pulp_write32((base) + (offset), (value)); \
+                                            asm volatile("":::"memory"); \
+                                            }while(0)
 #define IP_READ(base, offset) pulp_read32((base) + (offset))
 #endif
 

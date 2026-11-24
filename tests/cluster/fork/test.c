@@ -10,7 +10,6 @@
 
 #include "pmsis.h"
 #include "stdio.h"
-
 #include "pmsis/cluster/cluster_team/cl_team.h"
 
 #define STACK_SIZE 2048

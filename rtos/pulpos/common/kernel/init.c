@@ -15,7 +15,7 @@
  */
 
 
-/* 
+/*
  * Authors: Germain Haugou, GreenWaves Technologies (germain.haugou@greenwaves-technologies.com)
  */
 
@@ -26,15 +26,23 @@
 
 typedef void (*fptr)(void);
 
-static fptr ctor_list[1] __attribute__((section(".ctors.start"))) = { (fptr) -1 };
-static fptr dtor_list[1] __attribute__((section(".dtors.start"))) = { (fptr) -1 };
+/**
+ * Layout produced by linker script:
+ *  [0]     entry num               --> LONG((__CTOR_END__ - __CTOR_LIST__)/4 - 2)
+ *  [1]     "-1" mark               --> KEEP(*(.ctors.start))
+ *  [2..]   NULL terminated ptrs    --> KEEP(*(.ctors)), SORT(.init_array.*), .init_array + LONG(0) (NULL)
+ */
+extern fptr __CTOR_LIST__[];
+extern fptr __DTOR_LIST__[];
+static fptr ctor_list[1] __attribute__((used, section(".ctors.start"))) = { (fptr) -1 };
+static fptr dtor_list[1] __attribute__((used, section(".dtors.start"))) = { (fptr) -1 };
 
 
 static void pos_init_do_ctors(void)
 {
     fptr *fpp;
 
-    for(fpp = ctor_list+1;  *fpp != 0;  ++fpp)
+    for(fpp = &__CTOR_LIST__[2];  *fpp != 0;  ++fpp)
     {
         (**fpp)();
     }
@@ -45,7 +53,7 @@ static void pos_init_do_ctors(void)
 static void pos_init_do_dtors(void)
 {
     fptr *fpp;
-    for(fpp = dtor_list + 1;  *fpp != 0;  ++fpp)
+    for(fpp = &__DTOR_LIST__[2];  *fpp != 0;  ++fpp)
     {
         (**fpp)();
     }

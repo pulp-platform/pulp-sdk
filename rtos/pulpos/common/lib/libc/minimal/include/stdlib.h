@@ -43,4 +43,6 @@ void *malloc(size_t size);
 
 void free(void *ptr);
 
+static inline int abs(int j) { return (j < 0) ? -j : j; }
+
 #endif

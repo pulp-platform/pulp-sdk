@@ -20,7 +20,6 @@
  */
 
 #include "pmsis.h"
-
 #define POS_UART_BAUDRATE 115200
 
 

@@ -434,7 +434,7 @@ static int _atoi(const char **sptr)
 	return i;
 }
 
-int pos_libc_prf(int (*func)(), void *dest, const char *format, va_list vargs)
+int pos_libc_prf(int (*func)(char, void*), void *dest, const char *format, va_list vargs)
 {
 	/*
 	 * The work buffer has to accommodate for the largest data length.

@@ -26,8 +26,29 @@ pos_init_entry:
 
     # Performance counters are active after reset, deactivate them to let the
     # user control when they should start counting
+#ifdef __cv32e40p__
+    # No PCMR on CV32E40P; use mcountinhibit.
+    li      t0, -1
+    csrw    0x320, t0
+#else
     csrw    0xCC1, x0
+#endif
 
+#if defined(__riscv_flen)
+    # mstatus.FS resets to Off, and a core with a separate FP register file
+    # (F extension, as opposed to Zfinx) traps every FP instruction until
+    # software enables it.
+    li      t0, 0x2000           # mstatus.FS = Initial (bits [14:13] = 0b01)
+    csrs    mstatus, t0
+#endif
+
+#ifdef ARCHI_NO_FC
+    csrr    a0, 0xF14
+    andi    a1, a0, 0x1f         # core offset within the cluster
+    beqz    a1, pos_no_fc_core0  # core 0 -> boot as FC (fall through)
+    j       pos_pe_start         # cores 1..N-1 -> slave dispatch loop
+pos_no_fc_core0:
+#else
 #ifdef ARCHI_HAS_CLUSTER
 
     # Cluster PEs will also starts here to avoid aligning another entry point
@@ -41,6 +62,7 @@ pos_init_entry:
     j      pos_pe_start
 label0:
 
+#endif
 #endif
 
 

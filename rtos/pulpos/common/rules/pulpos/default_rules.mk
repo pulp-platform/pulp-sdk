@@ -37,12 +37,21 @@ PULP_AR := $(PULP_RISCV_GCC_TOOLCHAIN)/bin/$(PULP_AR)
 PULP_CFLAGS += -fno-jump-tables -fno-tree-loop-distribute-patterns
 endif
 ifdef PULP_RISCV_LLVM_TOOLCHAIN
-PULP_CC := $(CCACHE) $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/clang
+PULP_CC := $(CCACHE) $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_CC)
 PULP_LD := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_LD)
 PULP_AR := $(PULP_RISCV_LLVM_TOOLCHAIN)/bin/$(PULP_AR)
 endif
 endif
 endif
+
+VENV := venv
+
+export PATH := $(abspath $(VENV))/bin:$(PATH)
+
+venv:
+	python3 -m venv $(VENV) && \
+	$(VENV)/bin/python -m pip install -U pip && \
+	$(VENV)/bin/python -m pip install -r $(PULP_SDK_HOME)/tools/gapy/requirements.txt
 
 VPATH = $(PULPOS_HOME) $(PULPOS_MODULES)
 
@@ -97,6 +106,10 @@ PULP_CFLAGS += -DARCHI_CLUSTER_NB_PE=$(CONFIG_NB_CLUSTER_PE)
 ifdef USE_GAPY
 override config_args += --config-opt=cluster/nb_pe=$(CONFIG_NB_CLUSTER_PE)
 endif
+endif
+
+ifdef CONFIG_NO_FC
+PULP_CFLAGS += -DARCHI_NO_FC=1
 endif
 
 ifdef CONFIG_IO_HOST
@@ -405,11 +418,46 @@ $(TARGET_BUILD_DIR)/stdout:
 $(TARGET_BUILD_DIR)/fs:
 	mkdir -p $@
 
-run: $(TARGET_BUILD_DIR)/modelsim.ini $(TARGET_BUILD_DIR)/work  $(TARGET_BUILD_DIR)/boot $(TARGET_BUILD_DIR)/tcl_files $(TARGET_BUILD_DIR)/stdout $(TARGET_BUILD_DIR)/fs $(TARGET_BUILD_DIR)/waves
-	$(PULP_SDK_HOME)/bin/stim_utils.py --binary=$(TARGETS) --vectors=$(TARGET_BUILD_DIR)/vectors/stim.txt
-	$(PULP_SDK_HOME)/bin/plp_mkflash  --flash-boot-binary=$(TARGETS)  --stimuli=$(TARGET_BUILD_DIR)/vectors/qspi_stim.slm --flash-type=spi --qpi
-	$(PULP_SDK_HOME)/bin/slm_hyper.py  --input=$(TARGET_BUILD_DIR)/vectors/qspi_stim.slm  --output=$(TARGET_BUILD_DIR)/vectors/hyper_stim.slm
-	cd $(TARGET_BUILD_DIR) && export VSIM_RUNNER_FLAGS='+ENTRY_POINT=0x1c008080 -permit_unmatched_virtual_intf -gBAUDRATE=115200 -gLOAD_L2=JTAG' && vsim -64 -c -do 'source $(VSIM_PATH)/tcl_files/config/run_and_exit.tcl' -do 'source $(VSIM_PATH)/tcl_files/run.tcl; run_and_exit;'
+POS_RTL_DEPS = $(TARGET_BUILD_DIR)/modelsim.ini $(TARGET_BUILD_DIR)/work $(TARGET_BUILD_DIR)/boot \
+               $(TARGET_BUILD_DIR)/tcl_files $(TARGET_BUILD_DIR)/stdout $(TARGET_BUILD_DIR)/fs \
+               $(TARGET_BUILD_DIR)/waves
+
+POS_VSIM_ENV = export VSIM_RUNNER_FLAGS='+ENTRY_POINT=0x1c008080 -permit_unmatched_virtual_intf -gBAUDRATE=115200 -gLOAD_L2=JTAG'
+
+define POS_GEN_STIMULI
+$(PULP_SDK_HOME)/bin/stim_utils.py --binary=$(TARGETS) --vectors=$(TARGET_BUILD_DIR)/vectors/stim.txt
+$(PULP_SDK_HOME)/bin/plp_mkflash --flash-boot-binary=$(TARGETS) --stimuli=$(TARGET_BUILD_DIR)/vectors/qspi_stim.slm --flash-type=spi --qpi
+$(PULP_SDK_HOME)/bin/slm_hyper.py --input=$(TARGET_BUILD_DIR)/vectors/qspi_stim.slm --output=$(TARGET_BUILD_DIR)/vectors/hyper_stim.slm
+endef
+
+ifdef CONFIG_NO_FC
+
+# No FC (pulp_cluster): the cluster testbench takes the ELF through a TCL
+# variable and reports failure in the transcript rather than the exit code.
+run: $(POS_RTL_DEPS)
+	$(POS_GEN_STIMULI)
+	cd $(TARGET_BUILD_DIR) && mkdir -p build/test && ln -sf $(TARGETS) build/test/test
+	cd $(TARGET_BUILD_DIR) && $(POS_VSIM_ENV) && vsim -64 -c -do 'set VSIM_PATH $(VSIM_PATH); set APP $(TARGET_BUILD_DIR)/test/test; source $(VSIM_PATH)/scripts/run_and_exit.tcl'
+	@if grep -q " Test not passed" $(TARGET_BUILD_DIR)/transcript; then exit 1; fi
+
+run_gui: $(POS_RTL_DEPS)
+	$(POS_GEN_STIMULI)
+	cd $(TARGET_BUILD_DIR) && mkdir -p build/test && ln -sf $(TARGETS) build/test/test
+	cd $(TARGET_BUILD_DIR) && $(POS_VSIM_ENV) && vsim -64 -do 'set VSIM_PATH $(VSIM_PATH); set APP $(TARGET_BUILD_DIR)/test/test; source $(VSIM_PATH)/scripts/start.tcl'
+
+else
+
+# FC present (pulp-open): the SoC testbench loads the ELF itself.
+run: $(POS_RTL_DEPS)
+	$(POS_GEN_STIMULI)
+	cd $(TARGET_BUILD_DIR) && $(POS_VSIM_ENV) && vsim -64 -c -do 'source $(VSIM_PATH)/tcl_files/config/run_and_exit.tcl' -do 'source $(VSIM_PATH)/tcl_files/run.tcl; run_and_exit;'
+
+run_gui: $(POS_RTL_DEPS)
+	$(POS_GEN_STIMULI)
+	cd $(TARGET_BUILD_DIR) && $(POS_VSIM_ENV) && vsim -64 -do 'source $(VSIM_PATH)/tcl_files/run_gui.tcl; run;'
+
+endif
+
 
 else
 
@@ -434,7 +482,12 @@ endif
 
 endif
 
+# image/flash only exist in the gvsoc and fpga/board branches.
+ifeq '$(platform)' 'rtl'
+all:: build
+else
 all:: build image flash
+endif
 
 clean::
 	@echo "RM  $(TARGET_BUILD_DIR)"

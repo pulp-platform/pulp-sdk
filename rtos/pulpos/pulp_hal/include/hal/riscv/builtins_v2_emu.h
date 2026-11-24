@@ -259,10 +259,16 @@ typedef unsigned int rt_pointerT;
 #endif
 
 /* Position of the most significant bit of x */
-#define __FL1(x)				(31 - __builtin_clz((x)))
-
 /* Number of sign bits */
+#ifdef __cv32e40p__
+/* Native cv.fl1/cv.clb; __builtin_clz would call libgcc's __clzsi2, which is
+ * missing from the default CoreV multilib. */
+#define __FL1(x)				(__builtin_riscv_cv_bitmanip_fl1((x)))
+#define __CLB(x)				(__builtin_riscv_cv_bitmanip_clb((x)))
+#else
+#define __FL1(x)				(31 - __builtin_clz((x)))
 #define __CLB(x)				(__builtin_clrsb((x)))
+#endif
 
 /* Bit set */
 #define __BITSET(x, size, off)		((x) | (((1<<(size))-1)<<(off)))

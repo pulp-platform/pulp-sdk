@@ -34,23 +34,14 @@
 #define ARCHI_HAS_L2_MULTI             1
 #define ARCHI_HAS_L1                   1
 
-#define ARCHI_L2_PRIV0_ADDR  0x1c000000
-#define ARCHI_L2_PRIV0_SIZE  0x00008000
-
-#define ARCHI_L2_PRIV1_ADDR  0x1c008000
-#define ARCHI_L2_PRIV1_SIZE  0x00008000
-
-#define ARCHI_L2_SHARED_ADDR  0x1c010000
-#define ARCHI_L2_SHARED_SIZE  0x00070000
-
-
-
 /*
  * MEMORY ALIAS
  */
 
 #define ARCHI_HAS_L1_ALIAS             1
 #define ARCHI_HAS_L2_ALIAS             1
+
+#define ARCHI_HAS_DMA_DEMUX 1
 
 
 
@@ -99,9 +90,11 @@
  * FC
  */
 
+#ifndef ARCHI_NO_FC
 #define ARCHI_FC_CID        31
 #define ARCHI_HAS_FC_ITC     1
 #define ARCHI_HAS_FC         1
+#endif
 
 
 /*
@@ -250,6 +243,8 @@
 #define ARCHI_CL_EVT_DMA1        9
 #define ARCHI_EVT_TIMER0         10
 #define ARCHI_EVT_TIMER1         11
+#define ARCHI_EVT_TIMER0_LO      10
+#define ARCHI_EVT_TIMER0_HI      11
 #define ARCHI_CL_EVT_ACC0        12
 #define ARCHI_CL_EVT_ACC1        13
 #define ARCHI_CL_EVT_ACC2        14

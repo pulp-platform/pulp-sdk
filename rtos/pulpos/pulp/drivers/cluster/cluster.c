@@ -62,6 +62,7 @@ static void pos_init_cluster_data(int cid, struct pi_cluster_conf *conf)
     CL_TRACE(POS_LOG_INFO, "L1 preloading data copy from L2 to L1 (L2 start: 0x%x, L2 end: 0x%x, L1 start: 0x%x)\n", (int)l1_preload_start_inL2, (int)l1_preload_start_inL2 + (int)l1_preload_size, (int)l1_preload_start);
     for (; l1_preload_size > 0; l1_preload_size-=4, l1_preload_start++, l1_preload_start_inL2++) {
         *l1_preload_start = *l1_preload_start_inL2;
+        CL_TRACE(POS_LOG_INFO, "L1 preload size is 0x%x \n", l1_preload_size);
     }
 
     int nb_cluster = pos_nb_cluster();
@@ -99,12 +100,13 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 
     cluster_dev->data = (void *)cluster;
     cluster->cid = cid;
-
+#ifndef ARCHI_NO_FC
 #if __PLATFORM__ != ARCHI_PLATFORM_FPGA
     pos_pmu_cluster_power_up();
 #endif
 
     pos_cluster_init();
+#endif
 
     pos_cluster_call_pool_t *pool = (pos_cluster_call_pool_t *)pos_cluster_tiny_addr(cid, &pos_cluster_pool);
 
@@ -115,7 +117,7 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 
     pos_cluster_fc_task_lock = 0;
 
-#if __PLATFORM__ != ARCHI_PLATFORM_FPGA && !defined(SKIP_PLL_INIT)
+#if !defined(ARCHI_NO_FC) && __PLATFORM__ != ARCHI_PLATFORM_FPGA && !defined(SKIP_PLL_INIT)
     {
         // Setup FLL
         int init_freq = pos_fll_init(POS_FLL_CL);
@@ -146,7 +148,7 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 
     // Activate icache
     cluster_icache_ctrl_enable_set(ARCHI_CLUSTER_PERIPHERALS_GLOBAL_ADDR(cid) + ARCHI_ICACHE_CTRL_OFFSET, 0xFFFFFFFF);
-
+#ifndef ARCHI_NO_FC
     // Fetch all cores, they will directly jump to the PE loop waiting from orders through the dispatcher
     for (int i=0; i<pi_cl_cluster_nb_pe_cores(); i++) 
     {
@@ -161,7 +163,10 @@ int pi_cluster_open(struct pi_device *cluster_dev)
 #endif
 
     cluster_ctrl_unit_fetch_en_set(ARCHI_CLUSTER_PERIPHERALS_GLOBAL_ADDR(cid) + ARCHI_CLUSTER_CTRL_OFFSET, core_mask);
-
+#else
+    eu_evt_maskSet((1<<ARCHI_CL_EVT_DISPATCH) | (1<<ARCHI_CL_EVT_BAR) | (1<<ARCHI_CL_EVT_MUTEX));
+    eu_bar_setup(eu_bar_addr(0), (1<<pi_cl_cluster_nb_pe_cores()) - 1);
+#endif
 #ifdef CONFIG_PE_TASK
     if (cluster->cluster_exec_mode == PI_CLUSTER_FLAGS_TASK_BASED)
     {
@@ -220,6 +225,70 @@ int __attribute__((noinline)) pos_cluster_task_set_stack(struct pi_device *devic
     return 0;
 }
 
+#ifdef ARCHI_NO_FC
+
+extern void pos_set_slave_stack();
+// asm trampoline: run entry(arg) on the L1 task stack, then restore sp
+extern void pos_cl_run_on_stack(void (*entry)(void *), void *arg, void *stack_top);
+
+// C mirror of pos_master_loop_exec_task: run the cluster task in place on core 0
+static int pos_cluster_exec_in_place(struct pi_device *device, struct pi_cluster_task *task)
+{
+    if (task->stacks == NULL)
+    {
+        if (pos_cluster_task_set_stack(device, task))
+            return -1;
+    }
+
+    task->core_mask = (1 << task->nb_cores) - 1;
+    pos_cluster_nb_active_pe = task->nb_cores;
+
+    // team config + barrier-0 mask (non-CC); refined per fork later
+    eu_dispatch_team_config(task->core_mask);
+    eu_bar_setup_mask(eu_bar_addr(0), task->core_mask, task->core_mask);
+
+    // set slave stacks once, before the entry runs
+    if (task->nb_cores > 1)
+    {
+        eu_dispatch_push((int)pos_set_slave_stack | 1);
+        eu_dispatch_push(task->slave_stack_size);
+        eu_dispatch_push((int)task->stacks + task->stack_size);
+    }
+
+    // core 0 = worker 0: run on the L1 stack, not the L2 boot stack
+    pos_cl_run_on_stack(task->entry, task->arg,
+                        (void *)((char *)task->stacks + task->stack_size));
+
+    return 0;
+}
+
+// standalone execution is synchronous: blocking form is the primary
+int pi_cluster_send_task_to_cl(struct pi_device *device, struct pi_cluster_task *task)
+{
+    return pos_cluster_exec_in_place(device, task);
+}
+
+// async = sync + queue the completion callback for a later pi_yield/wait_on
+int pi_cluster_send_task_to_cl_async(struct pi_device *device, struct pi_cluster_task *task, pi_task_t *async_task)
+{
+    task->next = NULL;
+    int ret = pos_cluster_exec_in_place(device, task);
+    if (async_task)
+        pi_task_push(async_task);
+    return ret;
+}
+
+int pi_cluster_send_tasklet_to_cl_async(struct pi_device *device, struct pi_cluster_task *task, pi_task_t *async_task)
+{
+    task->next = NULL;
+    int ret = pos_cluster_exec_in_place(device, task);
+    if (async_task)
+        pi_task_push(async_task);
+    return ret;
+}
+
+#else
+
 int pi_cluster_send_task_to_cl_async(struct pi_device *device, struct pi_cluster_task *task, pi_task_t *async_task)
 {
     pos_cluster_t *data = (pos_cluster_t *)device->data;
@@ -265,7 +334,6 @@ int pi_cluster_send_task_to_cl_async(struct pi_device *device, struct pi_cluster
     data->last_call_fc = task;
 
     hal_compiler_barrier();
-    
     if (cl_data->first_call_fc_for_cl == NULL)
         cl_data->first_call_fc_for_cl = task;
 
@@ -298,7 +366,7 @@ int pi_cluster_send_tasklet_to_cl_async(struct pi_device *device, struct pi_clus
     data->last_call_fc = task;
 
     hal_compiler_barrier();
-    
+
     if (cl_data->first_call_fc_for_cl == NULL)
         cl_data->first_call_fc_for_cl = task;
 
@@ -326,6 +394,8 @@ int pi_cluster_send_task_to_cl(struct pi_device *device, struct pi_cluster_task 
 
     return 0;
 }
+
+#endif
 
 
 void pos_cluster_push_fc_event(pi_task_t *event)

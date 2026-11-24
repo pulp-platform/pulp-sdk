@@ -61,8 +61,7 @@
 #endif
 
 
-#include "archi/riscv/builtins_v2.h"
-#include "archi/riscv/builtins_v2_emu.h"
+#include "archi/riscv/builtins.h"
 
 #define ARCHI_BINSERT(dst,src,size,off)  __BITINSERT(dst,src,size,off)
 #define ARCHI_BINSERT_R(dst,src,size,off)  __BITINSERT_R(dst,src,size,off)

@@ -258,12 +258,18 @@ static inline unsigned int plp_dma_status();
 
 /// @cond IMPLEM
 
-#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
-#define DMA_WRITE(value, offset) __builtin_pulp_OffsetedWrite((value), (int *)ARCHI_MCHAN_EXT_ADDR, (offset))
-#define DMA_READ(offset) __builtin_pulp_OffsetedRead((int *)ARCHI_MCHAN_EXT_ADDR, (offset))
+#if ARCHI_HAS_DMA_DEMUX
+#define MCHAN_ADDR ARCHI_MCHAN_DEMUX_ADDR
 #else
-#define DMA_WRITE(value, offset) pulp_write32(ARCHI_MCHAN_EXT_ADDR + (offset), (value))
-#define DMA_READ(offset) pulp_read32(ARCHI_MCHAN_EXT_ADDR + (offset))
+#define MCHAN_ADDR ARCHI_MCHAN_EXT_ADDR
+#endif
+
+#if defined(__riscv__) && !defined(RV_ISA_RV32) && !defined(__LLVM__)
+#define DMA_WRITE(value, offset) __builtin_pulp_OffsetedWrite((value), (int *)MCHAN_ADDR, (offset))
+#define DMA_READ(offset) __builtin_pulp_OffsetedRead((int *)MCHAN_ADDR, (offset))
+#else
+#define DMA_WRITE(value, offset) pulp_write32(MCHAN_ADDR + (offset), (value))
+#define DMA_READ(offset) pulp_read32(MCHAN_ADDR + (offset))
 #endif
 
 static inline int plp_dma_counter_alloc() {
@@ -279,14 +285,22 @@ static inline unsigned int plp_dma_getCmd(int ext2loc, unsigned int size, int is
   unsigned int res;
   res = __builtin_bitinsert(0,  ext2loc,      1, MCHAN_CMD_CMD_TYPE_BIT);
   res = __builtin_bitinsert(res, PLP_DMA_INC, 1, MCHAN_CMD_CMD_INC_BIT);
-  res = __builtin_bitinsert(res, is2D,        1, MCHAN_CMD_CMD__2D_EXT_BIT);
+  res = __builtin_bitinsert(res, (!ext2loc && is2D), 1, MCHAN_CMD_CMD__2D_EXT_BIT);
   res = __builtin_bitinsert(res, size,        MCHAN_CMD_CMD_LEN_WIDTH, MCHAN_CMD_CMD_LEN_BIT);
   res = __builtin_bitinsert(res, trigEvt,     1, MCHAN_CMD_CMD_ELE_BIT);
   res = __builtin_bitinsert(res, trigIrq,     1, MCHAN_CMD_CMD_ILE_BIT);
   res = __builtin_bitinsert(res, broadcast,   1, MCHAN_CMD_CMD_BLE_BIT);
+  res = __builtin_bitinsert(res, (ext2loc && is2D),        1, MCHAN_CMD_CMD__2D_TCDM_BIT);
   return res;
 #else
-  return (ext2loc << MCHAN_CMD_CMD_TYPE_BIT) | (PLP_DMA_INC << MCHAN_CMD_CMD_INC_BIT) | (is2D << MCHAN_CMD_CMD__2D_EXT_BIT) | (size << MCHAN_CMD_CMD_LEN_BIT) | (trigEvt<<MCHAN_CMD_ELE_BIT) | (trigIrq<<MCHAN_CMD_ILE_BIT) | (broadcast<<MCHAN_CMD_CMD_BLE_BIT);
+  return (((unsigned int)(ext2loc != 0))            << MCHAN_CMD_CMD_TYPE_BIT)
+       | (((unsigned int)(PLP_DMA_INC))             << MCHAN_CMD_CMD_INC_BIT)
+       | (((unsigned int)(!ext2loc && is2D))        << MCHAN_CMD_CMD__2D_EXT_BIT)
+       | ((size & ((1U << MCHAN_CMD_CMD_LEN_WIDTH) - 1)) << MCHAN_CMD_CMD_LEN_BIT)
+       | (((unsigned int)(trigEvt != 0))            << MCHAN_CMD_CMD_ELE_BIT)
+       | (((unsigned int)(trigIrq != 0))            << MCHAN_CMD_CMD_ILE_BIT)
+       | (((unsigned int)(broadcast != 0))          << MCHAN_CMD_CMD_BLE_BIT)
+       | (((unsigned int)(ext2loc && is2D))         << MCHAN_CMD_CMD__2D_TCDM_BIT);
 #endif
 }
 
@@ -357,7 +371,9 @@ static inline void plp_dma_memcpy_2d_keepCounter(mchan_ext_t ext, unsigned int l
 
 static inline int plp_dma_memcpy_2d(mchan_ext_t ext, unsigned int loc, unsigned short size, unsigned short stride, unsigned short length, int ext2loc) {
   unsigned int counter = plp_dma_counter_alloc();
-  plp_dma_memcpy_2d_keepCounter(ext, loc, size, stride, length, ext2loc);
+  // plp_dma_memcpy_2d_keepCounter(ext, loc, size, stride, length, ext2loc);
+  unsigned int cmd = plp_dma_getCmd(ext2loc, size, PLP_DMA_2D, PLP_DMA_TRIG_EVT, PLP_DMA_NO_TRIG_IRQ, PLP_DMA_SHARED);
+  plp_dma_cmd_push_2d(cmd, loc, ext, stride, length);
   return counter;
 }
 

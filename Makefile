@@ -18,6 +18,7 @@ include rules/json-tools.mk
 include rules/gap-configs.mk
 include rules/pulp-debug-bridge.mk
 include rules/pulpos.mk
+include regression.mk
 
 CMAKE_FLAGS ?= -j 6
 CMAKE ?= cmake
