@@ -4,3 +4,4 @@ build/
 install/*
 !install/rules/
 .sconsign.dblite
+./tests/datamover/logs/
